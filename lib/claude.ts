@@ -23,7 +23,7 @@ export const DEFAULT_MODEL = "claude-sonnet-4-6";
 export const MAX_TOKENS = 1500;
 
 // Modèle optimisé pour les analyses — rapide, économique, suffisant pour analyse structurée
-export const ANALYSIS_MODEL = "claude-haiku-4-5-20251001";
+export const ANALYSIS_MODEL = "claude-haiku-4-5";
 
 // Token budget pour les analyses — ~900 mots, suffisant pour une analyse complète
 export const ANALYSIS_MAX_OUTPUT_TOKENS = parseInt(

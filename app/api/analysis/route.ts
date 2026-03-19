@@ -33,7 +33,7 @@ function isClaudeEnabled(): boolean {
 // ── Validation ────────────────────────────────────────────────────────────────
 
 const triggerSchema = z.object({
-  horizon: z.enum(["MONTH_1", "MONTH_3", "MONTH_6", "YEAR_1"]),
+  horizon: z.enum(["YEAR_1", "YEAR_3", "YEAR_5", "YEAR_10"]),
   /** "PORTFOLIO" = analyse portefeuille personnalisée | "MARKET" = vision marché tech */
   type: z.enum(["PORTFOLIO", "MARKET"]).optional().default("PORTFOLIO"),
   /** Si true, force la régénération même si l'analyse a moins de 30 jours */

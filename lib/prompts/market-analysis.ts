@@ -59,6 +59,83 @@ function formatEur(v: number) {
 }
 
 /**
+ * Retourne les instructions de focus spécifiques à chaque horizon pour buildEnrichedAnalysisPrompt.
+ * Chaque horizon produit des recommandations qualitativement différentes.
+ */
+function getHorizonFocusPortfolio(horizon: Horizon): {
+  systemAddendum: string;
+  userAddendum: string;
+} {
+  switch (horizon) {
+    case "YEAR_1":
+      return {
+        systemAddendum: `FOCUS HORIZON 1 AN :
+Tu analyses la situation tactique immédiate. Sur cet horizon, les mouvements de marché de court terme (cycles crypto, corrections boursières, taux d'intérêt) sont déterminants. Priorise : la gestion du cash disponible, le rééquilibrage urgent des écarts d'allocation > 10 pts, les opportunités d'entrée sur les actifs sous-pondérés. Évite de recommander des changements structurels lourds — cet horizon est celui de l'exécution tactique, pas de la stratégie long terme.`,
+        userAddendum: `Focus sur les 12 prochains mois : quelles actions concrètes et immédiates (dans les semaines à venir) me permettraient d'optimiser mon portefeuille ? Identifie les rééquilibrages urgents, les actifs à renforcer ou réduire maintenant, et les catalyseurs de marché à surveiller sur les 12 prochains mois.`,
+      };
+
+    case "YEAR_3":
+      return {
+        systemAddendum: `FOCUS HORIZON 3 ANS :
+Sur cet horizon, les cycles de marché crypto (typiquement 3-4 ans entre halvings Bitcoin) et les cycles économiques classiques sont pleinement visibles. Tu dois raisonner en termes de cycles : où en est-on dans le cycle crypto ? Où en est le cycle des taux ? Quel est le meilleur timing pour déployer du capital dans chaque pilier ? Recommande des stratégies d'accumulation programmée (DCA), de diversification sectorielle dans le PEA, et d'initiation ou renforcement de positions immobilières si pertinent. Cet horizon est celui du compounding : chaque euro investi aujourd'hui doit maximiser sa croissance sur 36 mois.`,
+        userAddendum: `Focus sur les 3 prochaines années : comment optimiser mon allocation pour tirer parti des cycles de marché actuels (crypto, actions, immobilier) ? Donne-moi une stratégie d'accumulation progressive avec des jalons annuels. Quels secteurs et actifs renforcer en priorité pour maximiser la croissance composée sur cet horizon ?`,
+      };
+
+    case "YEAR_5":
+      return {
+        systemAddendum: `FOCUS HORIZON 5 ANS :
+Sur 5 ans, la construction structurelle du portefeuille prime sur le timing. Tes recommandations doivent porter sur : l'allocation stratégique cible (est-elle bien calibrée pour un objectif de 1M€ ?), les thématiques d'investissement à fort potentiel de croissance sur 5 ans (IA, énergies, biotech, marchés émergents), la fiscalité optimisée (PEA plafond, enveloppes fiscales), et l'effet de levier raisonnable (immobilier à crédit). Évalue si le rythme d'épargne actuel est suffisant pour atteindre l'objectif et propose des ajustements structurels. Cet horizon est celui de la construction patrimoniale — chaque décision doit être réfléchie sur la durée.`,
+        userAddendum: `Focus sur les 5 prochaines années : mon allocation actuelle et mon rythme d'épargne sont-ils cohérents avec l'objectif de 1M€ ? Quels ajustements structurels apporter à mon portefeuille ? Quelles thématiques d'investissement à 5 ans sont les plus prometteuses pour mon profil ? Évalue aussi l'optimisation fiscale de mon portefeuille (PEA, enveloppes, timing des plus-values).`,
+      };
+
+    case "YEAR_10":
+      return {
+        systemAddendum: `FOCUS HORIZON 10 ANS :
+Sur 10 ans, les fondamentaux long terme dominent : l'effet des intérêts composés, les mégatendances technologiques et démographiques, et la solidité des thèses d'investissement de conviction. Tes recommandations doivent être de nature stratégique et visionnaire : quels secteurs seront dominants dans 10 ans ? Comment positionner un portefeuille pour capturer des rendements asymétriques ? Aborde la diversification géographique, les actifs alternatifs, et la progressivité du profil de risque selon l'âge. Sur cet horizon, l'investisseur jeune doit maintenir une tolérance au risque élevée et éviter les erreurs de sur-prudence. Oriente vers les convictions fortes et les positions de long terme.`,
+        userAddendum: `Focus sur les 10 prochaines années : quelles sont mes convictions d'investissement les plus importantes pour construire 1M€ ? Quels mégatendances et secteurs devraient être sur-pondérés dans mon portefeuille sur la décennie ? Comment dois-je faire évoluer mon allocation au fil des années ? Donne-moi une vision stratégique de long terme — pas des conseils de court terme — avec les positions de conviction à construire dès maintenant.`,
+      };
+  }
+}
+
+/**
+ * Retourne les instructions de focus spécifiques à chaque horizon pour buildMarketVisionPrompt.
+ */
+function getHorizonFocusMarket(horizon: Horizon): {
+  systemAddendum: string;
+  userAddendum: string;
+} {
+  switch (horizon) {
+    case "YEAR_1":
+      return {
+        systemAddendum: `FOCUS VEILLE MARCHÉ 1 AN :
+Concentre-toi sur les catalyseurs immédiats et les opportunités d'entrée à court terme dans les secteurs technologiques. Quels secteurs tech sont en train d'amorcer une accélération dans les 12 prochains mois ? Quels événements calendaires (lancements produits, régulations, résultats trimestriels, halvings) sont des catalyseurs proches ? Fournis des noms d'ETF ou d'actions accessibles immédiatement avec des points d'entrée pertinents.`,
+        userAddendum: `Sur les 12 prochains mois : quelles opportunités tech puis-je saisir maintenant ? Quels sont les catalyseurs immédiats à surveiller dans l'IA, la crypto, les semi-conducteurs et les autres secteurs innovants ? Donne-moi des noms d'ETF ou d'actions avec une justification d'entrée à court terme.`,
+      };
+
+    case "YEAR_3":
+      return {
+        systemAddendum: `FOCUS VEILLE MARCHÉ 3 ANS :
+Analyse les secteurs technologiques dont le cycle de maturité atteindra son pic dans 3 ans. Identifie les technologies qui passent du stade "early adopters" au mainstream. Sur cet horizon, le timing d'entrée reste important mais la dynamique de croissance du secteur prime. Analyse en détail les cycles d'adoption, les acteurs qui consolident leur avance, et les points d'inflexion attendus dans 18-36 mois (IA générative, quantique, spatial, biotech CRISPR, etc.).`,
+        userAddendum: `Sur 3 ans : quels secteurs technologiques sont en phase d'accélération et devraient atteindre leur maturité commerciale ? Quels acteurs consolident leur position dominante ? Donne-moi une analyse des cycles d'adoption et des meilleures façons d'y être exposé via ETF ou actions directes sur 3 ans.`,
+      };
+
+    case "YEAR_5":
+      return {
+        systemAddendum: `FOCUS VEILLE MARCHÉ 5 ANS :
+Sur 5 ans, les thématiques d'investissement tech doivent être sélectionnées pour leur potentiel structurel, pas leur momentum actuel. Analyse les technologies dont les fondamentaux économiques (TAM, barrières à l'entrée, modèles de récurrence) justifient une croissance soutenue sur 5 ans. Recommande une construction de portefeuille thématique diversifiée entre thèmes matures (IA infra) et thèmes émergents (quantique, spatial). Intègre la dimension de diversification géographique (US vs Europe vs Asie).`,
+        userAddendum: `Sur 5 ans : comment construire une exposition thématique tech structurée et diversifiée ? Quelles thématiques méritent une conviction forte à 5 ans et lesquelles sont trop spéculatives ? Comment équilibrer entre secteurs tech matures et émergents dans mon portefeuille ? Donne-moi une construction de portefeuille thématique cohérente pour cet horizon.`,
+      };
+
+    case "YEAR_10":
+      return {
+        systemAddendum: `FOCUS VEILLE MARCHÉ 10 ANS :
+Sur 10 ans, les mégatendances technologiques de rupture sont le sujet. Identifie les technologies qui vont remodeler l'économie mondiale d'ici 2035 : IA générale, ordinateurs quantiques, fusion nucléaire, ingénierie génétique, robotique autonome, interfaces cerveau-machine. Pour chaque mégatendance, évalue la probabilité de matérialisation sur 10 ans, les acteurs actuels positionnés pour en bénéficier, et les vecteurs d'investissement accessibles aujourd'hui (même si le marché n'est pas encore mature). L'investisseur de 10 ans doit accepter plus d'incertitude en échange d'un potentiel de rendement exceptionnel.`,
+        userAddendum: `Sur 10 ans : quelles sont les mégatendances technologiques de rupture qui vont créer le plus de valeur d'ici 2035 ? Comment puis-je m'y exposer aujourd'hui, même si ces marchés sont encore embryonnaires ? Donne-moi une vision de long terme sur les technologies qui redéfiniront l'économie et les meilleures façons d'y investir maintenant pour maximiser la croissance sur une décennie.`,
+      };
+  }
+}
+
+/**
  * Prompt legacy (non-enrichi) — conservé pour compatibilité ascendante.
  * Utilisé uniquement si le contexte étendu n'est pas disponible.
  */
@@ -112,6 +189,7 @@ Recommandation synthétique : que faire dans les prochains ${horizonLabel} pour 
 /**
  * Construit le prompt système enrichi (Analyse IA portefeuille) avec profil complet + portefeuille + actifs.
  * Retourne { systemPrompt, userMessage } pour callClaudeAnalysis().
+ * Les instructions de focus varient qualitativement selon l'horizon choisi.
  */
 export function buildEnrichedAnalysisPrompt(
   horizon: Horizon,
@@ -158,10 +236,14 @@ export function buildEnrichedAnalysisPrompt(
     ? `L'investisseur est jeune (${ageActuel} ans) avec un horizon long (${horizonAns} ans). Il peut et doit prendre des risques calculés pour maximiser la croissance de son capital. Adapte tes conseils en conséquence : privilégie les actifs de croissance, l'exposition aux secteurs innovants, et ne te limite pas aux recommandations conservatrices.`
     : "";
 
+  const { systemAddendum, userAddendum } = getHorizonFocusPortfolio(horizon);
+
   const systemPrompt = `Tu es un conseiller financier personnel expert en investissement long terme pour des particuliers français.
 Tu analyses le portefeuille d'un investisseur pour l'aider à atteindre son objectif de ${formatEur(user.objectif)}.
 Tu es factuel, concis et pratique. Tes conseils sont personnalisés, jamais génériques.
 ${profilAge ? `\n${profilAge}` : ""}
+
+${systemAddendum}
 
 PROFIL INVESTISSEUR :
 - Âge actuel : ${ageActuel != null ? `${ageActuel} ans` : "non renseigné"} | Âge cible : ${ageCible != null ? `${ageCible} ans` : "non renseigné"}${horizonAns != null ? ` (horizon ${horizonAns} ans)` : ""}
@@ -181,6 +263,8 @@ HORIZON DEMANDÉ : ${horizonLabel}`;
 
   const userMessage = `Génère une analyse structurée en Markdown pour mon portefeuille sur un horizon de ${horizonLabel}.
 
+${userAddendum}
+
 L'analyse doit couvrir exactement ces sections :
 
 ## Bilan de situation
@@ -193,7 +277,7 @@ Liste 2 à 3 atouts concrets de ma situation actuelle (diversification, PV laten
 Liste 3 à 5 risques concrets sur l'horizon ${horizonLabel}. Pour chaque risque, précise quel actif ou pilier est exposé et pourquoi.
 
 ## Recommandations pour l'horizon ${horizonLabel}
-Donne 3 à 5 actions prioritaires et actionnables pour les prochains ${horizonLabel}. Chaque recommandation doit être spécifique à ma situation (pas de conseils génériques).
+Donne 3 à 5 actions prioritaires et actionnables pour les prochains ${horizonLabel}. Chaque recommandation doit être spécifique à ma situation (pas de conseils génériques). Adapte le niveau d'urgence et la granularité au caractère ${horizon === "YEAR_1" ? "tactique et immédiat" : horizon === "YEAR_3" ? "cyclique et de moyen terme" : horizon === "YEAR_5" ? "structurel et de construction patrimoniale" : "stratégique et de conviction long terme"} de cet horizon.
 
 ## Conseil d'investissement personnalisé
 ${ageActuel != null ? `En tant qu'investisseur jeune (${ageActuel} ans) avec un horizon long terme (${horizonAns != null ? horizonAns + " ans" : "long"}), ` : ""}donne-moi un conseil d'investissement personnalisé tenant compte de mon profil de risque, de mon allocation actuelle et de mon objectif. Oriente vers les actifs de croissance et les opportunités à saisir sur la durée. Sois direct et actionnable.
@@ -208,6 +292,7 @@ Contraintes : Markdown propre avec les titres ## exacts ci-dessus, 800 mots maxi
 /**
  * Construit le prompt pour la Vision Marché — veille opportunités technologiques émergentes.
  * Retourne { systemPrompt, userMessage } pour callClaudeAnalysis().
+ * Le focus et la granularité varient qualitativement selon l'horizon.
  */
 export function buildMarketVisionPrompt(
   horizon: Horizon,
@@ -221,11 +306,15 @@ export function buildMarketVisionPrompt(
   const ageCible = user.ageCible ?? null;
   const horizonAns = ageActuel != null && ageCible != null ? ageCible - ageActuel : null;
 
+  const { systemAddendum, userAddendum } = getHorizonFocusMarket(horizon);
+
   const systemPrompt = `Tu es un expert en veille technologique et investissement thématique pour particuliers français.
 Tu analyses les tendances des secteurs technologiques émergents à fort potentiel de croissance sur le long terme.
 Tu es factuel, précis et orienté vers l'action. Tu connais les marchés boursiers, les ETF thématiques, et les véhicules d'investissement accessibles aux particuliers (PEA, CTO, etc.).
 Date d'analyse : ${dateAnalyse}.
 ${ageActuel != null ? `L'investisseur a ${ageActuel} ans${horizonAns != null ? ` avec un horizon de ${horizonAns} ans` : ""}. Il peut et doit prendre des risques calculés sur les secteurs innovants pour maximiser la croissance long terme.` : ""}
+
+${systemAddendum}
 
 PROFIL INVESTISSEUR :
 - Âge : ${ageActuel != null ? `${ageActuel} ans` : "non renseigné"}${ageCible != null ? ` | Âge cible : ${ageCible} ans` : ""}
@@ -236,6 +325,8 @@ PROFIL INVESTISSEUR :
 - Horizon d'analyse demandé : ${horizonLabel}`;
 
   const userMessage = `Génère une veille structurée en Markdown sur les opportunités technologiques émergentes pour un investisseur particulier français.
+
+${userAddendum}
 
 L'analyse doit couvrir exactement ces sections :
 
@@ -264,7 +355,7 @@ Selon l'actualité à la date d'analyse : énergie propre, robotique, matériaux
 Pour chaque thématique pertinente : ETF thématiques disponibles (nom, ticker si connu), actions directes accessibles, niveau de risque (1-5), éligibilité PEA ou CTO uniquement. Sois précis sur l'accessibilité pour un investisseur français.
 
 ## Avis personnalisé
-${ageActuel != null ? `En tant qu'investisseur de ${ageActuel} ans avec un horizon long terme (${horizonAns != null ? horizonAns + " ans" : "long"}), ` : ""}compte tenu de mon allocation actuelle et de mon profil, quelles thématiques prioriser en priorité ? Donne un classement des 3 meilleures opportunités pour mon profil avec une justification concrète.
+${ageActuel != null ? `En tant qu'investisseur de ${ageActuel} ans avec un horizon long terme (${horizonAns != null ? horizonAns + " ans" : "long"}), ` : ""}compte tenu de mon allocation actuelle et de mon profil, quelles thématiques prioriser en priorité sur un horizon de ${horizonLabel} ? Donne un classement des 3 meilleures opportunités pour mon profil avec une justification concrète adaptée à cet horizon.
 
 ---
 

@@ -13,7 +13,7 @@ import { HORIZON_LABEL } from "@/types";
 import type { Horizon } from "@/types";
 
 const CACHE_DAYS = 30;
-const TAB_HORIZONS: Horizon[] = ["MONTH_1", "MONTH_3", "MONTH_6", "YEAR_1"];
+const TAB_HORIZONS: Horizon[] = ["YEAR_1", "YEAR_3", "YEAR_5", "YEAR_10"];
 
 const PILIER_LABELS: Record<string, string> = {
   PEA: "PEA / Actions", IMMO: "Immobilier", CRYPTO: "Crypto", AUTRE: "Autre",
@@ -134,7 +134,7 @@ export default async function AnalysePage({
   const activeHorizon: Horizon =
     TAB_HORIZONS.includes(searchParams.horizon as Horizon)
       ? (searchParams.horizon as Horizon)
-      : "MONTH_3";
+      : "YEAR_3";
 
   // Mapper allocationDetaillee par pilier
   const allocationLines = Array.isArray(user.allocationDetaillee)
