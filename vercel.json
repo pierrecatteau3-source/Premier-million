@@ -1,0 +1,20 @@
+{
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "env": {
+    "DATABASE_URL": "@database_url",
+    "NEXTAUTH_URL": "@nextauth_url",
+    "NEXTAUTH_SECRET": "@nextauth_secret",
+    "SOLO_EMAIL": "@solo_email",
+    "SOLO_PASSWORD_HASH": "@solo_password_hash",
+    "ANTHROPIC_API_KEY": "@anthropic_api_key",
+    "CRON_SECRET": "@cron_secret"
+  },
+  "crons": [
+    {
+      "path": "/api/cron/snapshot",
+      "schedule": "0 17 * * *"
+    }
+  ]
+}
