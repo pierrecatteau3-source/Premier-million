@@ -3,9 +3,16 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 import { callClaudeAnalysis } from "@/lib/claude";
-import { buildEnrichedAnalysisPrompt } from "@/lib/prompts/market-analysis";
+import {
+  buildEnrichedAnalysisPrompt,
+  buildMarketVisionPrompt,
+} from "@/lib/prompts/market-analysis";
 import { getPortfolioSummary } from "@/lib/services/portfolio.service";
-import { checkGlobalDailyLimit, incrementGlobalCounter, getGlobalCount } from "@/lib/analysisRateLimit";
+import {
+  checkGlobalDailyLimit,
+  incrementGlobalCounter,
+  getGlobalCount,
+} from "@/lib/analysisRateLimit";
 import { HORIZON } from "@/types";
 import type { Horizon } from "@/types";
 
@@ -13,6 +20,10 @@ import type { Horizon } from "@/types";
 
 /** Cache de 30 jours — durée de fraîcheur d'une analyse */
 const CACHE_DAYS = 30;
+
+/** Types d'analyse supportés */
+const ANALYSIS_TYPES = ["PORTFOLIO", "MARKET"] as const;
+type AnalysisType = (typeof ANALYSIS_TYPES)[number];
 
 /** Si false → kill switch d'urgence, retourne le cache sans appel API */
 function isClaudeEnabled(): boolean {
@@ -23,6 +34,8 @@ function isClaudeEnabled(): boolean {
 
 const triggerSchema = z.object({
   horizon: z.enum(["MONTH_1", "MONTH_3", "MONTH_6", "YEAR_1"]),
+  /** "PORTFOLIO" = analyse portefeuille personnalisée | "MARKET" = vision marché tech */
+  type: z.enum(["PORTFOLIO", "MARKET"]).optional().default("PORTFOLIO"),
   /** Si true, force la régénération même si l'analyse a moins de 30 jours */
   force: z.boolean().optional().default(false),
 });
@@ -33,6 +46,7 @@ function serializeAnalysis(a: {
   id: string;
   userId: string;
   horizon: string;
+  type: string;
   content: string;
   createdAt: Date;
 }) {
@@ -40,6 +54,7 @@ function serializeAnalysis(a: {
     id: a.id,
     userId: a.userId,
     horizon: a.horizon,
+    type: a.type,
     content: a.content,
     createdAt: a.createdAt.toISOString(),
   };
@@ -72,6 +87,7 @@ export async function POST(req: NextRequest) {
   }
 
   const horizon = parsed.data.horizon as Horizon;
+  const analysisType = parsed.data.type as AnalysisType;
   const forceRegenerate = parsed.data.force === true;
 
   // ── Vérification du cache 30 jours ─────────────────────────────────────────
@@ -81,6 +97,7 @@ export async function POST(req: NextRequest) {
     where: {
       userId,
       horizon,
+      type: analysisType,
       createdAt: { gte: cacheLimit },
     },
     orderBy: { createdAt: "desc" },
@@ -89,7 +106,7 @@ export async function POST(req: NextRequest) {
   // Si l'analyse est fraîche ET qu'on ne force pas la régénération → retourner le cache
   if (cached && !forceRegenerate) {
     console.log(
-      `[Analysis] userId=${userId} horizon=${horizon} tokens_used=0 cached=true`
+      `[Analysis] userId=${userId} type=${analysisType} horizon=${horizon} tokens_used=0 cached=true`
     );
     return NextResponse.json({
       data: {
@@ -103,13 +120,13 @@ export async function POST(req: NextRequest) {
   if (!isClaudeEnabled()) {
     // Retourner l'analyse la plus récente en base (même expirée) si disponible
     const fallback = await prisma.analysis.findFirst({
-      where: { userId, horizon },
+      where: { userId, horizon, type: analysisType },
       orderBy: { createdAt: "desc" },
     });
 
     if (fallback) {
       console.log(
-        `[Analysis] userId=${userId} horizon=${horizon} tokens_used=0 cached=true kill_switch=true`
+        `[Analysis] userId=${userId} type=${analysisType} horizon=${horizon} tokens_used=0 cached=true kill_switch=true`
       );
       return NextResponse.json({
         data: {
@@ -133,15 +150,16 @@ export async function POST(req: NextRequest) {
     where: {
       userId,
       horizon,
+      type: analysisType,
       createdAt: { gte: userLast24h },
     },
     orderBy: { createdAt: "desc" },
   });
 
   if (recentCall) {
-    // L'utilisateur a déjà déclenché un appel API pour cet horizon dans les 24h
+    // L'utilisateur a déjà déclenché un appel API pour cet horizon+type dans les 24h
     console.log(
-      `[Analysis] userId=${userId} horizon=${horizon} tokens_used=0 cached=true rate_limit_user=true`
+      `[Analysis] userId=${userId} type=${analysisType} horizon=${horizon} tokens_used=0 cached=true rate_limit_user=true`
     );
     return NextResponse.json({
       data: {
@@ -155,7 +173,7 @@ export async function POST(req: NextRequest) {
   const { allowed, remaining } = checkGlobalDailyLimit();
   if (!allowed) {
     console.log(
-      `[Analysis] userId=${userId} horizon=${horizon} tokens_used=0 cached=false rate_limit_global=true`
+      `[Analysis] userId=${userId} type=${analysisType} horizon=${horizon} tokens_used=0 cached=false rate_limit_global=true`
     );
     return NextResponse.json(
       {
@@ -215,24 +233,27 @@ export async function POST(req: NextRequest) {
       }))
     );
 
-    // Construction du prompt enrichi
-    const { systemPrompt, userMessage } = buildEnrichedAnalysisPrompt(
-      horizon,
-      {
-        objectif: user?.objectif ?? 1_000_000,
-        ageActuel: user?.ageActuel ?? null,
-        ageCible: user?.ageCible ?? null,
-        epargneMensuelle: user?.epargneMensuelle ?? null,
-        risqueMaxPerte: user?.risqueMaxPerte ?? null,
-        niveauConnaissance: user?.niveauConnaissance ?? null,
-        allocationCible,
-      },
-      {
-        totalValue: portfolio.totalValue,
-        piliers,
-        assets,
-      }
-    );
+    const userProfile = {
+      objectif: user?.objectif ?? 1_000_000,
+      ageActuel: user?.ageActuel ?? null,
+      ageCible: user?.ageCible ?? null,
+      epargneMensuelle: user?.epargneMensuelle ?? null,
+      risqueMaxPerte: user?.risqueMaxPerte ?? null,
+      niveauConnaissance: user?.niveauConnaissance ?? null,
+      allocationCible,
+    };
+
+    const portfolioCtx = {
+      totalValue: portfolio.totalValue,
+      piliers,
+      assets,
+    };
+
+    // Construction du prompt selon le type d'analyse
+    const { systemPrompt, userMessage } =
+      analysisType === "MARKET"
+        ? buildMarketVisionPrompt(horizon, userProfile, portfolioCtx)
+        : buildEnrichedAnalysisPrompt(horizon, userProfile, portfolioCtx);
 
     // Incrémenter le compteur AVANT l'appel (protège contre les appels parallèles)
     incrementGlobalCounter();
@@ -243,14 +264,14 @@ export async function POST(req: NextRequest) {
       userMessage
     );
 
-    // Sauvegarde en base
+    // Sauvegarde en base avec le type
     const analysis = await prisma.analysis.create({
-      data: { userId, horizon, content },
+      data: { userId, horizon, type: analysisType, content },
     });
 
     // Log structuré
     console.log(
-      `[Analysis] userId=${userId} horizon=${horizon} tokens_used=${outputTokens} cached=false global_count=${getGlobalCount()} remaining_today=${remaining - 1}`
+      `[Analysis] userId=${userId} type=${analysisType} horizon=${horizon} tokens_used=${outputTokens} cached=false global_count=${getGlobalCount()} remaining_today=${remaining - 1}`
     );
 
     return NextResponse.json({
@@ -268,7 +289,7 @@ export async function POST(req: NextRequest) {
       ? "L'analyse a pris trop de temps (timeout 30s). Réessayez dans quelques instants."
       : "Erreur lors de la génération de l'analyse. Réessayez dans quelques instants.";
 
-    console.error(`[Analysis] userId=${userId} horizon=${horizon} error="${message}"`);
+    console.error(`[Analysis] userId=${userId} type=${analysisType} horizon=${horizon} error="${message}"`);
 
     return NextResponse.json(
       { error: clientMessage },

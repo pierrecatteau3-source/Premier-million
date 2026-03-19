@@ -17,12 +17,12 @@ import type { Horizon } from "@/types";
 const CACHE_DAYS = 30;
 const TAB_HORIZONS: Horizon[] = ["MONTH_1", "MONTH_3", "MONTH_6", "YEAR_1"];
 
-// Charge les analyses en cache pour tous les horizons (30 jours)
-async function getLatestAnalyses(userId: string) {
+// Charge les analyses Vision Marché en cache pour tous les horizons (30 jours)
+async function getLatestMarketAnalyses(userId: string) {
   const cacheLimit = new Date(Date.now() - CACHE_DAYS * 24 * 60 * 60 * 1000);
 
   const analyses = await prisma.analysis.findMany({
-    where: { userId, createdAt: { gte: cacheLimit } },
+    where: { userId, type: "MARKET", createdAt: { gte: cacheLimit } },
     orderBy: { createdAt: "desc" },
   });
 
@@ -43,7 +43,7 @@ export default async function VisionMarchePage({
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/login");
 
-  const byHorizon = await getLatestAnalyses(session.user.id);
+  const byHorizon = await getLatestMarketAnalyses(session.user.id);
 
   const activeHorizon: Horizon =
     TAB_HORIZONS.includes(searchParams.horizon as Horizon)
@@ -54,7 +54,7 @@ export default async function VisionMarchePage({
     <>
       <Header
         title="Vision Marché"
-        description="Analyses personnalisées générées par Claude · Cache 30 jours"
+        description="Veille opportunités technologiques émergentes par Claude · Cache 30 jours"
       />
 
       <div className="space-y-6 p-6">
@@ -103,12 +103,12 @@ export default async function VisionMarchePage({
         <Card>
           <CardHeader>
             <CardTitle className="text-base">
-              Analyse — {HORIZON_LABEL[activeHorizon]}
+              Vision Marché — {HORIZON_LABEL[activeHorizon]}
             </CardTitle>
             <CardDescription>
-              L&apos;analyse intègre votre profil complet (âge, épargne, tolérance au risque),
-              votre portefeuille actuel et l&apos;écart à votre allocation cible.
-              Elle est mise en cache 30 jours.
+              Veille sur les opportunités technologiques émergentes (quantique, photonique, IA,
+              biotech, spatial…). Analyse générée par Claude et adaptée à votre profil d&apos;investisseur.
+              Mise en cache 30 jours.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -117,6 +117,7 @@ export default async function VisionMarchePage({
               return (
                 <AnalysisCard
                   horizon={activeHorizon}
+                  analysisType="MARKET"
                   initial={
                     cached
                       ? {
@@ -124,6 +125,7 @@ export default async function VisionMarchePage({
                             id: cached.id,
                             userId: cached.userId,
                             horizon: cached.horizon,
+                            type: cached.type,
                             content: cached.content,
                             createdAt: cached.createdAt.toISOString(),
                           },
@@ -140,17 +142,17 @@ export default async function VisionMarchePage({
         {/* ── Infos sur la génération ───────────────────────────────── */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Comment fonctionne la génération ?</CardTitle>
+            <CardTitle className="text-base">Comment fonctionne la Vision Marché ?</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
               <div className="rounded-lg bg-muted/50 p-3">
-                <p className="font-medium text-foreground mb-1">1. Contexte complet</p>
-                <p>Profil (âge, épargne, tolérance au risque), portefeuille, actifs détenus et PV latentes.</p>
+                <p className="font-medium text-foreground mb-1">1. Secteurs couverts</p>
+                <p>Quantique, photonique, IA infrastructure, biotech, spatial/défense et autres secteurs émergents selon l&apos;actualité.</p>
               </div>
               <div className="rounded-lg bg-muted/50 p-3">
                 <p className="font-medium text-foreground mb-1">2. Appel Claude Haiku</p>
-                <p>Analyse structurée en 5 sections : bilan, points forts, risques, recommandations, conclusion.</p>
+                <p>Veille structurée en 3 sections : opportunités par secteur, comment investir (ETF/actions, PEA/CTO), avis personnalisé.</p>
               </div>
               <div className="rounded-lg bg-muted/50 p-3">
                 <p className="font-medium text-foreground mb-1">3. Cache 30 jours</p>
@@ -162,7 +164,7 @@ export default async function VisionMarchePage({
               </div>
             </div>
             <p className="text-xs">
-              ⚠️ Les analyses sont indicatives et ne constituent pas un conseil en investissement au sens réglementaire.
+              Les analyses sont basées sur les données d&apos;entraînement de Claude et ne constituent pas un conseil en investissement au sens réglementaire. Vérifiez les informations auprès de sources financières actualisées.
             </p>
           </CardContent>
         </Card>

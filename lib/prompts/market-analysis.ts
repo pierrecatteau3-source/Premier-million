@@ -110,7 +110,7 @@ Recommandation synthétique : que faire dans les prochains ${horizonLabel} pour 
 }
 
 /**
- * Construit le prompt système enrichi avec profil complet + portefeuille + actifs.
+ * Construit le prompt système enrichi (Analyse IA portefeuille) avec profil complet + portefeuille + actifs.
  * Retourne { systemPrompt, userMessage } pour callClaudeAnalysis().
  */
 export function buildEnrichedAnalysisPrompt(
@@ -124,6 +124,10 @@ export function buildEnrichedAnalysisPrompt(
     : "0.0";
   const manquant = formatEur(Math.max(user.objectif - portfolio.totalValue, 0));
   const dateAnalyse = new Date().toLocaleDateString("fr-FR");
+
+  const ageActuel = user.ageActuel ?? null;
+  const ageCible = user.ageCible ?? null;
+  const horizonAns = ageActuel != null && ageCible != null ? ageCible - ageActuel : null;
 
   // Lignes piliers
   const pilierLines = portfolio.piliers
@@ -150,12 +154,17 @@ export function buildEnrichedAnalysisPrompt(
           .join("\n")
       : "- Aucun actif valorisé";
 
+  const profilAge = ageActuel != null && horizonAns != null
+    ? `L'investisseur est jeune (${ageActuel} ans) avec un horizon long (${horizonAns} ans). Il peut et doit prendre des risques calculés pour maximiser la croissance de son capital. Adapte tes conseils en conséquence : privilégie les actifs de croissance, l'exposition aux secteurs innovants, et ne te limite pas aux recommandations conservatrices.`
+    : "";
+
   const systemPrompt = `Tu es un conseiller financier personnel expert en investissement long terme pour des particuliers français.
 Tu analyses le portefeuille d'un investisseur pour l'aider à atteindre son objectif de ${formatEur(user.objectif)}.
 Tu es factuel, concis et pratique. Tes conseils sont personnalisés, jamais génériques.
+${profilAge ? `\n${profilAge}` : ""}
 
 PROFIL INVESTISSEUR :
-- Âge actuel : ${user.ageActuel != null ? `${user.ageActuel} ans` : "non renseigné"} | Âge cible : ${user.ageCible != null ? `${user.ageCible} ans` : "non renseigné"}
+- Âge actuel : ${ageActuel != null ? `${ageActuel} ans` : "non renseigné"} | Âge cible : ${ageCible != null ? `${ageCible} ans` : "non renseigné"}${horizonAns != null ? ` (horizon ${horizonAns} ans)` : ""}
 - Épargne mensuelle : ${user.epargneMensuelle != null ? formatEur(user.epargneMensuelle) + "/mois" : "non renseignée"}
 - Tolérance au risque : ${user.risqueMaxPerte != null ? `${user.risqueMaxPerte}% de perte maximale acceptable` : "non renseignée"}
 - Niveau de connaissance : ${user.niveauConnaissance ?? "non renseigné"}
@@ -172,26 +181,94 @@ HORIZON DEMANDÉ : ${horizonLabel}`;
 
   const userMessage = `Génère une analyse structurée en Markdown pour mon portefeuille sur un horizon de ${horizonLabel}.
 
-L'analyse doit couvrir exactement ces 5 sections :
+L'analyse doit couvrir exactement ces sections :
 
-### 1. Bilan de la situation actuelle
-Évalue ma progression vers l'objectif de ${formatEur(user.objectif)}. Compare ma répartition actuelle à l'allocation cible. Identifie les écarts significatifs.
+## Bilan de situation
+Évalue ma progression vers l'objectif de ${formatEur(user.objectif)}${ageActuel != null && ageCible != null ? `. Projette l'atteinte de l'objectif en tenant compte de mon âge (${ageActuel} ans) et de mon âge cible (${ageCible} ans)` : ""}. Compare ma répartition actuelle à l'allocation cible. Identifie les écarts significatifs.
 
-### 2. Points forts du portefeuille
-Liste 2 à 3 atouts concrets de ma situation actuelle (diversification, PV latentes positives, épargne mensuelle, etc.).
+## Points forts du portefeuille
+Liste 2 à 3 atouts concrets de ma situation actuelle (diversification, PV latentes positives, épargne mensuelle, actifs performants, etc.).
 
-### 3. Points de vigilance / Risques identifiés
+## Points de vigilance
 Liste 3 à 5 risques concrets sur l'horizon ${horizonLabel}. Pour chaque risque, précise quel actif ou pilier est exposé et pourquoi.
 
-### 4. Recommandations concrètes et actionnables
-Donne 3 à 5 actions prioritaires pour les prochains ${horizonLabel}. Chaque recommandation doit être spécifique à ma situation (pas de conseils génériques).
+## Recommandations pour l'horizon ${horizonLabel}
+Donne 3 à 5 actions prioritaires et actionnables pour les prochains ${horizonLabel}. Chaque recommandation doit être spécifique à ma situation (pas de conseils génériques).
 
-### 5. Conclusion
-Synthèse en 2 à 3 phrases : ma situation globale, le chemin restant, et la priorité absolue pour la période.
+## Conseil d'investissement personnalisé
+${ageActuel != null ? `En tant qu'investisseur jeune (${ageActuel} ans) avec un horizon long terme (${horizonAns != null ? horizonAns + " ans" : "long"}), ` : ""}donne-moi un conseil d'investissement personnalisé tenant compte de mon profil de risque, de mon allocation actuelle et de mon objectif. Oriente vers les actifs de croissance et les opportunités à saisir sur la durée. Sois direct et actionnable.
 
 ---
 
-Contraintes : Markdown propre, 700 mots maximum, conseils personnalisés à ma situation exacte. Termine par une courte mention que cette analyse est indicative et ne constitue pas un conseil en investissement au sens réglementaire.`;
+Contraintes : Markdown propre avec les titres ## exacts ci-dessus, 800 mots maximum, conseils personnalisés à ma situation exacte. Termine par une courte mention que cette analyse est indicative et ne constitue pas un conseil en investissement au sens réglementaire.`;
+
+  return { systemPrompt, userMessage };
+}
+
+/**
+ * Construit le prompt pour la Vision Marché — veille opportunités technologiques émergentes.
+ * Retourne { systemPrompt, userMessage } pour callClaudeAnalysis().
+ */
+export function buildMarketVisionPrompt(
+  horizon: Horizon,
+  user: UserProfileContext,
+  portfolio: EnrichedPortfolioContext
+): { systemPrompt: string; userMessage: string } {
+  const horizonLabel = HORIZON_LABEL[horizon];
+  const dateAnalyse = new Date().toLocaleDateString("fr-FR");
+
+  const ageActuel = user.ageActuel ?? null;
+  const ageCible = user.ageCible ?? null;
+  const horizonAns = ageActuel != null && ageCible != null ? ageCible - ageActuel : null;
+
+  const systemPrompt = `Tu es un expert en veille technologique et investissement thématique pour particuliers français.
+Tu analyses les tendances des secteurs technologiques émergents à fort potentiel de croissance sur le long terme.
+Tu es factuel, précis et orienté vers l'action. Tu connais les marchés boursiers, les ETF thématiques, et les véhicules d'investissement accessibles aux particuliers (PEA, CTO, etc.).
+Date d'analyse : ${dateAnalyse}.
+${ageActuel != null ? `L'investisseur a ${ageActuel} ans${horizonAns != null ? ` avec un horizon de ${horizonAns} ans` : ""}. Il peut et doit prendre des risques calculés sur les secteurs innovants pour maximiser la croissance long terme.` : ""}
+
+PROFIL INVESTISSEUR :
+- Âge : ${ageActuel != null ? `${ageActuel} ans` : "non renseigné"}${ageCible != null ? ` | Âge cible : ${ageCible} ans` : ""}
+- Tolérance au risque : ${user.risqueMaxPerte != null ? `${user.risqueMaxPerte}% de perte maximale acceptable` : "élevée (non précisée)"}
+- Niveau de connaissance : ${user.niveauConnaissance ?? "non renseigné"}
+- Patrimoine total : ${formatEur(portfolio.totalValue)} | Objectif : ${formatEur(user.objectif)}
+- Allocation actuelle : ${portfolio.piliers.map((p) => `${p.name} ${p.percentage.toFixed(0)}%`).join(", ")}
+- Horizon d'analyse demandé : ${horizonLabel}`;
+
+  const userMessage = `Génère une veille structurée en Markdown sur les opportunités technologiques émergentes pour un investisseur particulier français.
+
+L'analyse doit couvrir exactement ces sections :
+
+## Opportunités technologiques émergentes
+Analyse les secteurs suivants avec leur stade de maturité, les principaux acteurs cotés et les dynamiques actuelles (date : ${dateAnalyse}) :
+
+**1. Informatique quantique**
+Entreprises cotées, ETF, maturité commerciale estimée, catalyseurs récents.
+
+**2. Photonique & semi-conducteurs optiques**
+Acteurs clés, dynamique du secteur, applications industrielles et leur traction.
+
+**3. Intelligence artificielle & infrastructure**
+Opportunités au-delà des géants (GAFAM) : fournisseurs d'infrastructure, puces spécialisées, logiciels verticaux.
+
+**4. Biotech & medtech**
+Innovation de rupture à horizon 5-10 ans, thérapies géniques, diagnostics IA, acteurs émergents.
+
+**5. Spatial & défense**
+Acteurs privés cotés, accélération budgétaire, applications commerciales (connectivité, observation).
+
+**6. Autres secteurs à potentiel**
+Selon l'actualité à la date d'analyse : énergie propre, robotique, matériaux avancés, fintech, etc.
+
+## Comment investir sur ces thématiques
+Pour chaque thématique pertinente : ETF thématiques disponibles (nom, ticker si connu), actions directes accessibles, niveau de risque (1-5), éligibilité PEA ou CTO uniquement. Sois précis sur l'accessibilité pour un investisseur français.
+
+## Avis personnalisé
+${ageActuel != null ? `En tant qu'investisseur de ${ageActuel} ans avec un horizon long terme (${horizonAns != null ? horizonAns + " ans" : "long"}), ` : ""}compte tenu de mon allocation actuelle et de mon profil, quelles thématiques prioriser en priorité ? Donne un classement des 3 meilleures opportunités pour mon profil avec une justification concrète.
+
+---
+
+Contraintes : Markdown propre avec les titres ## et ** exacts ci-dessus, 900 mots maximum, informations factuelles et récentes (basées sur tes données jusqu'à ta date de coupure). Mentionne en fin d'analyse que les informations sont basées sur tes données d'entraînement et peuvent ne pas refléter les évolutions les plus récentes du marché.`;
 
   return { systemPrompt, userMessage };
 }

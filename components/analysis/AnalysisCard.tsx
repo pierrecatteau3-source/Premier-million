@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 interface Analysis {
   id: string;
   horizon: string;
+  type?: string;
   content: string;
   createdAt: string;
   userId?: string;
@@ -18,6 +19,8 @@ interface Analysis {
 
 interface Props {
   horizon: Horizon;
+  /** "PORTFOLIO" = analyse portefeuille personnalisée | "MARKET" = vision marché tech */
+  analysisType?: "PORTFOLIO" | "MARKET";
   initial: { analysis: Analysis; cached: boolean } | null;
 }
 
@@ -98,7 +101,7 @@ function ConfirmModal({
   );
 }
 
-export function AnalysisCard({ horizon, initial }: Props) {
+export function AnalysisCard({ horizon, analysisType = "PORTFOLIO", initial }: Props) {
   const [result, setResult] = useState(initial);
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -112,7 +115,7 @@ export function AnalysisCard({ horizon, initial }: Props) {
         const res = await fetch("/api/analysis", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ horizon, force }),
+          body: JSON.stringify({ horizon, type: analysisType, force }),
         });
 
         const json = await res.json();
@@ -160,6 +163,11 @@ export function AnalysisCard({ horizon, initial }: Props) {
   const horizonLabel = HORIZON_LABEL[horizon];
   const age = result ? ageDays(result.analysis.createdAt) : null;
   const isExpired = age !== null && age >= 30;
+
+  const loadingLabel =
+    analysisType === "MARKET"
+      ? `Claude analyse les opportunités technologiques pour l'horizon ${horizonLabel}…`
+      : `Claude analyse votre portefeuille pour l'horizon ${horizonLabel}…`;
 
   return (
     <>
@@ -253,9 +261,7 @@ export function AnalysisCard({ horizon, initial }: Props) {
         {isPending && !result && (
           <div className="flex items-center justify-center gap-3 rounded-lg border border-border bg-muted/30 py-16 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
-            <span className="text-sm">
-              Claude analyse votre portefeuille pour l&apos;horizon {horizonLabel}…
-            </span>
+            <span className="text-sm">{loadingLabel}</span>
           </div>
         )}
 
@@ -269,6 +275,11 @@ export function AnalysisCard({ horizon, initial }: Props) {
           >
             <ReactMarkdown
               components={{
+                h2: ({ children }) => (
+                  <h2 className="mt-5 mb-2 text-base font-semibold text-foreground first:mt-0 border-b border-border/40 pb-1">
+                    {children}
+                  </h2>
+                ),
                 h3: ({ children }) => (
                   <h3 className="mt-4 mb-2 text-sm font-semibold text-foreground first:mt-0">
                     {children}
