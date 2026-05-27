@@ -338,28 +338,59 @@ Railway Project: premier-million
 4. **Healthcheck** : Railway détecte Next.js, le healthcheck pointe `GET /` par défaut.
 5. **Build & Start** :
    - Build command : `npm run build` (lance `prisma generate && next build`)
-   - Start command : `npm run start`
+   - Start command : `npx prisma migrate deploy && npm run start` (auto-migrate à chaque démarrage)
    - Pas besoin de config Railpack supplémentaire — Railway auto-détecte Next.js.
 
-### 10.3 Migrations Prisma au déploiement
+### 10.3 Migrations Prisma au déploiement (stratégie actuelle)
 
-**Stratégie recommandée** : migration manuelle via Railway CLI avant chaque release significative.
+**Stratégie retenue : auto-migrate au `startCommand`.**
 
-```bash
-# Depuis ta machine, après avoir lié le projet
-railway run --service postgres -- npx prisma migrate deploy
+Le `railway.json` exécute `npx prisma migrate deploy` juste avant le démarrage du serveur Next.js :
+
+```json
+"startCommand": "npx prisma migrate deploy && npm run start"
 ```
 
-Alternative auto : ajouter `prisma migrate deploy &&` dans le `build` du `package.json`. **À éviter en MVP** — risque de bloquer le déploiement si conflit migration.
+**Pourquoi pas dans le `buildCommand` ?** Le réseau privé Railway (`*.railway.internal`) n'est **pas accessible pendant la phase de build** — seulement au runtime/deploy. Mettre `prisma migrate deploy` dans le build casse le déploiement avec `Error P1001: Can't reach database server`.
+
+**Pourquoi c'est safe en runtime :**
+- `prisma migrate deploy` est **idempotent** : si toutes les migrations sont déjà appliquées, il ne fait rien
+- Coût ~1 sec ajouté au démarrage du container
+- Pas besoin de Railway CLI ni d'action manuelle au release
+
+**Workflow de migration :**
+
+1. En local : modifier `prisma/schema.prisma` puis `npm run db:migrate` (crée la migration dans `prisma/migrations/`)
+2. Tester en local
+3. Commit + push → PR → merge sur `main`
+4. Railway redéploie → migration appliquée automatiquement au startup
+
+**En cas de migration risquée** (table volumineuse, dropping column…) : la lancer manuellement via Railway CLI **avant** de merger la PR pour limiter le downtime :
+
+```bash
+railway link
+DATABASE_URL="<DATABASE_PUBLIC_URL>" npx prisma migrate deploy
+```
 
 ### 10.4 Cron Job
 
-Le cron actuel (`/api/cron/snapshot`) est configuré dans `vercel.json`. Pour Railway :
+Le cron `/api/cron/snapshot` :
+- Tourne **2× par jour** : 7h et 16h UTC (≈ 9h et 18h Paris en CEST)
+- Ne traite **que les actifs avec pricing live** (`live_crypto` via CoinGecko + `live_equity` via Yahoo Finance)
+- Les actifs `manual` / `savings` sont laissés tels quels (saisie manuelle préservée)
+- Upsert sur `[assetId, date]` (date = minuit UTC) → la 2e exécution écrase la 1re (close > open dans l'historique)
 
-- Option A (recommandée MVP) : créer un **service Cron Railway** séparé qui hit l'endpoint avec `CRON_SECRET` chaque jour à 17h UTC.
-- Option B : externe (GitHub Actions schedule) — moins fiable.
+**Setup Railway :**
 
-**À supprimer** : `vercel.json` (obsolète depuis migration Railway).
+Créer un **service Cron Railway dédié** (pas dans le service web) :
+- **+ New** → **Empty Service** → renomme en `Cron - Snapshot`
+- **Settings** → **Cron Schedule** : `0 7,16 * * *`
+- **Source** → image `curlimages/curl:latest`
+- **Variables** → `CRON_SECRET = ${{Premier million.CRON_SECRET}}`, `APP_URL = ${{Premier million.RAILWAY_PUBLIC_DOMAIN}}` (ou l'URL en dur)
+- **Start command** :
+  ```
+  curl -sfS -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/cron/snapshot"
+  ```
 
 ### 10.5 Domaines & SSL
 
@@ -367,14 +398,19 @@ Le cron actuel (`/api/cron/snapshot`) est configuré dans `vercel.json`. Pour Ra
 - Domaine custom : configurer DNS CNAME → Railway, SSL auto via Let's Encrypt.
 - **`NEXTAUTH_URL`** doit matcher l'URL prod exacte (sinon NextAuth casse).
 
-### 10.6 Fichier `railway.json` (à créer si besoin)
+### 10.6 Fichier `railway.json` (configuration actuelle)
 
 ```json
 {
-  "$schema": "https://railway.app/railway.schema.json",
-  "build": { "builder": "RAILPACK", "buildCommand": "npm run build" },
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "RAILPACK",
+    "buildCommand": "npm ci && npm run build"
+  },
   "deploy": {
-    "startCommand": "npm run start",
+    "startCommand": "npx prisma migrate deploy && npm run start",
+    "healthcheckPath": "/login",
+    "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3
   }

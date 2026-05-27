@@ -2,13 +2,13 @@ export const runtime = "nodejs";
 
 /**
  * GET /api/cron/snapshot
- * Appelée automatiquement à 19h (17h UTC) par Vercel Cron.
+ * Appelée 2× par jour par un cron Railway (7h + 16h UTC ≈ 9h et 18h Paris).
  * Sécurisée par Authorization: Bearer CRON_SECRET.
  *
- * Pour chaque actif actif :
- *   - live_equity / live_crypto + ticker → prix live × quantiteTotal
- *   - manual / savings → dernier snapshot connu (pas de nouveau snapshot si valeur inchangée)
- * Utilise upsert sur la contrainte unique [assetId, date] (date = minuit UTC du jour).
+ * Ne traite QUE les actifs avec pricing live (live_crypto / live_equity).
+ * Les actifs manual / savings sont laissés tels quels (snapshot inchangé).
+ * Utilise upsert sur [assetId, date] (date = minuit UTC du jour) — la 2e
+ * exécution de la journée écrase la 1re (close > open dans l'historique).
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -87,10 +87,13 @@ export async function GET(req: NextRequest) {
     Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
   );
 
-  // Récupérer tous les actifs avec leur dernier snapshot et leurs transactions
+  // Ne récupérer QUE les actifs avec un pricing live (crypto / equity) + ticker
   const assets = await prisma.asset.findMany({
+    where: {
+      pricingMode: { in: ["live_crypto", "live_equity"] },
+      ticker: { not: null },
+    },
     include: {
-      snapshots: { orderBy: { date: "desc" }, take: 1 },
       transactions: { select: { quantite: true } },
     },
   });
@@ -104,11 +107,8 @@ export async function GET(req: NextRequest) {
   const equityTickers: string[] = [];
 
   for (const asset of assets) {
-    const mode = asset.pricingMode ?? "manual";
-    const ticker = asset.ticker ?? null;
-    if (!ticker) continue;
-    if (mode === "live_crypto") cryptoIds.push(ticker);
-    else if (mode === "live_equity") equityTickers.push(ticker);
+    if (asset.pricingMode === "live_crypto") cryptoIds.push(asset.ticker!);
+    else if (asset.pricingMode === "live_equity") equityTickers.push(asset.ticker!);
   }
 
   // Dédoublonner
@@ -125,35 +125,24 @@ export async function GET(req: NextRequest) {
   let snapshotsSkipped = 0;
 
   for (const asset of assets) {
-    const mode = asset.pricingMode ?? "manual";
-    const ticker = asset.ticker ?? null;
     const quantiteTotal = asset.transactions.reduce((s, t) => s + t.quantite, 0);
-    const lastSnapshotValue = asset.snapshots[0]?.value ?? null;
 
-    let value: number | null = null;
-
-    if (
-      (mode === "live_crypto" || mode === "live_equity") &&
-      ticker != null &&
-      quantiteTotal > 0
-    ) {
-      const livePrice =
-        mode === "live_crypto"
-          ? (cryptoPrices[ticker] ?? null)
-          : (equityPrices[ticker] ?? null);
-
-      if (livePrice != null) {
-        value = quantiteTotal * livePrice;
-      }
-    } else if (mode === "manual" || mode === "savings") {
-      // Utiliser la dernière valeur connue sans en créer une nouvelle si inchangée
-      value = lastSnapshotValue;
-    }
-
-    if (value == null) {
+    if (quantiteTotal <= 0) {
       snapshotsSkipped++;
       continue;
     }
+
+    const livePrice =
+      asset.pricingMode === "live_crypto"
+        ? (cryptoPrices[asset.ticker!] ?? null)
+        : (equityPrices[asset.ticker!] ?? null);
+
+    if (livePrice == null) {
+      snapshotsSkipped++;
+      continue;
+    }
+
+    const value = quantiteTotal * livePrice;
 
     // Upsert sur la contrainte unique [assetId, date]
     await prisma.snapshot.upsert({
