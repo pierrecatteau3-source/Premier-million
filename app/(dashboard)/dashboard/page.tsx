@@ -55,7 +55,7 @@ function CompactKpi({
   suffix?: string;
 }) {
   return (
-    <div className="rounded-xl bg-card px-4 py-5 ring-1 ring-foreground/10 shadow-elev-1">
+    <div className="rounded-xl bg-card px-4 py-7 ring-1 ring-foreground/10 shadow-elev-1">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground truncate">

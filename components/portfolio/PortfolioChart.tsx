@@ -136,8 +136,8 @@ export function PortfolioChart({ onEvolutionChange, compact = false, defaultRang
     value: d.totalValue,
   }));
 
-  const chartHeight = compact ? 200 : 220;
-  const emptyHeight = compact ? "h-52" : "h-48";
+  const chartHeight = compact ? 400 : 220;
+  const emptyHeight = compact ? "h-[400px]" : "h-48";
 
   return (
     <div className="space-y-4">
