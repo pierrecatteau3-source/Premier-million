@@ -42,7 +42,7 @@ function formatEur(v: number | null) {
   }).format(v);
 }
 
-/** Mini KPI : version compacte du KpiCard pour la rangée d'indicateurs. */
+/** Mini KPI : version compacte avec icône or à droite. */
 function CompactKpi({
   label,
   value,
@@ -55,17 +55,21 @@ function CompactKpi({
   suffix?: string;
 }) {
   return (
-    <div className="rounded-xl border border-border/50 bg-card px-3 py-2.5 shadow-elev-1">
-      <div className="flex items-center gap-1.5">
-        <Icon className="h-3.5 w-3.5 text-primary shrink-0" />
-        <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground truncate">
-          {label}
-        </p>
+    <div className="rounded-xl bg-card px-4 py-3 ring-1 ring-foreground/10 shadow-elev-1">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground truncate">
+            {label}
+          </p>
+          <p className="mt-1 text-xl font-bold tabular-nums leading-tight">
+            {value}
+            {suffix && (
+              <span className="ml-1 text-xs font-medium text-muted-foreground">{suffix}</span>
+            )}
+          </p>
+        </div>
+        <Icon className="h-10 w-10 text-primary shrink-0 opacity-90" strokeWidth={1.75} />
       </div>
-      <p className="mt-1 text-lg font-bold tabular-nums leading-tight">
-        {value}
-        {suffix && <span className="ml-1 text-xs font-medium text-muted-foreground">{suffix}</span>}
-      </p>
     </div>
   );
 }
@@ -141,39 +145,38 @@ export default async function DashboardPage() {
           objectif={objectif}
         />
 
-        {/* Grille principale : 2 colonnes desktop (piliers/KPIs à gauche, chart à droite) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* COLONNE GAUCHE : 3 KPIs compacts + Piliers 2x2 */}
-          <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
-              <CompactKpi
-                label="Épargne / mois"
-                value={formatEur(epargneMensuelle)}
-                icon={PiggyBank}
-              />
-              <CompactKpi
-                label={ageCible ? `À ${ageCible} ans` : "Projection"}
-                value={formatEur(epargneProjectee)}
-                icon={TrendingUp}
-                suffix={epargneProjectee !== null ? "/mois" : undefined}
-              />
-              <CompactKpi
-                label="Objectif atteint à"
-                value={targetAge !== null ? String(targetAge) : "—"}
-                icon={Target}
-                suffix={targetAge !== null ? "ans" : undefined}
-              />
-            </div>
+        {/* 3 KPIs compacts — pleine largeur, au-dessus de la grille */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <CompactKpi
+            label="Épargne / mois"
+            value={formatEur(epargneMensuelle)}
+            icon={PiggyBank}
+          />
+          <CompactKpi
+            label={ageCible ? `À ${ageCible} ans` : "Projection"}
+            value={formatEur(epargneProjectee)}
+            icon={TrendingUp}
+            suffix={epargneProjectee !== null ? "/mois" : undefined}
+          />
+          <CompactKpi
+            label="Objectif atteint à"
+            value={targetAge !== null ? String(targetAge) : "—"}
+            icon={Target}
+            suffix={targetAge !== null ? "ans" : undefined}
+          />
+        </div>
 
-            <Card className="shadow-elev-1">
-              <CardContent className="pt-4">
-                <h2 className="mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Patrimoine par pilier
-                </h2>
-                <PilierCards piliers={portfolio.piliers} />
-              </CardContent>
-            </Card>
-          </div>
+        {/* Grille principale : 2 colonnes desktop (piliers 2x2 à gauche, chart à droite) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* COLONNE GAUCHE : Piliers 2x2 */}
+          <Card className="shadow-elev-1">
+            <CardContent className="pt-4">
+              <h2 className="mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Patrimoine par pilier
+              </h2>
+              <PilierCards piliers={portfolio.piliers} />
+            </CardContent>
+          </Card>
 
           {/* COLONNE DROITE : Évolution du patrimoine */}
           <Card className="shadow-elev-1">

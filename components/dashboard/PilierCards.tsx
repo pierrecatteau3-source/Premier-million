@@ -25,7 +25,7 @@ export function PilierCards({ piliers }: Props) {
         return (
           <div
             key={p.pilier}
-            className="rounded-xl border border-border bg-card p-4 space-y-3 shadow-sm"
+            className="rounded-xl bg-card p-4 space-y-3 ring-1 ring-foreground/10 shadow-elev-1"
           >
             {/* En-tête pilier */}
             <div className="flex items-center gap-2">

@@ -27,7 +27,7 @@ export function HeroCard({
   const isNegative = monthlyChange < 0;
 
   return (
-    <div className="rounded-2xl border border-border/50 bg-card shadow-elev-2 p-6 space-y-4">
+    <div className="rounded-2xl bg-card shadow-elev-2 ring-1 ring-foreground/10 p-6 space-y-4">
       {/* Deux colonnes : patrimoine | objectif */}
       <div className="flex items-start">
         {/* Gauche : patrimoine actuel */}
