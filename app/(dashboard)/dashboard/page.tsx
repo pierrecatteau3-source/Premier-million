@@ -55,7 +55,7 @@ function CompactKpi({
   suffix?: string;
 }) {
   return (
-    <div className="rounded-xl bg-card px-4 py-3 ring-1 ring-foreground/10 shadow-elev-1">
+    <div className="rounded-xl bg-card px-4 py-5 ring-1 ring-foreground/10 shadow-elev-1">
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground truncate">
@@ -145,28 +145,7 @@ export default async function DashboardPage() {
           objectif={objectif}
         />
 
-        {/* 3 KPIs compacts — pleine largeur, au-dessus de la grille */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <CompactKpi
-            label="Épargne / mois"
-            value={formatEur(epargneMensuelle)}
-            icon={PiggyBank}
-          />
-          <CompactKpi
-            label={ageCible ? `À ${ageCible} ans` : "Projection"}
-            value={formatEur(epargneProjectee)}
-            icon={TrendingUp}
-            suffix={epargneProjectee !== null ? "/mois" : undefined}
-          />
-          <CompactKpi
-            label="Objectif atteint à"
-            value={targetAge !== null ? String(targetAge) : "—"}
-            icon={Target}
-            suffix={targetAge !== null ? "ans" : undefined}
-          />
-        </div>
-
-        {/* Grille principale : 2 colonnes desktop (piliers 2x2 à gauche, chart à droite) */}
+        {/* Grille principale : 2 colonnes desktop */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* COLONNE GAUCHE : Piliers 2x2 */}
           <Card className="shadow-elev-1">
@@ -178,15 +157,37 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* COLONNE DROITE : Évolution du patrimoine */}
-          <Card className="shadow-elev-1">
-            <CardContent className="pt-4">
-              <h2 className="mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Évolution du patrimoine
-              </h2>
-              <PortfolioChart compact defaultRangeDays={30} />
-            </CardContent>
-          </Card>
+          {/* COLONNE DROITE : 3 KPIs + Chart d'évolution */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <CompactKpi
+                label="Épargne / mois"
+                value={formatEur(epargneMensuelle)}
+                icon={PiggyBank}
+              />
+              <CompactKpi
+                label={ageCible ? `À ${ageCible} ans` : "Projection"}
+                value={formatEur(epargneProjectee)}
+                icon={TrendingUp}
+                suffix={epargneProjectee !== null ? "/mois" : undefined}
+              />
+              <CompactKpi
+                label="Objectif atteint à"
+                value={targetAge !== null ? String(targetAge) : "—"}
+                icon={Target}
+                suffix={targetAge !== null ? "ans" : undefined}
+              />
+            </div>
+
+            <Card className="shadow-elev-1">
+              <CardContent className="pt-4">
+                <h2 className="mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Évolution du patrimoine
+                </h2>
+                <PortfolioChart compact defaultRangeDays={30} />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </>
