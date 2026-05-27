@@ -62,7 +62,7 @@ Ces features existent dans le code mais **ne sont pas bloquantes pour le release
 
 | Couche | Techno | Version | Notes |
 |---|---|---|---|
-| Runtime | Node.js | 20.x | Aligné avec Railway nixpacks par défaut |
+| Runtime | Node.js | 20.x | Aligné avec Railway Railpack par défaut |
 | Framework | Next.js (App Router) | 14.2.x | Pas de migration v15 tant que MVP pas livré |
 | UI | React + Tailwind CSS + shadcn/ui | 18 / 3.4 / latest | shadcn copié dans `components/ui/`, pas une dépendance |
 | Charts | Recharts | 3.x | |
@@ -339,7 +339,7 @@ Railway Project: premier-million
 5. **Build & Start** :
    - Build command : `npm run build` (lance `prisma generate && next build`)
    - Start command : `npm run start`
-   - Pas besoin de `nixpacks.toml` — Railway auto-détecte Next.js.
+   - Pas besoin de config Railpack supplémentaire — Railway auto-détecte Next.js.
 
 ### 10.3 Migrations Prisma au déploiement
 
@@ -372,7 +372,7 @@ Le cron actuel (`/api/cron/snapshot`) est configuré dans `vercel.json`. Pour Ra
 ```json
 {
   "$schema": "https://railway.app/railway.schema.json",
-  "build": { "builder": "NIXPACKS", "buildCommand": "npm run build" },
+  "build": { "builder": "RAILPACK", "buildCommand": "npm run build" },
   "deploy": {
     "startCommand": "npm run start",
     "restartPolicyType": "ON_FAILURE",

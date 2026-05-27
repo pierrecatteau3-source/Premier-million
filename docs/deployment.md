@@ -68,12 +68,12 @@ Dans `Project → Premier million → Variables`, ajoute les variables suivantes
 
 ### 4.1 Build automatique
 
-Le fichier `railway.json` à la racine configure :
+Le fichier `railway.json` à la racine configure le builder **Railpack** (qui a remplacé Nixpacks chez Railway en 2025) :
 
 ```json
 {
   "build": {
-    "builder": "NIXPACKS",
+    "builder": "RAILPACK",
     "buildCommand": "npm ci && npm run build"
   },
   "deploy": {
