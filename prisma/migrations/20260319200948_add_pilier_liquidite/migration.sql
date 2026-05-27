@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "Pilier" ADD VALUE 'LIQUIDITE';

@@ -1,6 +1,3 @@
-// Premier Million — Schéma de données MVP
-// Docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client"
   output   = "../lib/generated/prisma"
@@ -10,7 +7,142 @@ datasource db {
   provider = "postgresql"
 }
 
-// ─── Enums ───────────────────────────────────────────────────────────────────
+model User {
+  id                       String                @id @default(cuid())
+  email                    String                @unique
+  name                     String?
+  objectif                 Float                 @default(1000000)
+  ageCible                 Int?
+  epargneMensuelle         Float?
+  /// { pea: 40, crypto: 20, immo: 30, autre: 10 }
+  allocationCible          Json
+  createdAt                DateTime              @default(now())
+  ageActuel                Int?
+  epargnePrecaution        Int?
+  evolutionEpargne         Float?
+  risqueMaxPerte           Float?
+  niveauConnaissance       String?
+  objectifCroissance       Float?
+  /// [{ type, subtype, pct }] — allocation détaillée par type/sous-type
+  allocationDetaillee      Json?
+  epargnePrecautionMontant Float?
+  achievements             UserAchievement[]
+  analyses                 Analysis[]
+  assets                   Asset[]
+  contextDocuments         ContextDocument[]
+  decisions                Decision[]
+  recurringInvestments     RecurringInvestment[]
+  transactions             Transaction[]
+}
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+  notified      Boolean  @default(false)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([userId])
+}
+
+model Asset {
+  id                   String                @id @default(cuid())
+  name                 String
+  pilier               Pilier
+  /// ex. "ETF", "Action", "Token", "SCI"
+  type                 String
+  userId               String
+  createdAt            DateTime              @default(now())
+  ticker               String?
+  pricingMode          String                @default("manual")
+  user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recurringInvestments RecurringInvestment[]
+  snapshots            Snapshot[]
+  transactions         Transaction[]
+}
+
+model Snapshot {
+  id        String   @id @default(cuid())
+  assetId   String
+  value     Float
+  date      DateTime
+  createdAt DateTime @default(now())
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([assetId, date])
+  @@index([assetId, date])
+}
+
+model Analysis {
+  id        String   @id @default(cuid())
+  userId    String
+  horizon   Horizon
+  /// Contenu Markdown généré par Claude — mis en cache 30 jours
+  content   String
+  createdAt DateTime @default(now())
+  /// "PORTFOLIO" = analyse personnalisée du portefeuille | "MARKET" = vision marché opportunités tech
+  type      String   @default("PORTFOLIO")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type, horizon, createdAt])
+}
+
+model Decision {
+  id          String   @id @default(cuid())
+  userId      String
+  date        DateTime
+  description String
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ContextDocument {
+  id        String   @id @default(cuid())
+  userId    String
+  filename  String
+  mimeType  String
+  /// Contenu texte extrait du fichier — injecté dans les prompts Claude
+  content   String
+  sizeBytes Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model RecurringInvestment {
+  id         String   @id @default(cuid())
+  userId     String
+  assetId    String
+  amount     Float
+  frequency  String
+  dayOfWeek  Int?
+  dayOfMonth Int?
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  asset      Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Transaction {
+  id             String   @id @default(cuid())
+  userId         String
+  assetId        String
+  date           DateTime
+  quantite       Float
+  prixEntreeEur  Float
+  montantInvesti Float
+  source         String   @default("manuel")
+  note           String?
+  createdAt      DateTime @default(now())
+  asset          Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([assetId])
+  @@index([userId])
+}
 
 enum Pilier {
   PEA
@@ -25,116 +157,4 @@ enum Horizon {
   YEAR_3
   YEAR_5
   YEAR_10
-}
-
-// ─── Modèles ─────────────────────────────────────────────────────────────────
-
-model User {
-  id               String    @id @default(cuid())
-  email            String    @unique
-  name             String?
-  objectif         Float     @default(1000000)
-  ageCible         Int?
-  ageActuel           Int?
-  epargneMensuelle    Float?
-  epargnePrecaution        Int?
-  epargnePrecautionMontant Float?  // montant € de l'épargne de précaution (saisie directe)
-  evolutionEpargne         Float?
-  risqueMaxPerte      Float?
-  niveauConnaissance  String?
-  objectifCroissance  Float?
-  /// { pea: 40, crypto: 20, immo: 30, autre: 10 }
-  allocationCible     Json
-  /// [{ type, subtype, pct }] — allocation détaillée par type/sous-type
-  allocationDetaillee Json?
-  assets                Asset[]
-  analyses              Analysis[]
-  decisions             Decision[]
-  recurringInvestments  RecurringInvestment[]
-  transactions          Transaction[]
-  createdAt             DateTime  @default(now())
-}
-
-model Asset {
-  id        String     @id @default(cuid())
-  name      String
-  pilier    Pilier
-  /// ex. "ETF", "Action", "Token", "SCI"
-  type      String
-  ticker        String?
-  pricingMode   String    @default("manual")
-  userId    String
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  snapshots            Snapshot[]
-  recurringInvestments RecurringInvestment[]
-  transactions         Transaction[]
-  createdAt            DateTime   @default(now())
-}
-
-model Snapshot {
-  id        String   @id @default(cuid())
-  assetId   String
-  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  value     Float
-  date      DateTime
-  createdAt DateTime @default(now())
-
-  @@index([assetId, date])
-  @@unique([assetId, date])
-}
-
-model Analysis {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  horizon   Horizon
-  /// "PORTFOLIO" = analyse personnalisée du portefeuille | "MARKET" = vision marché opportunités tech
-  type      String   @default("PORTFOLIO")
-  /// Contenu Markdown généré par Claude — mis en cache 30 jours
-  content   String   @db.Text
-  createdAt DateTime @default(now())
-
-  @@index([userId, type, horizon, createdAt])
-}
-
-model Decision {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date        DateTime
-  description String
-  createdAt   DateTime @default(now())
-}
-
-model RecurringInvestment {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  assetId     String
-  asset       Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  amount      Float
-  frequency   String
-  dayOfWeek   Int?
-  dayOfMonth  Int?
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-}
-
-model Transaction {
-  id              String   @id @default(cuid())
-  userId          String
-  assetId         String
-  date            DateTime
-  quantite        Float
-  prixEntreeEur   Float
-  montantInvesti  Float
-  source          String   @default("manuel")
-  note            String?
-  createdAt       DateTime @default(now())
-
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  asset Asset @relation(fields: [assetId], references: [id], onDelete: Cascade)
-
-  @@index([assetId])
-  @@index([userId])
 }

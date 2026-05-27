@@ -8,6 +8,7 @@ import {
   buildMarketVisionPrompt,
 } from "@/lib/prompts/market-analysis";
 import { getPortfolioSummary } from "@/lib/services/portfolio.service";
+import { fetchMarketSnapshot } from "@/lib/services/market-data.service";
 import {
   checkGlobalDailyLimit,
   incrementGlobalCounter,
@@ -15,6 +16,9 @@ import {
 } from "@/lib/analysisRateLimit";
 import { HORIZON } from "@/types";
 import type { Horizon } from "@/types";
+
+// Timeout Next.js App Router — nécessaire pour les appels Claude longs
+export const maxDuration = 120; // secondes
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -35,7 +39,7 @@ function isClaudeEnabled(): boolean {
 const triggerSchema = z.object({
   horizon: z.enum(["YEAR_1", "YEAR_3", "YEAR_5", "YEAR_10"]),
   /** "PORTFOLIO" = analyse portefeuille personnalisée | "MARKET" = vision marché tech */
-  type: z.enum(["PORTFOLIO", "MARKET"]).optional().default("PORTFOLIO"),
+  type: z.enum(ANALYSIS_TYPES).optional().default("PORTFOLIO"),
   /** Si true, force la régénération même si l'analyse a moins de 30 jours */
   force: z.boolean().optional().default(false),
 });
@@ -89,6 +93,9 @@ export async function POST(req: NextRequest) {
   const horizon = parsed.data.horizon as Horizon;
   const analysisType = parsed.data.type as AnalysisType;
   const forceRegenerate = parsed.data.force === true;
+
+  // ── Toute la logique est dans un try-catch global pour garantir une réponse JSON ──
+  try {
 
   // ── Vérification du cache 30 jours ─────────────────────────────────────────
   const cacheLimit = new Date(Date.now() - CACHE_DAYS * 24 * 60 * 60 * 1000);
@@ -156,7 +163,7 @@ export async function POST(req: NextRequest) {
     orderBy: { createdAt: "desc" },
   });
 
-  if (recentCall) {
+  if (recentCall && !forceRegenerate) {
     // L'utilisateur a déjà déclenché un appel API pour cet horizon+type dans les 24h
     console.log(
       `[Analysis] userId=${userId} type=${analysisType} horizon=${horizon} tokens_used=0 cached=true rate_limit_user=true`
@@ -184,7 +191,7 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Appel Claude API ──────────────────────────────────────────────────────
-  try {
+  {
     // Récupération parallèle du portefeuille et du profil utilisateur complet
     const [portfolio, user] = await Promise.all([
       getPortfolioSummary(userId),
@@ -249,11 +256,14 @@ export async function POST(req: NextRequest) {
       assets,
     };
 
+    const marketSnapshot = await fetchMarketSnapshot().catch(() => null);
+    const contextDocuments: { filename: string; content: string }[] = [];
+
     // Construction du prompt selon le type d'analyse
     const { systemPrompt, userMessage } =
       analysisType === "MARKET"
-        ? buildMarketVisionPrompt(horizon, userProfile, portfolioCtx)
-        : buildEnrichedAnalysisPrompt(horizon, userProfile, portfolioCtx);
+        ? buildMarketVisionPrompt(horizon, userProfile, portfolioCtx, { marketData: marketSnapshot, contextDocuments })
+        : buildEnrichedAnalysisPrompt(horizon, userProfile, portfolioCtx, { marketData: marketSnapshot, contextDocuments });
 
     // Incrémenter le compteur AVANT l'appel (protège contre les appels parallèles)
     incrementGlobalCounter();
@@ -280,16 +290,21 @@ export async function POST(req: NextRequest) {
         cached: false,
       },
     });
+  } // fin bloc Claude API
+
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur inconnue";
 
     // Ne pas exposer les détails de l'erreur (potentiellement sensibles)
     const isTimeout = message.includes("abort") || message.toLowerCase().includes("timeout");
+    const isDbError = message.toLowerCase().includes("prisma") || message.toLowerCase().includes("connect");
     const clientMessage = isTimeout
-      ? "L'analyse a pris trop de temps (timeout 30s). Réessayez dans quelques instants."
+      ? "L'analyse a pris trop de temps (timeout 120s). Réessayez dans quelques instants."
+      : isDbError
+      ? "Erreur de connexion à la base de données. Réessayez dans quelques instants."
       : "Erreur lors de la génération de l'analyse. Réessayez dans quelques instants.";
 
-    console.error(`[Analysis] userId=${userId} type=${analysisType} horizon=${horizon} error="${message}"`);
+    console.error(`[Analysis] error="${message}"`);
 
     return NextResponse.json(
       { error: clientMessage },

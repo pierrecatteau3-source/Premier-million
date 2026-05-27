@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { Horizon } from "@/types";
 import { HORIZON_LABEL } from "@/types";
 import { Loader2, RefreshCw, Clock, Zap, AlertTriangle, X } from "lucide-react";
@@ -51,7 +52,7 @@ function ConfirmModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-black"
         onClick={onCancel}
         aria-hidden="true"
       />
@@ -118,16 +119,21 @@ export function AnalysisCard({ horizon, analysisType = "PORTFOLIO", initial }: P
           body: JSON.stringify({ horizon, type: analysisType, force }),
         });
 
-        const json = await res.json();
+        const json = await res.json().catch(() => null);
 
         if (!res.ok) {
-          setError(json.error ?? "Erreur lors de la génération");
+          setError(json?.error ?? `Erreur serveur (${res.status}) — réessaie dans quelques instants.`);
+          return;
+        }
+
+        if (!json?.data) {
+          setError("Réponse inattendue du serveur — réessaie dans quelques instants.");
           return;
         }
 
         setResult(json.data);
       } catch {
-        setError("Erreur réseau — vérifie ta connexion.");
+        setError("Impossible de contacter le serveur — vérifie que l'application est démarrée.");
       }
     });
   }
@@ -274,6 +280,7 @@ export function AnalysisCard({ horizon, analysisType = "PORTFOLIO", initial }: P
             )}
           >
             <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
               components={{
                 h2: ({ children }) => (
                   <h2 className="mt-5 mb-2 text-base font-semibold text-foreground first:mt-0 border-b border-border/40 pb-1">
@@ -300,17 +307,30 @@ export function AnalysisCard({ horizon, analysisType = "PORTFOLIO", initial }: P
                   <strong className="font-semibold text-foreground">{children}</strong>
                 ),
                 table: ({ children }) => (
-                  <div className="my-3 overflow-x-auto">
-                    <table className="w-full border-collapse text-xs">{children}</table>
+                  <div className="my-4 w-full overflow-x-auto rounded-lg border border-border">
+                    <table className="w-full border-collapse text-xs min-w-[600px]">
+                      {children}
+                    </table>
                   </div>
                 ),
+                thead: ({ children }) => (
+                  <thead className="bg-muted/60">{children}</thead>
+                ),
+                tbody: ({ children }) => (
+                  <tbody className="divide-y divide-border">{children}</tbody>
+                ),
+                tr: ({ children }) => (
+                  <tr className="hover:bg-muted/30 transition-colors">{children}</tr>
+                ),
                 th: ({ children }) => (
-                  <th className="border border-border bg-muted px-3 py-1.5 text-left font-medium">
+                  <th className="border-b border-border px-3 py-2 text-left text-xs font-semibold text-foreground whitespace-nowrap">
                     {children}
                   </th>
                 ),
                 td: ({ children }) => (
-                  <td className="border border-border px-3 py-1.5">{children}</td>
+                  <td className="px-3 py-2 text-xs text-foreground/90 align-top">
+                    {children}
+                  </td>
                 ),
                 hr: () => <hr className="my-4 border-border" />,
               }}

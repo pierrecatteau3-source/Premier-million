@@ -7,7 +7,7 @@ import { computeAdvancedRiskScore } from "@/lib/riskEngine";
 import { TYPE_TO_PILIER } from "@/lib/constants/allocation-types";
 import { Header } from "@/components/layout/Header";
 import { AnalysisCard } from "@/components/analysis/AnalysisCard";
-import { RiskGauge } from "@/components/analyse/RiskGauge";
+import { RiskGauge } from "@/components/risk/RiskGauge";
 import { ShieldCheck, TrendingUp, BarChart2, Sparkles } from "lucide-react";
 import { HORIZON_LABEL } from "@/types";
 import type { Horizon } from "@/types";
@@ -155,6 +155,8 @@ export default async function AnalysePage({
   });
 
   const riskScore = riskResult.total;
+  const riskLevel: "faible" | "modéré" | "élevé" =
+    riskScore < 3.5 ? "faible" : riskScore < 5.5 ? "modéré" : "élevé";
 
   const targetAge =
     user.ageActuel != null && user.epargneMensuelle != null
@@ -188,7 +190,7 @@ export default async function AnalysePage({
           {/* Jauge + tableau côte à côte sur desktop */}
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
             <div className="flex justify-center sm:justify-start">
-              <RiskGauge score={riskScore} />
+              <RiskGauge score={riskScore / 10} level={riskLevel} />
             </div>
             <div className="flex-1">
               <table className="w-full text-sm">

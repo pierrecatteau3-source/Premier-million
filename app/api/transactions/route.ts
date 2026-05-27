@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
+import { revalidatePath } from "next/cache";
 
 const createSchema = z.object({
   assetId: z.string().min(1),
@@ -113,6 +114,24 @@ export async function POST(req: NextRequest) {
       note: note ?? null,
     },
   });
+
+  // Snapshot cost-basis : cumul montantInvesti pour cet actif jusqu'à la date de la transaction
+  const snapDate = new Date(date);
+  snapDate.setHours(0, 0, 0, 0);
+
+  const allTxUpToDate = await prisma.transaction.findMany({
+    where: { assetId, date: { lte: snapDate } },
+    select: { montantInvesti: true },
+  });
+  const cumul = allTxUpToDate.reduce((s, t) => s + t.montantInvesti, 0);
+
+  await prisma.snapshot.createMany({
+    data: [{ assetId, value: cumul, date: snapDate }],
+    skipDuplicates: true,
+  });
+
+  revalidatePath("/portefeuille");
+  revalidatePath("/historique");
 
   return NextResponse.json({
     data: {

@@ -1,5 +1,49 @@
 import type { Horizon } from "@/types";
 import { HORIZON_LABEL } from "@/types";
+import type { MarketSnapshot } from "@/lib/services/market-data.service";
+
+interface AnalysisOptions {
+  marketData?: MarketSnapshot | null;
+  contextDocuments?: { filename: string; content: string }[];
+}
+
+function buildMarketDataBlock(marketData?: MarketSnapshot | null): string {
+  if (!marketData) return "";
+
+  const fmt = (v: number | null, unit = "") =>
+    v != null ? `${v.toLocaleString("fr-FR")}${unit}` : "indisponible";
+  const fmtChange = (v: number | null) =>
+    v != null ? `${v >= 0 ? "+" : ""}${v.toFixed(2)}%` : "n/a";
+
+  return `
+DONNÉES MARCHÉ EN TEMPS RÉEL (${marketData.fetchedAt}) :
+- CAC40  : ${fmt(marketData.indices.cac40?.value ?? null)} pts (${fmtChange(marketData.indices.cac40?.change1d ?? null)} / 24h)
+- S&P500 : ${fmt(marketData.indices.sp500?.value ?? null)} pts (${fmtChange(marketData.indices.sp500?.change1d ?? null)} / 24h)
+- NASDAQ : ${fmt(marketData.indices.nasdaq?.value ?? null)} pts (${fmtChange(marketData.indices.nasdaq?.change1d ?? null)} / 24h)
+- Bitcoin  : ${fmt(marketData.crypto.btc?.priceEur ?? null, "€")} (${fmtChange(marketData.crypto.btc?.change24h ?? null)} / 24h)
+- Ethereum : ${fmt(marketData.crypto.eth?.priceEur ?? null, "€")} (${fmtChange(marketData.crypto.eth?.change24h ?? null)} / 24h)
+
+`;
+}
+
+function buildContextDocsBlock(
+  docs?: { filename: string; content: string }[]
+): string {
+  if (!docs || docs.length === 0) return "";
+
+  const sections = docs
+    .map((d) => `--- ${d.filename} ---\n${d.content}`)
+    .join("\n\n");
+
+  return `
+DOCUMENTS DE CONTEXTE FOURNIS PAR L'UTILISATEUR :
+Ces documents contiennent des recherches approfondies que l'utilisateur a réalisées.
+Priorise ces informations dans ton analyse — elles sont plus récentes que tes données d'entraînement.
+
+${sections}
+
+`;
+}
 
 interface PortfolioContext {
   totalValue: number;
@@ -194,7 +238,8 @@ Recommandation synthétique : que faire dans les prochains ${horizonLabel} pour 
 export function buildEnrichedAnalysisPrompt(
   horizon: Horizon,
   user: UserProfileContext,
-  portfolio: EnrichedPortfolioContext
+  portfolio: EnrichedPortfolioContext,
+  options: AnalysisOptions = {}
 ): { systemPrompt: string; userMessage: string } {
   const horizonLabel = HORIZON_LABEL[horizon];
   const progression = portfolio.totalValue > 0
@@ -258,7 +303,7 @@ ${pilierLines}
 ACTIFS DÉTENUS :
 ${assetLines}
 
-DATE D'ANALYSE : ${dateAnalyse}
+${buildMarketDataBlock(options.marketData)}${buildContextDocsBlock(options.contextDocuments)}DATE D'ANALYSE : ${dateAnalyse}
 HORIZON DEMANDÉ : ${horizonLabel}`;
 
   const userMessage = `Génère une analyse structurée en Markdown pour mon portefeuille sur un horizon de ${horizonLabel}.
@@ -282,9 +327,33 @@ Donne 3 à 5 actions prioritaires et actionnables pour les prochains ${horizonLa
 ## Conseil d'investissement personnalisé
 ${ageActuel != null ? `En tant qu'investisseur jeune (${ageActuel} ans) avec un horizon long terme (${horizonAns != null ? horizonAns + " ans" : "long"}), ` : ""}donne-moi un conseil d'investissement personnalisé tenant compte de mon profil de risque, de mon allocation actuelle et de mon objectif. Oriente vers les actifs de croissance et les opportunités à saisir sur la durée. Sois direct et actionnable.
 
+## Récapitulatif
+Synthétise les points clés de l'analyse dans un tableau Markdown avec exactement ces colonnes : | Indicateur | Valeur | Interprétation |. 5 à 8 lignes maximum.
+
+## Stratégies d'investissement (PEA uniquement)
+Propose trois stratégies concrètes et actionnables, adaptées à mon profil et à l'horizon ${horizonLabel} :
+
+### Modéré
+- ETF éligibles PEA recommandés (nom + ticker)
+- Actions éligibles PEA recommandées (nom + ticker)
+- Allocation suggérée en % entre ETF et actions
+- Justification courte
+
+### Risqué
+- ETF éligibles PEA recommandés (nom + ticker)
+- Actions éligibles PEA recommandées (nom + ticker)
+- Allocation suggérée en % entre ETF et actions
+- Justification courte
+
+### Très risqué
+- ETF éligibles PEA recommandés (nom + ticker)
+- Actions éligibles PEA recommandées (nom + ticker)
+- Allocation suggérée en % entre ETF et actions
+- Justification courte
+
 ---
 
-Contraintes : Markdown propre avec les titres ## exacts ci-dessus, 800 mots maximum, conseils personnalisés à ma situation exacte. Termine par une courte mention que cette analyse est indicative et ne constitue pas un conseil en investissement au sens réglementaire.`;
+Contraintes : Markdown propre avec les titres ## exacts ci-dessus, conseils personnalisés à ma situation exacte. Termine par une courte mention que cette analyse est indicative et ne constitue pas un conseil en investissement au sens réglementaire.`;
 
   return { systemPrompt, userMessage };
 }
@@ -297,7 +366,8 @@ Contraintes : Markdown propre avec les titres ## exacts ci-dessus, 800 mots maxi
 export function buildMarketVisionPrompt(
   horizon: Horizon,
   user: UserProfileContext,
-  portfolio: EnrichedPortfolioContext
+  portfolio: EnrichedPortfolioContext,
+  options: AnalysisOptions = {}
 ): { systemPrompt: string; userMessage: string } {
   const horizonLabel = HORIZON_LABEL[horizon];
   const dateAnalyse = new Date().toLocaleDateString("fr-FR");
@@ -322,7 +392,9 @@ PROFIL INVESTISSEUR :
 - Niveau de connaissance : ${user.niveauConnaissance ?? "non renseigné"}
 - Patrimoine total : ${formatEur(portfolio.totalValue)} | Objectif : ${formatEur(user.objectif)}
 - Allocation actuelle : ${portfolio.piliers.map((p) => `${p.name} ${p.percentage.toFixed(0)}%`).join(", ")}
-- Horizon d'analyse demandé : ${horizonLabel}`;
+- Horizon d'analyse demandé : ${horizonLabel}
+
+${buildMarketDataBlock(options.marketData)}${buildContextDocsBlock(options.contextDocuments)}DATE D'ANALYSE : ${dateAnalyse}`;
 
   const userMessage = `Génère une veille structurée en Markdown sur les opportunités technologiques émergentes pour un investisseur particulier français.
 
@@ -331,35 +403,46 @@ ${userAddendum}
 L'analyse doit couvrir exactement ces sections :
 
 ## Opportunités technologiques émergentes
-Analyse les secteurs suivants avec leur stade de maturité, les principaux acteurs cotés et les dynamiques actuelles (date : ${dateAnalyse}) :
+Pour chacun des 6 secteurs, rédige 4-6 phrases : stade de maturité actuel, 2-3 acteurs cotés clés (nom + ticker + éligibilité PEA oui/non), catalyseur principal sur ${horizonLabel}, niveau de risque (1-5) et une phrase de synthèse. Pas de tableau par secteur.
 
 **1. Informatique quantique**
-Entreprises cotées, ETF, maturité commerciale estimée, catalyseurs récents.
-
 **2. Photonique & semi-conducteurs optiques**
-Acteurs clés, dynamique du secteur, applications industrielles et leur traction.
-
-**3. Intelligence artificielle & infrastructure**
-Opportunités au-delà des géants (GAFAM) : fournisseurs d'infrastructure, puces spécialisées, logiciels verticaux.
-
-**4. Biotech & medtech**
-Innovation de rupture à horizon 5-10 ans, thérapies géniques, diagnostics IA, acteurs émergents.
-
+**3. Intelligence artificielle & infrastructure** (au-delà des GAFAM : puces, software vertical, infra)
+**4. Biotech & medtech** (thérapies géniques, diagnostics IA)
 **5. Spatial & défense**
-Acteurs privés cotés, accélération budgétaire, applications commerciales (connectivité, observation).
-
-**6. Autres secteurs à potentiel**
-Selon l'actualité à la date d'analyse : énergie propre, robotique, matériaux avancés, fintech, etc.
-
-## Comment investir sur ces thématiques
-Pour chaque thématique pertinente : ETF thématiques disponibles (nom, ticker si connu), actions directes accessibles, niveau de risque (1-5), éligibilité PEA ou CTO uniquement. Sois précis sur l'accessibilité pour un investisseur français.
+**6. Autres secteurs à potentiel** (énergie propre, robotique, matériaux avancés)
 
 ## Avis personnalisé
-${ageActuel != null ? `En tant qu'investisseur de ${ageActuel} ans avec un horizon long terme (${horizonAns != null ? horizonAns + " ans" : "long"}), ` : ""}compte tenu de mon allocation actuelle et de mon profil, quelles thématiques prioriser en priorité sur un horizon de ${horizonLabel} ? Donne un classement des 3 meilleures opportunités pour mon profil avec une justification concrète adaptée à cet horizon.
+${ageActuel != null ? `En tant qu'investisseur de ${ageActuel} ans avec un horizon de ${horizonAns != null ? horizonAns + " ans" : "long terme"}, ` : ""}classe les 3 meilleures thématiques pour mon profil sur ${horizonLabel}. Pour chacune : nom du secteur, pourquoi c'est prioritaire pour moi, une action ou ETF PEA concret à privilégier.
+
+## Récapitulatif global
+Tableau Markdown : | Secteur | Stade de maturité | Risque (1-5) | Meilleur actif PEA | Horizon optimal | Priorité |
+6 lignes (une par secteur).
+
+## Stratégies d'investissement (PEA uniquement)
+Trois stratégies adaptées à mon profil et à l'horizon ${horizonLabel} :
+
+### Modéré
+- 2 ETF PEA (nom + ticker)
+- 2 actions PEA (nom + ticker)
+- Allocation % entre ETF et actions
+- Justification en 2 phrases
+
+### Risqué
+- 2 ETF PEA (nom + ticker)
+- 3 actions PEA (nom + ticker)
+- Allocation %
+- Justification en 2 phrases
+
+### Très risqué
+- 1 ETF PEA (nom + ticker)
+- 4 actions PEA (nom + ticker)
+- Allocation %
+- Justification en 2 phrases
 
 ---
 
-Contraintes : Markdown propre avec les titres ## et ** exacts ci-dessus, 900 mots maximum, informations factuelles et récentes (basées sur tes données jusqu'à ta date de coupure). Mentionne en fin d'analyse que les informations sont basées sur tes données d'entraînement et peuvent ne pas refléter les évolutions les plus récentes du marché.`;
+Contraintes : Markdown propre, titres ## et ### exacts, 4-6 phrases par secteur (ni plus ni moins). Mentionne en fin que les informations sont basées sur les données d'entraînement.`;
 
   return { systemPrompt, userMessage };
 }

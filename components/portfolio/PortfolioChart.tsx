@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -11,17 +11,16 @@ import {
   CartesianGrid,
 } from "recharts";
 import type { HistoryPoint } from "@/lib/services/portfolio.service";
+import { DateRangePicker } from "@/components/portfolio/DateRangePicker";
 
-type Period = "7d" | "1m" | "3m" | "6m" | "1y" | "all";
+interface Evolution {
+  deltaEur: number;
+  deltaPct: number;
+}
 
-const PERIODS: { value: Period; label: string }[] = [
-  { value: "7d", label: "7j" },
-  { value: "1m", label: "1m" },
-  { value: "3m", label: "3m" },
-  { value: "6m", label: "6m" },
-  { value: "1y", label: "1an" },
-  { value: "all", label: "Tout" },
-];
+interface Props {
+  onEvolutionChange?: (evo: Evolution) => void;
+}
 
 function formatEur(v: number) {
   return new Intl.NumberFormat("fr-FR", {
@@ -31,81 +30,119 @@ function formatEur(v: number) {
   }).format(v);
 }
 
-function formatXDate(dateStr: string, period: Period): string {
+function diffDays(from: string, to: string): number {
+  return (new Date(to).getTime() - new Date(from).getTime()) / 86_400_000;
+}
+
+function formatXDate(dateStr: string, from: string, to: string): string {
   const d = new Date(dateStr);
-  if (period === "7d" || period === "1m") {
+  if (diffDays(from, to) <= 31) {
     return new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" }).format(d);
   }
-  if (period === "3m" || period === "6m") {
-    return new Intl.DateTimeFormat("fr-FR", { month: "short", year: "2-digit" }).format(d);
-  }
-  return new Intl.DateTimeFormat("fr-FR", { month: "short", year: "numeric" }).format(d);
+  return new Intl.DateTimeFormat("fr-FR", { month: "short", year: "2-digit" }).format(d);
 }
 
-interface Props {
-  initialData: HistoryPoint[];
-  initialPeriod?: Period;
-}
+export function PortfolioChart({ onEvolutionChange }: Props) {
+  const today = new Date().toISOString().split("T")[0];
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString().split("T")[0];
 
-export function PortfolioChart({ initialData, initialPeriod = "1m" }: Props) {
-  const [period, setPeriod] = useState<Period>(initialPeriod);
-  const [data, setData] = useState<HistoryPoint[]>(initialData);
+  const [from, setFrom] = useState<string>(yesterday);
+  const [to, setTo] = useState<string>(today);
+  const [data, setData] = useState<HistoryPoint[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchData = useCallback(async (p: Period) => {
+  // Pour éviter le double fetch au montage
+  const isFirstRender = useRef(true);
+  // Pour annuler les requêtes en vol lors d'un changement de dates
+  const abortCtrlRef = useRef<AbortController | null>(null);
+
+  async function fetchByRange(f: string, t: string) {
+    // Annuler toute requête précédente
+    abortCtrlRef.current?.abort();
+    const ctrl = new AbortController();
+    abortCtrlRef.current = ctrl;
+
     setLoading(true);
     try {
-      const res = await fetch(`/api/portfolio/history?period=${p}`);
-      const json = await res.json();
-      if (res.ok && Array.isArray(json.data) && json.data.length > 0) setData(json.data);
+      const res = await fetch(
+        `/api/portfolio/history?startDate=${f}&endDate=${t}`,
+        { signal: ctrl.signal }
+      );
+      const json = await res.json() as {
+        data?: HistoryPoint[];
+        evolution?: {
+          deltaEur: number;
+          deltaPct: number;
+        };
+      };
+      if (res.ok && Array.isArray(json.data)) {
+        setData(json.data);
+        const hasEnoughData = json.data.length >= 2;
+        if (hasEnoughData && json.evolution) {
+          onEvolutionChange?.({
+            deltaEur: json.evolution.deltaEur,
+            deltaPct: json.evolution.deltaPct,
+          });
+        }
+      }
+    } catch (e) {
+      // Ignorer les erreurs d'annulation (AbortError) — comportement normal
+      if (e instanceof Error && e.name !== "AbortError") {
+        console.error("Erreur fetch portfolio history:", e);
+      }
     } finally {
-      setLoading(false);
+      // Ne pas désactiver le loading si la requête a été annulée
+      if (!ctrl.signal.aborted) {
+        setLoading(false);
+      }
     }
+  }
+
+  // Montage : sync + fetch initial (1 seul)
+  useEffect(() => {
+    fetch("/api/snapshots/sync", { method: "POST" }).catch(() => null);
+    fetchByRange(from, to);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function handlePeriod(p: Period) {
-    setPeriod(p);
-    fetchData(p);
-  }
+  // Changements de dates : skip le premier cycle (le montage s'en charge)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    fetchByRange(from, to);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [from, to]);
 
   const rawData = data;
   const displayData =
     rawData.length === 1
-      ? [
-          {
-            date: new Date(new Date(rawData[0].date).getTime() - 86_400_000)
-              .toISOString()
-              .split("T")[0],
-            totalValue: rawData[0].totalValue,
-          },
-          rawData[0],
-        ]
+      ? (() => {
+          const d = new Date(rawData[0].date);
+          d.setDate(d.getDate() - 1);
+          const prev = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+          return [{ date: prev, totalValue: rawData[0].totalValue }, rawData[0]];
+        })()
       : rawData;
 
   const chartData = displayData.map((d) => ({
     date: d.date,
-    label: formatXDate(d.date, period),
+    label: formatXDate(d.date, from, to),
     value: d.totalValue,
   }));
 
   return (
     <div className="space-y-4">
-      {/* Sélecteur de période */}
-      <div className="flex gap-1">
-        {PERIODS.map((p) => (
-          <button
-            key={p.value}
-            onClick={() => handlePeriod(p.value)}
-            className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-              period === p.value
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-            }`}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
+      {/* Sélecteur de plage de dates */}
+      <DateRangePicker
+        from={from}
+        to={to}
+        onChange={(f, t) => {
+          setFrom(f);
+          setTo(t);
+        }}
+      />
 
       {/* Chart ou message vide */}
       {rawData.length === 0 ? (
@@ -130,6 +167,7 @@ export function PortfolioChart({ initialData, initialPeriod = "1m" }: Props) {
                 tick={{ fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
+                interval="preserveStartEnd"
                 className="fill-muted-foreground"
               />
               <YAxis

@@ -234,20 +234,20 @@ export function AssetManager({ piliers, priceMap = {} }: Props) {
             </CardDescription>
           </div>
           <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setShowAddForm((v) => !v);
-              setAddError("");
-            }}
-          >
-            {showAddForm ? (
-              <ChevronUp className="mr-1.5 h-3.5 w-3.5" />
-            ) : (
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
-            )}
-            Nouvel actif
-          </Button>
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setShowAddForm((v) => !v);
+                setAddError("");
+              }}
+            >
+              {showAddForm ? (
+                <ChevronUp className="mr-1.5 h-3.5 w-3.5" />
+              ) : (
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              Nouvel actif
+            </Button>
         </CardHeader>
 
         <CardContent className="p-0 pb-0">
@@ -288,6 +288,7 @@ export function AssetManager({ piliers, priceMap = {} }: Props) {
                   <option value="CRYPTO">Crypto</option>
                   <option value="IMMO">Immobilier</option>
                   <option value="AUTRE">Autre</option>
+                  <option value="LIQUIDITE">Compte courant</option>
                 </select>
               </div>
               <table className="w-full text-sm">
@@ -393,20 +394,22 @@ export function AssetManager({ piliers, priceMap = {} }: Props) {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center justify-end gap-1">
-                              <button
-                                title="Historique d'achats"
-                                onClick={() =>
-                                  setExpandedAssetId(expandedAssetId === asset.id ? null : asset.id)
-                                }
-                                className={cn(
-                                  "rounded px-1.5 py-1 text-xs font-medium transition-colors",
-                                  expandedAssetId === asset.id
-                                    ? "bg-primary/10 text-primary"
-                                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                                )}
-                              >
-                                Achats
-                              </button>
+                              {asset.pilier !== "LIQUIDITE" && (
+                                <button
+                                  title="Historique d'achats"
+                                  onClick={() =>
+                                    setExpandedAssetId(expandedAssetId === asset.id ? null : asset.id)
+                                  }
+                                  className={cn(
+                                    "rounded px-1.5 py-1 text-xs font-medium transition-colors",
+                                    expandedAssetId === asset.id
+                                      ? "bg-primary/10 text-primary"
+                                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                  )}
+                                >
+                                  Achats
+                                </button>
+                              )}
                               <button
                                 title="Modifier la valeur"
                                 onClick={() =>
@@ -523,53 +526,70 @@ export function AssetManager({ piliers, priceMap = {} }: Props) {
                         {editingId === asset.id && (
                           <tr className="bg-muted/20">
                             <td colSpan={10} className="px-4 py-3">
-                              <div className="flex flex-wrap items-end gap-3">
-                                <div className="space-y-1">
-                                  <label className="text-xs font-medium">Ticker (ex: bitcoin, EWLD.PA)</label>
-                                  <input
-                                    type="text"
-                                    placeholder="ex: bitcoin ou EWLD.PA"
-                                    value={editTicker}
-                                    onChange={(e) => setEditTicker(e.target.value)}
-                                    className="w-48 rounded border border-input bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
-                                  />
+                              {asset.pilier === "LIQUIDITE" ? (
+                                <p className="text-xs text-muted-foreground">
+                                  Le Compte courant est toujours en saisie manuelle — pas de ticker ni de pricing live.
+                                </p>
+                              ) : (
+                                <div className="flex flex-wrap items-end gap-3">
+                                  <div className="space-y-1">
+                                    <label className="text-xs font-medium">Ticker (ex: bitcoin, EWLD.PA)</label>
+                                    <input
+                                      type="text"
+                                      placeholder="ex: bitcoin ou EWLD.PA"
+                                      value={editTicker}
+                                      onChange={(e) => setEditTicker(e.target.value)}
+                                      className="w-48 rounded border border-input bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                                    />
+                                  </div>
+                                  <div className="space-y-1">
+                                    <label className="text-xs font-medium">Mode de pricing</label>
+                                    <select
+                                      value={editPricingMode}
+                                      onChange={(e) => setEditPricingMode(e.target.value)}
+                                      className="rounded border border-input bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                                    >
+                                      <option value="manual">Estimation manuelle</option>
+                                      <option value="live_crypto">Prix live Crypto</option>
+                                      <option value="live_equity">Prix live Action/ETF</option>
+                                      <option value="savings">Livret / Épargne</option>
+                                    </select>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleSaveEdit(asset.id)}
+                                      disabled={isPending}
+                                    >
+                                      Enregistrer
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => setEditingId(null)}
+                                    >
+                                      Annuler
+                                    </Button>
+                                  </div>
                                 </div>
-                                <div className="space-y-1">
-                                  <label className="text-xs font-medium">Mode de pricing</label>
-                                  <select
-                                    value={editPricingMode}
-                                    onChange={(e) => setEditPricingMode(e.target.value)}
-                                    className="rounded border border-input bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
-                                  >
-                                    <option value="manual">Estimation manuelle</option>
-                                    <option value="live_crypto">Prix live Crypto</option>
-                                    <option value="live_equity">Prix live Action/ETF</option>
-                                    <option value="savings">Livret / Épargne</option>
-                                  </select>
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    onClick={() => handleSaveEdit(asset.id)}
-                                    disabled={isPending}
-                                  >
-                                    Enregistrer
-                                  </Button>
+                              )}
+                              {asset.pilier === "LIQUIDITE" && (
+                                <div className="mt-2">
                                   <Button
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => setEditingId(null)}
                                   >
-                                    Annuler
+                                    Fermer
                                   </Button>
                                 </div>
-                              </div>
+                              )}
                             </td>
                           </tr>
                         )}
 
-                        {/* ── Transaction form inline ─────────────── */}
-                        {expandedAssetId === asset.id && (
+                        {/* ── Transaction form inline — masqué pour LIQUIDITE ─ */}
+                        {expandedAssetId === asset.id && asset.pilier !== "LIQUIDITE" && (
                           <tr className="bg-muted/10">
                             <td colSpan={10} className="px-4 py-4">
                               <TransactionForm

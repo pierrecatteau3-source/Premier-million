@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { usePrices } from "@/hooks/usePrices";
 import { AssetManager } from "@/components/portfolio/AssetManager";
 import type { PilierSummary, PilierAsset } from "@/types";
@@ -43,6 +44,9 @@ function applyLivePrices(piliers: PilierSummary[], priceMap: PriceMap): PilierSu
 }
 
 export function PortfolioClient({ piliers }: Props) {
+  const router = useRouter();
+  const syncedRef = useRef(false);
+
   // Build the price requests from the flat list of assets
   const requests = useMemo(() => {
     const equityTickers: string[] = [];
@@ -73,6 +77,27 @@ export function PortfolioClient({ piliers }: Props) {
   }, [piliers]);
 
   const { prices } = usePrices(requests);
+
+  // Auto-sync when live prices arrive and some assets have no snapshot yet (latestValue === undefined)
+  const hasLiveAssets = requests.length > 0;
+  const hasUnsnapshotted = piliers.some((p) =>
+    p.assets.some(
+      (a) =>
+        (a.pricingMode === "live_equity" || a.pricingMode === "live_crypto") &&
+        a.latestValue === undefined
+    )
+  );
+
+  useEffect(() => {
+    if (!hasLiveAssets || !hasUnsnapshotted) return;
+    if (Object.keys(prices).length === 0) return; // prices not loaded yet
+    if (syncedRef.current) return;
+    syncedRef.current = true;
+
+    fetch("/api/snapshots/sync", { method: "POST" })
+      .then(() => router.refresh())
+      .catch(() => null);
+  }, [prices, hasLiveAssets, hasUnsnapshotted, router]);
 
   const piliersWithLive = useMemo(
     () => applyLivePrices(piliers, prices),

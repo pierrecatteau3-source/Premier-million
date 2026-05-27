@@ -27,12 +27,12 @@ export const ANALYSIS_MODEL = "claude-haiku-4-5";
 
 // Token budget pour les analyses — ~900 mots, suffisant pour une analyse complète
 export const ANALYSIS_MAX_OUTPUT_TOKENS = parseInt(
-  process.env.ANTHROPIC_MAX_OUTPUT_TOKENS ?? "1200",
+  process.env.ANTHROPIC_MAX_OUTPUT_TOKENS ?? "10000",
   10
 );
 
-// Timeout strict par appel Claude (30 secondes)
-const CLAUDE_TIMEOUT_MS = 30_000;
+// Timeout strict par appel Claude (120 secondes)
+const CLAUDE_TIMEOUT_MS = 120_000;
 
 /**
  * Appel standard (non-streaming) retournant le texte complet.
@@ -59,7 +59,7 @@ export async function callClaude(prompt: string): Promise<string> {
  * Sécurités intégrées :
  * - Modèle économique : claude-haiku-4-5-20251001
  * - Token budget : ANTHROPIC_MAX_OUTPUT_TOKENS (défaut 1200)
- * - Timeout strict : 30 secondes via AbortController
+ * - Timeout strict : 120 secondes via AbortController
  * - Prompt système séparé du message utilisateur
  *
  * @returns `{ text, outputTokens }` — texte généré et nombre de tokens de sortie
