@@ -34,12 +34,20 @@ Application web personnelle de **suivi de patrimoine vers le premier million d'e
 
 ### 2.1 Scope MVP (avril 2026)
 
-Les **4 modules bloquants** pour le release MVP :
+Le MVP couvre **6 modules fonctionnels + 1 design system + gamification poussée** :
 
+**Fonctionnel (déjà codé, à raffiner) :**
 - ✅ **Dashboard** — patrimoine global, progression vers 1M€, KPIs, saisie inline par pilier
 - ✅ **Portefeuille** — 4 piliers (PEA, Crypto, Immo, Autre), CRUD actifs/transactions, prix live crypto/equity
 - ✅ **Risque & alertes** — moteur avancé `riskEngine.ts` (4 composantes), jauge, alertes d'allocation
-- ✅ **Achievements (gamification light)** — système de succès débloqués, affichage carte/grille, toast de notification
+- ✅ **Historique** — évolution patrimoine, journal décisions, historique transactions
+- ✅ **Profil** — objectifs, allocation cible, paramètres
+- ✅ **Succès** — système d'achievements débloqués
+
+**Design system + gamification poussée (à coder) :**
+- 🚧 **Phase 1 — Design system global** : refonte visuelle complète (couleurs, fonts, primitives shadcn customisées). Fondations posées avant de toucher aux écrans.
+- 🚧 **Phase 2 — Passe par onglet** : redesign écran par écran sur les 6 onglets, en utilisant le design system.
+- 🚧 **Phase 3 — Gamification poussée** : création de personnage (avatar custom + nom), items débloqués par achievements (skins, accessoires, badges), customisation profil. **Promu de v3.0 vers MVP** suite à décision produit 2026-05-27.
 
 ### 2.2 Hors scope MVP (code présent mais non bloquant)
 
@@ -47,14 +55,14 @@ Ces features existent dans le code mais **ne sont pas bloquantes pour le release
 
 - **Vision marché / Analyses Claude** — code complet (`/api/analysis`, `/analyse`, `/vision-marche`). Coûte des crédits API → garder désactivé tant qu'on n'a pas validé l'usage.
 - **Investissements récurrents** — `RecurringInvestments.tsx` existant, à finaliser pour v1.1.
-- **Snapshots / historique** — `/api/cron/snapshot`, `PortfolioChart`. Fonctionnel.
 
 ### 2.3 Modules à ne PAS implémenter en MVP
 
-- ❌ Leaderboard — repoussé à v2.0 (ouverture amis)
-- ❌ Création de personnage / skins / items — repoussé à v3.0
-- ❌ Notifications email — repoussé à v1.2 (cf. roadmap §13)
-- ❌ Analytics / monitoring (Plausible/Sentry) — solo MVP, logs Railway suffisent
+- ❌ **Leaderboard** — repoussé à v2.0 (ouverture amis)
+- ❌ **Notifications email (Resend)** — repoussé à v1.2
+- ❌ **Import CSV/PDF via Claude** — repoussé à v1.1
+- ❌ **Analytics / monitoring (Plausible/Sentry)** — solo MVP, logs Railway suffisent
+- ❌ **Tests E2E (Playwright)** — repoussé à v1.1
 
 ---
 
@@ -494,6 +502,8 @@ Le système actuel (`lib/analysisRateLimit.ts`) limite :
 
 ### v1.0 — MVP (cible : avril 2026)
 
+**Fonctionnel (codé + déployé) :**
+
 - [x] Auth solo (credentials)
 - [x] Dashboard + KPIs + saisie inline
 - [x] Portefeuille (4 piliers, CRUD actifs/transactions)
@@ -501,11 +511,43 @@ Le système actuel (`lib/analysisRateLimit.ts`) limite :
 - [x] Score de risque avancé (4 composantes)
 - [x] Alertes d'allocation
 - [x] Achievements (light)
-- [ ] **Déploiement Railway propre**
-- [ ] **Repo public GitHub + README soigné**
-- [ ] **CI GitHub Actions (typecheck + lint)**
-- [ ] **Suppression de `vercel.json`**
-- [ ] **`.env.example` à jour**
+- [x] **Déploiement Railway propre**
+- [x] **Repo GitHub (privé pour le MVP) + README soigné**
+- [x] **CI GitHub Actions (typecheck + lint)**
+- [x] **Suppression de `vercel.json`**
+- [x] **`.env.example` à jour**
+- [x] **Cron snapshot 2×/jour via GitHub Actions**
+
+**Phase 1 — Design system global (en cours) :**
+
+- [ ] Décision direction visuelle (palette, typo, mood)
+- [ ] Mise à jour `tailwind.config.ts` (couleurs custom, typo scale, spacing)
+- [ ] Mise à jour `app/globals.css` (variables CSS, base styles, dark theme)
+- [ ] Customisation des primitives shadcn dans `components/ui/`
+- [ ] Composants atomiques manquants si besoin (typography helpers, etc.)
+
+**Phase 2 — Redesign onglet par onglet :**
+
+Pour chaque onglet : audit visuel actuel → propositions → validation utilisateur → implémentation → merge.
+
+- [ ] Dashboard (`app/(dashboard)/dashboard/page.tsx` + composants `components/dashboard/`)
+- [ ] Portefeuille (`app/(dashboard)/portefeuille/page.tsx` + `components/portfolio/`)
+- [ ] Risque (`app/(dashboard)/risque/page.tsx` + `components/risk/`)
+- [ ] Historique (`app/(dashboard)/historique/page.tsx` + `components/history/`)
+- [ ] Profil (`app/(dashboard)/profil/page.tsx` + `components/profile/`)
+- [ ] Succès (`app/(dashboard)/succes/page.tsx` + `components/achievements/`)
+- [ ] Layout commun (Sidebar, BottomNav, Header)
+
+**Phase 3 — Gamification poussée (promue de v3.0 vers MVP, 2026-05-27) :**
+
+- [ ] Schéma Prisma : ajouter modèles `CharacterCustomization`, `UnlockedItem`, `ItemCatalog`
+- [ ] Migration de la table `User` : champs `avatarConfig`, `displayName`, `level`, `xp`
+- [ ] Flow de création de personnage (page `/onboarding/character` ou modal au premier login)
+- [ ] Catalogue d'items (skins, badges, frames, backgrounds, titles)
+- [ ] Logique d'unlock : chaque achievement débloque 1+ items
+- [ ] Page `/profil` enrichie : aperçu personnage + inventaire + customisation
+- [ ] Affichage du personnage dans la sidebar + dashboard
+- [ ] Effets visuels d'unlock (animations)
 
 ### v1.1 — Robustesse (T3 2026)
 
@@ -514,12 +556,11 @@ Le système actuel (`lib/analysisRateLimit.ts`) limite :
 - [ ] Améliorer historique (filtres, export)
 - [ ] Tests E2E critiques (login, ajout asset, snapshot)
 
-### v1.2 — Notifications (T3 2026)
+### v1.2 — Notifications (T4 2026)
 
 - [ ] Resend installé + templates React Email
 - [ ] Digest mensuel : récap progression + alertes risque
 - [ ] Opt-in/opt-out dans Profil
-- [ ] Cron Railway dédié
 
 ### v1.3 — Vision marché propre (T4 2026)
 
@@ -527,24 +568,17 @@ Le système actuel (`lib/analysisRateLimit.ts`) limite :
 - [ ] UI plus claire sur la fraîcheur du cache
 - [ ] Analyses portfolio personnalisées validées
 
-### v2.0 — Ouverture aux amis (T4 2026 / T1 2027)
+### v2.0 — Ouverture aux amis (T1 2027)
 
 - [ ] OAuth Google + GitHub (NextAuth)
 - [ ] Allowlist email (table `AllowedEmail`)
 - [ ] **Leaderboard "local"** (ranking entre amis)
-- [ ] Profil public minimal (pseudo, avatar, progression %)
+- [ ] Profil public minimal (pseudo, avatar perso, progression %)
 - [ ] Rate limit IP via middleware
 - [ ] CGU + Privacy Policy minimales
+- [ ] Migration repo en public
 
-### v3.0 — Gamification poussée (2027+)
-
-- [ ] **Création de personnage à l'inscription** (avatar custom + nom)
-- [ ] **Système d'items débloqués par achievements** (skins, accessoires)
-- [ ] Customisation profil (background, badges)
-- [ ] Achievements étoffés (quêtes, paliers, saisonniers)
-- [ ] Effets visuels lors d'un déblocage
-
-### v4.0 — Freemium public (2028, optionnel)
+### v3.0 — Freemium public (2027+, optionnel)
 
 - [ ] Signup public ouvert
 - [ ] Stripe (abonnements, webhooks, billing UI)
