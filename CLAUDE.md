@@ -372,7 +372,7 @@ railway link
 DATABASE_URL="<DATABASE_PUBLIC_URL>" npx prisma migrate deploy
 ```
 
-### 10.4 Cron Job
+### 10.4 Cron Job — via GitHub Actions (pas Railway)
 
 Le cron `/api/cron/snapshot` :
 - Tourne **2× par jour** : 7h et 16h UTC (≈ 9h et 18h Paris en CEST)
@@ -380,17 +380,17 @@ Le cron `/api/cron/snapshot` :
 - Les actifs `manual` / `savings` sont laissés tels quels (saisie manuelle préservée)
 - Upsert sur `[assetId, date]` (date = minuit UTC) → la 2e exécution écrase la 1re (close > open dans l'historique)
 
-**Setup Railway :**
+**Implémentation** : workflow GitHub Actions `.github/workflows/cron-snapshot.yml`.
 
-Créer un **service Cron Railway dédié** (pas dans le service web) :
-- **+ New** → **Empty Service** → renomme en `Cron - Snapshot`
-- **Settings** → **Cron Schedule** : `0 7,16 * * *`
-- **Source** → image `curlimages/curl:latest`
-- **Variables** → `CRON_SECRET = ${{Premier million.CRON_SECRET}}`, `APP_URL = ${{Premier million.RAILWAY_PUBLIC_DOMAIN}}` (ou l'URL en dur)
-- **Start command** :
-  ```
-  curl -sfS -H "Authorization: Bearer $CRON_SECRET" "$APP_URL/api/cron/snapshot"
-  ```
+Choix vs Railway Cron Service :
+- ✅ Plus simple à débugger (logs lisibles, pas d'image Docker capricieuse)
+- ✅ Trigger manuel via `workflow_dispatch` pour tester
+- ✅ Gratuit (couvert par le free tier GitHub)
+- ⚠️ Petit délai possible (jusqu'à 15 min en peak) — acceptable pour un snapshot patrimoine
+
+**Secrets GitHub requis** (Settings → Secrets and variables → Actions) :
+- `CRON_SECRET` (même valeur que Railway)
+- `APP_URL` (URL prod sans `/` final)
 
 ### 10.5 Domaines & SSL
 

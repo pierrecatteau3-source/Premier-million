@@ -1,0 +1,17 @@
+name: Cron - Snapshot
+
+on:
+  schedule:
+    # 7h et 16h UTC = 9h + 18h Paris en été (CEST), 8h + 17h Paris en hiver (CET)
+    - cron: "0 7,16 * * *"
+  workflow_dispatch: # trigger manuel via Actions tab
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit cron endpoint
+        run: |
+          curl -sfS \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.APP_URL }}/api/cron/snapshot"
