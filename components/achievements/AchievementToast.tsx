@@ -58,7 +58,7 @@ export function AchievementToast({ achievements, onDismiss }: Props) {
 
         {/* Texte */}
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-violet-400">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-primary">
             Succès débloqué !
           </p>
           <p className="text-sm font-bold text-foreground leading-tight truncate">
@@ -69,7 +69,7 @@ export function AchievementToast({ achievements, onDismiss }: Props) {
 
         {/* Compteur si plusieurs */}
         {queue.length > 1 && (
-          <span className="shrink-0 rounded-full bg-violet-500/20 px-2 py-0.5 text-[10px] font-bold text-violet-400">
+          <span className="shrink-0 rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-bold text-primary">
             +{queue.length - 1}
           </span>
         )}
@@ -77,7 +77,7 @@ export function AchievementToast({ achievements, onDismiss }: Props) {
 
       {/* Barre de progression */}
       <div className="mx-3 h-0.5 overflow-hidden rounded-full bg-border">
-        <div className="h-full bg-violet-500 animate-progress-shrink" />
+        <div className="h-full bg-primary animate-progress-shrink" />
       </div>
     </div>
   );

@@ -56,7 +56,7 @@ export function KpiCard({
   return (
     <div className="rounded-2xl border border-border/50 bg-card shadow-sm p-4">
       <div className="flex items-center gap-2 mb-2">
-        <Icon className="h-4 w-4 text-violet-400 dark:text-violet-400 shrink-0" />
+        <Icon className="h-4 w-4 text-primary shrink-0" />
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           {label}
         </p>

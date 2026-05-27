@@ -157,8 +157,8 @@ export function PortfolioChart({ onEvolutionChange }: Props) {
             <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
               <defs>
                 <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="hsl(280, 90%, 65%)" />
-                  <stop offset="100%" stopColor="hsl(320, 75%, 60%)" />
+                  <stop offset="0%" stopColor="hsl(45 95% 60%)" />
+                  <stop offset="100%" stopColor="hsl(28 90% 50%)" />
                 </linearGradient>
               </defs>
               <CartesianGrid stroke="transparent" />

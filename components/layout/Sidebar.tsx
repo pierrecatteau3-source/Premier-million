@@ -72,7 +72,7 @@ export function Sidebar() {
     <aside className="hidden md:flex h-screen w-64 flex-col border-r border-border bg-card">
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 px-5 border-b border-border">
-        <div className="flex shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-500 p-1.5">
+        <div className="flex shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 p-1.5 shadow-gold">
           <TrendingUp className="h-[18px] w-[18px] text-primary-foreground" />
         </div>
         <div className="min-w-0">
@@ -96,7 +96,7 @@ export function Sidebar() {
                   className={cn(
                     "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-violet-500/10 text-violet-400 border-l-2 border-violet-500"
+                      ? "bg-primary/10 text-primary border-l-2 border-primary"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   )}
                 >

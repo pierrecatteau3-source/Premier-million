@@ -20,7 +20,7 @@ const PILIER_LABELS: Record<string, string> = {
 };
 
 const PILIER_COLORS: Record<string, string> = {
-  PEA: "bg-violet-500", IMMO: "bg-emerald-500", CRYPTO: "bg-orange-500", AUTRE: "bg-slate-400",
+  PEA: "bg-sky-500", IMMO: "bg-emerald-500", CRYPTO: "bg-amber-500", AUTRE: "bg-slate-400",
 };
 
 function formatEur(v: number) {

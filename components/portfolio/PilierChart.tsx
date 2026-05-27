@@ -17,10 +17,10 @@ interface Props {
 }
 
 const PILIER_COLORS: Record<string, string> = {
-  PEA:    "hsl(280 90% 65%)",
-  CRYPTO: "hsl(38 92% 55%)",
-  IMMO:   "hsl(142 76% 45%)",
-  AUTRE:  "hsl(220 14% 50%)",
+  PEA:    "hsl(220 70% 60%)",  // bleu cobalt — actions / marchés
+  CRYPTO: "hsl(38 92% 55%)",   // or — primary de l'app
+  IMMO:   "hsl(142 65% 45%)",  // vert émeraude — immobilier
+  AUTRE:  "hsl(220 10% 55%)",  // slate — neutre
 };
 
 const PILIER_LABELS: Record<string, string> = {
