@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/layout/SessionProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { AuroraBackground } from "@/components/ui/aurora-background";
 import NextTopLoader from "nextjs-toploader";
 
 const inter = Inter({
@@ -22,10 +23,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" suppressHydrationWarning>
+    <html lang="fr" className="dark" suppressHydrationWarning>
       <body suppressHydrationWarning className={`${inter.variable} font-sans antialiased`}>
-        <NextTopLoader color="#8b5cf6" showSpinner={false} />
+        <NextTopLoader color="#f59e0b" showSpinner={false} height={2} />
         <ThemeProvider>
+          <AuroraBackground />
           <SessionProvider>{children}</SessionProvider>
         </ThemeProvider>
       </body>

@@ -2,63 +2,78 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   Premier Million — Design System (dark only, accent or #f59e0b)
+   Inspiration : Revolut × Finary
+   ───────────────────────────────────────────────────────────────────────────── */
+
 @layer base {
-  :root {
-    --background: 270 10% 97%;
-    --foreground: 270 15% 8%;
-    --card: 270 10% 100%;
-    --card-foreground: 270 15% 8%;
-    --popover: 270 10% 100%;
-    --popover-foreground: 270 15% 8%;
-    --primary: 280 85% 55%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 320 70% 55%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 270 10% 93%;
-    --muted-foreground: 270 8% 45%;
-    --accent: 320 70% 55%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 270 10% 88%;
-    --input: 270 10% 88%;
-    --ring: 280 85% 55%;
-    --radius: 0.75rem;
-  }
-
+  :root,
   .dark {
-    --background: 270 15% 5%;
-    --foreground: 270 10% 95%;
-    --card: 270 12% 8%;
-    --card-foreground: 270 10% 95%;
-    --popover: 270 12% 8%;
-    --popover-foreground: 270 10% 95%;
-    --primary: 280 90% 65%;
-    --primary-foreground: 270 15% 5%;
-    --secondary: 320 75% 60%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 270 12% 13%;
-    --muted-foreground: 270 8% 55%;
-    --accent: 320 75% 60%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 62% 55%;
+    /* Fond principal — noir chaud, légèrement warmer qu'un pur noir */
+    --background: 30 6% 5%;
+    --foreground: 30 10% 97%;
+
+    /* Surfaces — cards et popover */
+    --card: 30 6% 8%;
+    --card-foreground: 30 10% 97%;
+    --popover: 30 6% 7%;
+    --popover-foreground: 30 10% 97%;
+
+    /* Primaire — or (#f59e0b ≈ HSL 38 92% 50%) */
+    --primary: 38 92% 50%;
+    --primary-foreground: 30 10% 8%;
+
+    /* Secondaire — surface neutre élevée */
+    --secondary: 30 6% 14%;
+    --secondary-foreground: 30 10% 95%;
+
+    /* Muted — texte secondaire / fonds discrets */
+    --muted: 30 6% 12%;
+    --muted-foreground: 30 5% 60%;
+
+    /* Accent — hover / état actif (or atténué) */
+    --accent: 38 50% 18%;
+    --accent-foreground: 38 80% 75%;
+
+    /* Sémantique */
+    --destructive: 0 65% 55%;
     --destructive-foreground: 0 0% 100%;
-    --border: 270 12% 16%;
-    --input: 270 12% 16%;
-    --ring: 280 90% 65%;
+    --success: 142 65% 45%;
+    --success-foreground: 0 0% 100%;
+
+    /* Inputs & focus */
+    --border: 30 5% 16%;
+    --input: 30 5% 16%;
+    --ring: 38 92% 50%;
+
+    /* Charts — déclinaison de l'or + complémentaires */
+    --chart-1: 38 92% 50%;
+    --chart-2: 30 80% 45%;
+    --chart-3: 142 65% 45%;
+    --chart-4: 190 70% 50%;
+    --chart-5: 260 55% 60%;
+
+    --radius: 0.875rem;
   }
 }
 
-.gradient-primary {
-  background: linear-gradient(135deg, hsl(280 90% 65%), hsl(320 75% 60%));
+/* ── Gradients utilitaires ──────────────────────────────────────────────── */
+.gradient-gold {
+  background: linear-gradient(135deg, hsl(38 92% 55%), hsl(28 90% 50%));
 }
-.gradient-primary-text {
-  background: linear-gradient(135deg, hsl(280 90% 65%), hsl(320 75% 60%));
+.gradient-gold-text {
+  background: linear-gradient(135deg, hsl(45 95% 65%), hsl(38 92% 50%) 40%, hsl(28 90% 45%));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  color: transparent;
+}
+.gradient-surface {
+  background: linear-gradient(180deg, hsl(30 6% 9% / 1), hsl(30 6% 6% / 1));
 }
 
+/* ── Base ───────────────────────────────────────────────────────────────── */
 @layer base {
   * {
     @apply border-border;
@@ -67,12 +82,13 @@
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
+    color-scheme: dark;
   }
 
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
-    font-feature-settings: "cv02","cv03","cv04","cv11";
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -81,19 +97,19 @@
   select {
     appearance: none;
     -webkit-appearance: none;
-    background-color: hsl(var(--background));
+    background-color: hsl(var(--secondary));
     color: hsl(var(--foreground));
     border: 1px solid hsl(var(--border));
-    border-radius: 0.5rem;
-    padding: 0.375rem 2rem 0.375rem 0.625rem;
+    border-radius: 0.625rem;
+    padding: 0.375rem 2rem 0.375rem 0.75rem;
     font-size: 0.875rem;
     line-height: 1.25rem;
     height: 2.25rem;
     cursor: pointer;
     outline: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b8b9e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 0.5rem center;
+    background-position: right 0.625rem center;
     background-size: 1rem;
     transition: border-color 150ms ease, box-shadow 150ms ease;
   }
@@ -109,37 +125,97 @@
     color: hsl(var(--foreground));
   }
 
-  /* Scrollbar discrète sur webkit */
+  /* Scrollbar minimaliste */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    @apply rounded-full bg-border;
+    background: hsl(var(--border));
+    border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground) / 0.3);
+    background: hsl(var(--muted-foreground) / 0.4);
   }
 }
 
+/* ── Utilitaires ────────────────────────────────────────────────────────── */
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
-
-  /* Empêche le layout shift au scroll */
   .scrollbar-gutter {
     scrollbar-gutter: stable;
   }
+
+  /* Hairline border — bordure douce premium */
+  .border-hairline {
+    border: 1px solid hsl(var(--border));
+    background: hsl(var(--card));
+  }
+
+  /* Glow autour d'éléments importants */
+  .ring-gold {
+    box-shadow: 0 0 0 1px hsl(38 92% 50% / 0.4), 0 0 30px -10px hsl(38 92% 50% / 0.6);
+  }
 }
 
-h1, h2, h3 { letter-spacing: -0.025em; }
+/* ── Typographie ─────────────────────────────────────────────────────────── */
+h1, h2, h3 { letter-spacing: -0.03em; }
+h1 { font-weight: 700; }
 .tabular-nums { font-variant-numeric: tabular-nums; }
 
-/* ── Animations succès ───────────────────────────────────────────────────── */
+/* ── Animations ──────────────────────────────────────────────────────────── */
+
+/* Aurora — déplacement lent des blobs de fond */
+@keyframes aurora-drift {
+  0%, 100% { transform: translate(0%, 0%) scale(1); }
+  33%      { transform: translate(8%, -6%) scale(1.1); }
+  66%      { transform: translate(-6%, 8%) scale(0.95); }
+}
+
+@keyframes aurora-drift-reverse {
+  0%, 100% { transform: translate(0%, 0%) scale(1); }
+  33%      { transform: translate(-10%, 5%) scale(1.05); }
+  66%      { transform: translate(7%, -7%) scale(1.15); }
+}
+
+.animate-aurora-1 {
+  animation: aurora-drift 22s ease-in-out infinite;
+}
+.animate-aurora-2 {
+  animation: aurora-drift-reverse 28s ease-in-out infinite;
+}
+
+/* Fade in — pour les transitions de pages */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Shimmer — pour skeletons et highlights */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(var(--muted-foreground) / 0.08) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* Toasts succès — conservé pour compat */
 @keyframes slide-in-right {
   from {
     opacity: 0;
@@ -150,16 +226,13 @@ h1, h2, h3 { letter-spacing: -0.025em; }
     transform: translateX(0);
   }
 }
-
 @keyframes progress-shrink {
   from { width: 100%; }
   to   { width: 0%; }
 }
-
 .animate-slide-in-right {
   animation: slide-in-right 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-
 .animate-progress-shrink {
   animation: progress-shrink 5s linear forwards;
 }

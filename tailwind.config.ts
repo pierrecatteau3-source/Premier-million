@@ -40,6 +40,10 @@ const config: Config = {
           DEFAULT: "var(--destructive)",
           foreground: "var(--destructive-foreground)",
         },
+        success: {
+          DEFAULT: "var(--success)",
+          foreground: "var(--success-foreground)",
+        },
         border: "var(--border)",
         input: "var(--input)",
         ring: "var(--ring)",
@@ -53,11 +57,17 @@ const config: Config = {
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        md: "calc(var(--radius) - 4px)",
+        sm: "calc(var(--radius) - 8px)",
       },
       fontFamily: {
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+      },
+      boxShadow: {
+        "elev-1": "0 1px 2px 0 hsl(0 0% 0% / 0.4)",
+        "elev-2": "0 4px 12px -2px hsl(0 0% 0% / 0.5)",
+        "elev-3": "0 12px 32px -8px hsl(0 0% 0% / 0.6)",
+        gold: "0 0 24px -4px hsl(38 92% 50% / 0.4)",
       },
     },
   },
