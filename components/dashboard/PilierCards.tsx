@@ -17,7 +17,7 @@ function formatEur(v: number) {
 
 export function PilierCards({ piliers }: Props) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {piliers.map((p) => {
         const isOver = p.allocationGap > 0;
         const isUnder = p.allocationGap < 0;

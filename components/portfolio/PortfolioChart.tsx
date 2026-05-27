@@ -20,6 +20,10 @@ interface Evolution {
 
 interface Props {
   onEvolutionChange?: (evo: Evolution) => void;
+  /** Mode compact : pas de DateRangePicker, hauteur réduite. Pour le dashboard. */
+  compact?: boolean;
+  /** Plage par défaut (en jours) avant aujourd'hui. Défaut : 1 (yesterday). */
+  defaultRangeDays?: number;
 }
 
 function formatEur(v: number) {
@@ -42,11 +46,11 @@ function formatXDate(dateStr: string, from: string, to: string): string {
   return new Intl.DateTimeFormat("fr-FR", { month: "short", year: "2-digit" }).format(d);
 }
 
-export function PortfolioChart({ onEvolutionChange }: Props) {
+export function PortfolioChart({ onEvolutionChange, compact = false, defaultRangeDays = 1 }: Props) {
   const today = new Date().toISOString().split("T")[0];
-  const yesterday = new Date(Date.now() - 86_400_000).toISOString().split("T")[0];
+  const defaultFrom = new Date(Date.now() - defaultRangeDays * 86_400_000).toISOString().split("T")[0];
 
-  const [from, setFrom] = useState<string>(yesterday);
+  const [from, setFrom] = useState<string>(defaultFrom);
   const [to, setTo] = useState<string>(today);
   const [data, setData] = useState<HistoryPoint[]>([]);
   const [loading, setLoading] = useState(false);
@@ -132,28 +136,33 @@ export function PortfolioChart({ onEvolutionChange }: Props) {
     value: d.totalValue,
   }));
 
+  const chartHeight = compact ? 280 : 220;
+  const emptyHeight = compact ? "h-72" : "h-48";
+
   return (
     <div className="space-y-4">
-      {/* Sélecteur de plage de dates */}
-      <DateRangePicker
-        from={from}
-        to={to}
-        onChange={(f, t) => {
-          setFrom(f);
-          setTo(t);
-        }}
-      />
+      {/* Sélecteur de plage de dates — caché en mode compact */}
+      {!compact && (
+        <DateRangePicker
+          from={from}
+          to={to}
+          onChange={(f, t) => {
+            setFrom(f);
+            setTo(t);
+          }}
+        />
+      )}
 
       {/* Chart ou message vide */}
       {rawData.length === 0 ? (
-        <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
+        <div className={`flex ${emptyHeight} items-center justify-center text-sm text-muted-foreground`}>
           {loading
             ? "Chargement…"
             : "Enregistrez des valeurs pour voir l'évolution"}
         </div>
       ) : (
         <div className={loading ? "opacity-50 transition-opacity" : ""}>
-          <ResponsiveContainer width="100%" height={220}>
+          <ResponsiveContainer width="100%" height={chartHeight}>
             <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
               <defs>
                 <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">

@@ -6,7 +6,6 @@ interface Props {
   monthlyChangePercent: number;
   progressionPercent: number;
   objectif?: number;
-  matelasEur?: number;
 }
 
 function formatEur(v: number) {
@@ -23,13 +22,12 @@ export function HeroCard({
   monthlyChangePercent,
   progressionPercent,
   objectif = 1_000_000,
-  matelasEur = 0,
 }: Props) {
   const isPositive = monthlyChange > 0;
   const isNegative = monthlyChange < 0;
 
   return (
-    <div className="rounded-2xl border border-border/50 bg-card shadow-sm p-6 space-y-4">
+    <div className="rounded-2xl border border-border/50 bg-card shadow-elev-2 p-6 space-y-4">
       {/* Deux colonnes : patrimoine | objectif */}
       <div className="flex items-start">
         {/* Gauche : patrimoine actuel */}
@@ -37,23 +35,9 @@ export function HeroCard({
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">
             Patrimoine actuel
           </p>
-          <p
-            className="text-4xl font-bold tracking-tight tabular-nums leading-none"
-            style={{
-              background:
-                "linear-gradient(135deg, hsl(280 90% 65%), hsl(320 75% 60%))",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
+          <p className="text-4xl font-bold tracking-tight tabular-nums leading-none gradient-gold-text">
             {formatEur(totalValue)}
           </p>
-          {matelasEur > 0 && (
-            <p className="text-xs text-muted-foreground mt-1">
-              dont {formatEur(matelasEur)} en précaution
-            </p>
-          )}
         </div>
 
         {/* Séparateur vertical */}
@@ -75,8 +59,8 @@ export function HeroCard({
         <span
           className={cn(
             "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-            isPositive && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-            isNegative && "bg-red-500/10 text-red-500",
+            isPositive && "bg-success/10 text-success",
+            isNegative && "bg-destructive/10 text-destructive",
             !isPositive && !isNegative && "bg-muted text-muted-foreground"
           )}
         >
@@ -92,12 +76,8 @@ export function HeroCard({
       <div className="space-y-1">
         <div className="h-2 rounded-full bg-muted overflow-hidden">
           <div
-            className="h-full rounded-full transition-all duration-500"
-            style={{
-              background:
-                "linear-gradient(90deg, hsl(280 90% 65%), hsl(320 75% 60%))",
-              width: `${Math.min(progressionPercent, 100)}%`,
-            }}
+            className="h-full rounded-full transition-all duration-500 gradient-gold"
+            style={{ width: `${Math.min(progressionPercent, 100)}%` }}
           />
         </div>
         <p className="text-xs text-muted-foreground">

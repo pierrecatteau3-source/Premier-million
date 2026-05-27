@@ -5,10 +5,12 @@ import { getPortfolioSummary } from "@/lib/services/portfolio.service";
 import { prisma } from "@/lib/prisma";
 import { Header } from "@/components/layout/Header";
 import { HeroCard } from "@/components/dashboard/HeroCard";
-import { KpiCard } from "@/components/dashboard/KpiCard";
 import { PilierCards } from "@/components/dashboard/PilierCards";
+import { PortfolioChart } from "@/components/portfolio/PortfolioChart";
 import { Card, CardContent } from "@/components/ui/card";
+import { PiggyBank, TrendingUp, Target } from "lucide-react";
 
+/** Projection de l'âge auquel l'objectif sera atteint avec intérêts composés. */
 function calculateTargetAge(
   currentValue: number,
   epargneMensuelle: number,
@@ -31,6 +33,43 @@ function calculateTargetAge(
   return null;
 }
 
+function formatEur(v: number | null) {
+  if (v === null) return "—";
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+  }).format(v);
+}
+
+/** Mini KPI : version compacte du KpiCard pour la rangée d'indicateurs. */
+function CompactKpi({
+  label,
+  value,
+  icon: Icon,
+  suffix,
+}: {
+  label: string;
+  value: string;
+  icon: typeof PiggyBank;
+  suffix?: string;
+}) {
+  return (
+    <div className="rounded-xl border border-border/50 bg-card px-3 py-2.5 shadow-elev-1">
+      <div className="flex items-center gap-1.5">
+        <Icon className="h-3.5 w-3.5 text-primary shrink-0" />
+        <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground truncate">
+          {label}
+        </p>
+      </div>
+      <p className="mt-1 text-lg font-bold tabular-nums leading-tight">
+        {value}
+        {suffix && <span className="ml-1 text-xs font-medium text-muted-foreground">{suffix}</span>}
+      </p>
+    </div>
+  );
+}
+
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/login");
@@ -43,8 +82,6 @@ export default async function DashboardPage() {
       select: {
         objectif: true,
         epargneMensuelle: true,
-        epargnePrecaution: true,
-        epargnePrecautionMontant: true,
         evolutionEpargne: true,
         ageCible: true,
         ageActuel: true,
@@ -54,37 +91,18 @@ export default async function DashboardPage() {
   ]);
 
   const objectif = user?.objectif ?? 1_000_000;
-
   const epargneMensuelle = user?.epargneMensuelle ?? null;
-  const epargnePrecaution = user?.epargnePrecaution ?? null;
   const evolutionEpargne = user?.evolutionEpargne ?? null;
   const ageCible = user?.ageCible ?? null;
   const ageActuel = user?.ageActuel ?? null;
 
-  // Formule canonique — identique à portefeuille/page.tsx et risque/page.tsx
-  // epargnePrecautionMontant (saisie directe) est prioritaire ;
-  // sinon fallback calculé : nb mois × dépense mensuelle.
-  // Toujours un nombre (0 si non renseigné) pour les calculs patrimoniaux.
-  const matelasEur: number =
-    user?.epargnePrecautionMontant != null
-      ? user.epargnePrecautionMontant
-      : (epargnePrecaution ?? 0) * (epargneMensuelle ?? 0);
-
-  // Version nullable pour l'affichage KPI (null = non configuré → affiche "—")
-  const matelasEurDisplay: number | null =
-    user?.epargnePrecautionMontant != null
-      ? user.epargnePrecautionMontant
-      : epargnePrecaution != null && epargneMensuelle != null
-      ? epargnePrecaution * epargneMensuelle
-      : null;
-
-  // portfolio.totalValue = somme des actifs (snapshots serveur) + liquidités (Compte courant).
-  // Le Cash externe (epargnePrecautionMontant) est hors actifs → on l'additionne.
-  // Valeur basée sur derniers snapshots — prix live disponibles uniquement dans Portefeuille.
-  const patrimoineBrut = portfolio.totalValue + matelasEur;
+  // Patrimoine total = somme actifs (snapshots) + liquidités. PAS de matelas
+  // d'épargne de précaution (= réserve hors patrimoine investi, utilisée
+  // seulement comme indicateur de sécurité dans le Profil).
+  const patrimoineTotal = portfolio.totalValue;
   const progressionPercent =
     objectif > 0
-      ? Math.min(Math.round((patrimoineBrut / objectif) * 1000) / 10, 100)
+      ? Math.min(Math.round((patrimoineTotal / objectif) * 1000) / 10, 100)
       : 0;
 
   const years =
@@ -92,15 +110,13 @@ export default async function DashboardPage() {
 
   const epargneProjectee =
     years != null && years > 0 && epargneMensuelle != null
-      ? epargneMensuelle *
-        Math.pow(1 + (evolutionEpargne ?? 0) / 100, years)
+      ? epargneMensuelle * Math.pow(1 + (evolutionEpargne ?? 0) / 100, years)
       : null;
 
-  // Projection : partir du patrimoine brut (investissable + Cash) comme base
   const targetAge =
     ageActuel != null && epargneMensuelle != null
       ? calculateTargetAge(
-          patrimoineBrut,
+          patrimoineTotal,
           epargneMensuelle,
           evolutionEpargne ?? 0,
           user?.objectifCroissance ?? 8,
@@ -116,64 +132,59 @@ export default async function DashboardPage() {
       />
 
       <div className="p-6 space-y-6">
-        {/* Zone 1 : Hero */}
+        {/* Patrimoine — pleine largeur */}
         <HeroCard
-          totalValue={patrimoineBrut}
+          totalValue={patrimoineTotal}
           monthlyChange={portfolio.monthlyChange}
           monthlyChangePercent={portfolio.monthlyChangePercent}
           progressionPercent={progressionPercent}
           objectif={objectif}
-          matelasEur={matelasEur}
         />
 
-        {/* Zone 2 : KPIs */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <KpiCard
-            label="Précaution"
-            value={matelasEurDisplay}
-            icon="Shield"
-            suffix="€"
-            formatAsCurrency={matelasEurDisplay !== null}
-          />
-          <KpiCard
-            label="Épargne / mois"
-            value={epargneMensuelle}
-            icon="PiggyBank"
-            suffix="€/mois"
-            formatAsCurrency={epargneMensuelle !== null}
-          />
-          <KpiCard
-            label={ageCible ? `À ${ageCible} ans` : "Projection"}
-            value={epargneProjectee}
-            icon="TrendingUp"
-            suffix="€/mois"
-            formatAsCurrency={epargneProjectee !== null}
-          />
-          <KpiCard
-            label="Objectif atteint à"
-            value={targetAge}
-            icon="Target"
-            suffix="ans"
-            subLabel={targetAge === null ? "Renseigne ton profil" : undefined}
-          />
+        {/* Grille principale : 2 colonnes desktop (piliers/KPIs à gauche, chart à droite) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* COLONNE GAUCHE : 3 KPIs compacts + Piliers 2x2 */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-3">
+              <CompactKpi
+                label="Épargne / mois"
+                value={formatEur(epargneMensuelle)}
+                icon={PiggyBank}
+              />
+              <CompactKpi
+                label={ageCible ? `À ${ageCible} ans` : "Projection"}
+                value={formatEur(epargneProjectee)}
+                icon={TrendingUp}
+                suffix={epargneProjectee !== null ? "/mois" : undefined}
+              />
+              <CompactKpi
+                label="Objectif atteint à"
+                value={targetAge !== null ? String(targetAge) : "—"}
+                icon={Target}
+                suffix={targetAge !== null ? "ans" : undefined}
+              />
+            </div>
+
+            <Card className="shadow-elev-1">
+              <CardContent className="pt-4">
+                <h2 className="mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Patrimoine par pilier
+                </h2>
+                <PilierCards piliers={portfolio.piliers} />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* COLONNE DROITE : Évolution du patrimoine */}
+          <Card className="shadow-elev-1">
+            <CardContent className="pt-4">
+              <h2 className="mb-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Évolution du patrimoine
+              </h2>
+              <PortfolioChart compact defaultRangeDays={30} />
+            </CardContent>
+          </Card>
         </div>
-
-        {targetAge !== null && (
-          <p className="text-xs text-muted-foreground -mt-2">
-            Projection basée sur {user?.objectifCroissance ?? 8} %/an
-            {user?.evolutionEpargne ? ` · épargne +${user.evolutionEpargne} %/an` : ""}
-          </p>
-        )}
-
-        {/* Zone 3 : Saisie rapide */}
-        <Card className="shadow-sm">
-          <CardContent className="pt-4">
-            <h2 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-              Saisie rapide — patrimoine par pilier
-            </h2>
-            <PilierCards piliers={portfolio.piliers} />
-          </CardContent>
-        </Card>
       </div>
     </>
   );
