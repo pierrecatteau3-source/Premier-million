@@ -19,42 +19,59 @@ interface Evolution {
 }
 
 /**
- * Curseur crosshair : ligne verticale + ligne horizontale en pointillés
- * lors du survol. Reliés au point sur la courbe.
+ * Curseur vertical (du haut au bas du chart) — pour relier le hover à la date.
+ * Note : `points[0].y` dans recharts = haut du chart, pas la valeur. La ligne
+ * horizontale alignée sur la valeur est dessinée dans `ActiveDotWithLine`.
  */
 interface CursorProps {
   points?: { x: number; y: number }[];
-  width?: number;
-  height?: number;
   top?: number;
-  left?: number;
+  height?: number;
 }
-function CrosshairCursor({ points, width = 0, height = 0, top = 0, left = 0 }: CursorProps) {
+function VerticalCursor({ points, top = 0, height = 0 }: CursorProps) {
   if (!points?.[0]) return null;
-  const { x, y } = points[0];
+  const { x } = points[0];
+  return (
+    <line
+      x1={x}
+      y1={top}
+      x2={x}
+      y2={top + height}
+      stroke="hsl(var(--foreground))"
+      strokeOpacity={0.35}
+      strokeWidth={1}
+      strokeDasharray="4 4"
+      pointerEvents="none"
+    />
+  );
+}
+
+/**
+ * Active dot avec ligne horizontale pointillée vers l'axe Y.
+ * Le `cy` est la position SVG du point sur la courbe → la ligne y est alignée.
+ */
+const CHART_LEFT_OFFSET = 98; // margin.left (8) + YAxis width (90)
+function ActiveDotWithLine(props: { cx?: number; cy?: number }) {
+  const { cx = 0, cy = 0 } = props;
   return (
     <g pointerEvents="none">
-      {/* Verticale : du haut du chart au point */}
       <line
-        x1={x}
-        y1={top}
-        x2={x}
-        y2={top + height}
+        x1={CHART_LEFT_OFFSET}
+        y1={cy}
+        x2={cx}
+        y2={cy}
         stroke="hsl(var(--foreground))"
         strokeOpacity={0.35}
         strokeWidth={1}
         strokeDasharray="4 4"
       />
-      {/* Horizontale : du Y-axis au point */}
-      <line
-        x1={left}
-        y1={y}
-        x2={left + width}
-        y2={y}
-        stroke="hsl(var(--foreground))"
-        strokeOpacity={0.35}
-        strokeWidth={1}
-        strokeDasharray="4 4"
+      <circle
+        cx={cx}
+        cy={cy}
+        r={5}
+        fill="hsl(38 92% 55%)"
+        stroke="hsl(var(--card))"
+        strokeWidth={2}
       />
     </g>
   );
@@ -238,7 +255,7 @@ export function PortfolioChart({ onEvolutionChange, compact = false, defaultRang
                 ]}
               />
               <Tooltip
-                cursor={<CrosshairCursor />}
+                cursor={<VerticalCursor />}
                 formatter={(value) => [formatEur(Number(value)), "Patrimoine"]}
                 labelFormatter={(label) => label}
                 contentStyle={{
@@ -256,7 +273,7 @@ export function PortfolioChart({ onEvolutionChange, compact = false, defaultRang
                 stroke="url(#lineGradient)"
                 strokeWidth={2.5}
                 dot={false}
-                activeDot={{ r: 5, fill: "hsl(38 92% 55%)", stroke: "hsl(var(--card))", strokeWidth: 2 }}
+                activeDot={(props) => <ActiveDotWithLine cx={props.cx} cy={props.cy} />}
               />
             </LineChart>
           </ResponsiveContainer>
