@@ -18,6 +18,48 @@ interface Evolution {
   deltaPct: number;
 }
 
+/**
+ * Curseur crosshair : ligne verticale + ligne horizontale en pointillés
+ * lors du survol. Reliés au point sur la courbe.
+ */
+interface CursorProps {
+  points?: { x: number; y: number }[];
+  width?: number;
+  height?: number;
+  top?: number;
+  left?: number;
+}
+function CrosshairCursor({ points, width = 0, height = 0, top = 0, left = 0 }: CursorProps) {
+  if (!points?.[0]) return null;
+  const { x, y } = points[0];
+  return (
+    <g pointerEvents="none">
+      {/* Verticale : du haut du chart au point */}
+      <line
+        x1={x}
+        y1={top}
+        x2={x}
+        y2={top + height}
+        stroke="hsl(var(--foreground))"
+        strokeOpacity={0.35}
+        strokeWidth={1}
+        strokeDasharray="4 4"
+      />
+      {/* Horizontale : du Y-axis au point */}
+      <line
+        x1={left}
+        y1={y}
+        x2={left + width}
+        y2={y}
+        stroke="hsl(var(--foreground))"
+        strokeOpacity={0.35}
+        strokeWidth={1}
+        strokeDasharray="4 4"
+      />
+    </g>
+  );
+}
+
 interface Props {
   onEvolutionChange?: (evo: Evolution) => void;
   /** Mode compact : pas de DateRangePicker, hauteur réduite. Pour le dashboard. */
@@ -163,7 +205,7 @@ export function PortfolioChart({ onEvolutionChange, compact = false, defaultRang
       ) : (
         <div className={loading ? "opacity-50 transition-opacity" : ""}>
           <ResponsiveContainer width="100%" height={chartHeight}>
-            <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+            <LineChart data={chartData} margin={{ top: 16, right: 32, bottom: 8, left: 8 }}>
               <defs>
                 <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
                   <stop offset="0%" stopColor="hsl(45 95% 60%)" />
@@ -177,6 +219,8 @@ export function PortfolioChart({ onEvolutionChange, compact = false, defaultRang
                 tickLine={false}
                 axisLine={false}
                 interval="preserveStartEnd"
+                tickMargin={12}
+                padding={{ left: 8, right: 8 }}
                 className="fill-muted-foreground"
               />
               <YAxis
@@ -185,30 +229,34 @@ export function PortfolioChart({ onEvolutionChange, compact = false, defaultRang
                 tickLine={false}
                 axisLine={false}
                 width={90}
+                tickCount={6}
+                tickMargin={8}
                 className="fill-muted-foreground"
                 domain={[
-                  (dataMin: number) => Math.floor(dataMin * 0.97),
-                  (dataMax: number) => Math.ceil(dataMax * 1.03),
+                  (dataMin: number) => Math.floor((dataMin * 0.97) / 100) * 100,
+                  (dataMax: number) => Math.ceil((dataMax * 1.03) / 100) * 100,
                 ]}
               />
               <Tooltip
+                cursor={<CrosshairCursor />}
                 formatter={(value) => [formatEur(Number(value)), "Patrimoine"]}
                 labelFormatter={(label) => label}
                 contentStyle={{
                   fontSize: 12,
-                  borderRadius: 6,
+                  borderRadius: 8,
                   border: "1px solid hsl(var(--border))",
                   background: "hsl(var(--card))",
                   color: "hsl(var(--foreground))",
+                  boxShadow: "0 8px 24px -8px hsl(0 0% 0% / 0.6)",
                 }}
               />
               <Line
                 type="monotone"
                 dataKey="value"
                 stroke="url(#lineGradient)"
-                strokeWidth={2}
+                strokeWidth={2.5}
                 dot={false}
-                activeDot={{ r: 4 }}
+                activeDot={{ r: 5, fill: "hsl(38 92% 55%)", stroke: "hsl(var(--card))", strokeWidth: 2 }}
               />
             </LineChart>
           </ResponsiveContainer>
