@@ -29,15 +29,9 @@ export const authOptions: NextAuthOptions = {
       },
 
       async authorize(credentials) {
-        // [DEBUG TEMPORAIRE — à retirer une fois login OK]
-        console.log("[auth-debug] === LOGIN ATTEMPT ===");
-
         // Validation Zod
         const parsed = credentialsSchema.safeParse(credentials);
-        if (!parsed.success) {
-          console.log("[auth-debug] Zod validation FAIL:", parsed.error.format());
-          return null;
-        }
+        if (!parsed.success) return null;
 
         const { email, password } = parsed.data;
 
@@ -45,29 +39,15 @@ export const authOptions: NextAuthOptions = {
         const soloEmail = process.env.SOLO_EMAIL;
         const soloHash = process.env.SOLO_PASSWORD_HASH;
 
-        console.log("[auth-debug] SOLO_EMAIL set:", !!soloEmail, "length:", soloEmail?.length ?? 0);
-        console.log("[auth-debug] SOLO_PASSWORD_HASH set:", !!soloHash, "length:", soloHash?.length ?? 0);
-        console.log("[auth-debug] SOLO_PASSWORD_HASH starts with $2b$:", soloHash?.startsWith("$2b$"));
-        console.log("[auth-debug] Submitted email length:", email.length, "match exact:", email === soloEmail);
-        console.log("[auth-debug] Submitted password length:", password.length);
-
         if (!soloEmail || !soloHash) {
           console.error("[auth] SOLO_EMAIL ou SOLO_PASSWORD_HASH manquant dans .env");
           return null;
         }
 
-        if (email !== soloEmail) {
-          console.log("[auth-debug] FAIL: email mismatch");
-          return null;
-        }
+        if (email !== soloEmail) return null;
 
         const passwordMatch = await bcrypt.compare(password, soloHash);
-        console.log("[auth-debug] bcrypt.compare result:", passwordMatch);
-        if (!passwordMatch) {
-          console.log("[auth-debug] FAIL: bcrypt mismatch");
-          return null;
-        }
-        console.log("[auth-debug] === AUTH SUCCESS, going to DB upsert ===");
+        if (!passwordMatch) return null;
 
         // Récupération ou création de l'utilisateur en DB
         const user = await prisma.user.upsert({
