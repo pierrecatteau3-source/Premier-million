@@ -49,15 +49,6 @@ function formatPct(value: number | null | undefined) {
   return `${sign}${value.toFixed(1)} %`;
 }
 
-function formatDateShort(iso: string | undefined) {
-  if (!iso) return null;
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-  }).format(new Date(iso));
-}
-
 function today() {
   return new Date().toISOString().split("T")[0];
 }
@@ -300,23 +291,11 @@ export function AssetManager({ piliers, priceMap = {} }: Props) {
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">
                       Pilier
                     </th>
-                    <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground sm:table-cell">
-                      Type
-                    </th>
-                    <th className="hidden px-4 py-3 text-left font-medium text-muted-foreground sm:table-cell">
-                      Mis à jour
-                    </th>
                     <th className="hidden px-4 py-3 text-right font-medium text-muted-foreground xl:table-cell">
                       Quantité
                     </th>
-                    <th className="hidden px-4 py-3 text-right font-medium text-muted-foreground xl:table-cell">
-                      PMP
-                    </th>
                     <th className="px-4 py-3 text-right font-medium text-muted-foreground">
                       Valeur
-                    </th>
-                    <th className="hidden px-4 py-3 text-right font-medium text-muted-foreground lg:table-cell">
-                      Investi
                     </th>
                     <th className="hidden px-4 py-3 text-right font-medium text-muted-foreground lg:table-cell">
                       +/− latent
@@ -354,25 +333,13 @@ export function AssetManager({ piliers, priceMap = {} }: Props) {
                               {PILIER_LABEL[asset.pilier]}
                             </span>
                           </td>
-                          <td className="hidden px-4 py-3 text-muted-foreground sm:table-cell">
-                            {asset.type}
-                          </td>
-                          <td className="hidden px-4 py-3 text-muted-foreground sm:table-cell">
-                            {formatDateShort(asset.latestDate) ?? "—"}
-                          </td>
                           <td className="hidden px-4 py-3 text-right tabular-nums text-muted-foreground xl:table-cell">
                             {asset.quantiteTotal != null
                               ? asset.quantiteTotal.toLocaleString("fr-FR", { maximumFractionDigits: 6 })
                               : "—"}
                           </td>
-                          <td className="hidden px-4 py-3 text-right tabular-nums text-muted-foreground xl:table-cell">
-                            {asset.pmp != null ? formatEur(asset.pmp) : "—"}
-                          </td>
                           <td className="px-4 py-3 text-right tabular-nums font-medium">
                             {formatEur(asset.latestValue)}
-                          </td>
-                          <td className="hidden px-4 py-3 text-right tabular-nums text-muted-foreground lg:table-cell">
-                            {formatEur(asset.coutRevient)}
                           </td>
                           <td className="hidden px-4 py-3 text-right tabular-nums lg:table-cell">
                             {asset.pvLatente != null ? (
@@ -460,7 +427,7 @@ export function AssetManager({ piliers, priceMap = {} }: Props) {
                         {/* ── Formulaire snapshot inline ─────────── */}
                         {snapshotOpen === asset.id && (
                           <tr className="bg-muted/20">
-                            <td colSpan={10} className="px-4 py-3">
+                            <td colSpan={6} className="px-4 py-3">
                               <div className="flex flex-wrap items-end gap-3">
                                 <div className="space-y-1">
                                   <label className="text-xs font-medium">
@@ -525,7 +492,7 @@ export function AssetManager({ piliers, priceMap = {} }: Props) {
                         {/* ── Formulaire ticker / pricingMode inline ─ */}
                         {editingId === asset.id && (
                           <tr className="bg-muted/20">
-                            <td colSpan={10} className="px-4 py-3">
+                            <td colSpan={6} className="px-4 py-3">
                               {asset.pilier === "LIQUIDITE" ? (
                                 <p className="text-xs text-muted-foreground">
                                   Le Compte courant est toujours en saisie manuelle — pas de ticker ni de pricing live.
@@ -591,7 +558,7 @@ export function AssetManager({ piliers, priceMap = {} }: Props) {
                         {/* ── Transaction form inline — masqué pour LIQUIDITE ─ */}
                         {expandedAssetId === asset.id && asset.pilier !== "LIQUIDITE" && (
                           <tr className="bg-muted/10">
-                            <td colSpan={10} className="px-4 py-4">
+                            <td colSpan={6} className="px-4 py-4">
                               <TransactionForm
                                 assetId={asset.id}
                                 assetName={asset.name}
@@ -606,13 +573,13 @@ export function AssetManager({ piliers, priceMap = {} }: Props) {
                 </tbody>
                 <tfoot>
                   <tr className="border-t-2 border-border bg-muted/30">
-                    <td colSpan={6} className="px-4 py-3 font-semibold">
+                    <td colSpan={3} className="px-4 py-3 font-semibold">
                       Total portefeuille
                     </td>
                     <td className="px-4 py-3 text-right tabular-nums font-bold">
                       {formatEur(total)}
                     </td>
-                    <td colSpan={3} />
+                    <td colSpan={2} />
                   </tr>
                 </tfoot>
               </table>

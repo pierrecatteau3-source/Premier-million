@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PortfolioChart } from "@/components/portfolio/PortfolioChart";
+import { PilierChart } from "@/components/portfolio/PilierChart";
 import { cn } from "@/lib/utils";
+import type { PilierSummary } from "@/types";
 
 interface Evolution {
   deltaEur: number;
@@ -11,7 +13,8 @@ interface Evolution {
 }
 
 interface Props {
-  totalBrut: number;
+  totalValue: number;
+  piliers: PilierSummary[];
 }
 
 function formatEur(value: number) {
@@ -22,7 +25,7 @@ function formatEur(value: number) {
   }).format(value);
 }
 
-export function PortfolioHero({ totalBrut }: Props) {
+export function PortfolioHero({ totalValue, piliers }: Props) {
   const [evolution, setEvolution] = useState<Evolution | null>(null);
 
   const isPositive = evolution !== null && evolution.deltaEur > 0;
@@ -39,7 +42,7 @@ export function PortfolioHero({ totalBrut }: Props) {
                 Patrimoine total
               </p>
               <p className="text-4xl font-bold tabular-nums tracking-tight">
-                {formatEur(totalBrut)}
+                {formatEur(totalValue)}
               </p>
             </div>
             <div className="flex flex-col gap-0.5 pb-1">
@@ -68,15 +71,26 @@ export function PortfolioHero({ totalBrut }: Props) {
         </CardContent>
       </Card>
 
-      {/* Graphique — pleine largeur */}
-      <Card className="shadow-sm rounded-xl">
-        <CardHeader>
-          <CardTitle className="text-base">Évolution du patrimoine</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <PortfolioChart onEvolutionChange={setEvolution} />
-        </CardContent>
-      </Card>
+      {/* Grille : graphique d'évolution à gauche, répartition par pilier à droite */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="shadow-sm rounded-xl">
+          <CardHeader>
+            <CardTitle className="text-base">Évolution du patrimoine</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PortfolioChart onEvolutionChange={setEvolution} />
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm rounded-xl">
+          <CardHeader>
+            <CardTitle className="text-base">Répartition par pilier</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PilierChart piliers={piliers} />
+          </CardContent>
+        </Card>
+      </div>
     </>
   );
 }

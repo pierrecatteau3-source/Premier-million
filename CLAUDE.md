@@ -273,6 +273,10 @@ Avant de **créer** un composant, un helper, un service ou un type — **fais l'
 
 ## 8. Workflow Git & GitHub
 
+### 8.0 Cadence de commit (règle solo) : **commit + push après chaque résumé**
+
+> **Phase solo MVP.** Dès qu'une tâche est terminée et que le résumé a été présenté à l'utilisateur, l'agent **commit ET push automatiquement** les changements — sans attendre une demande explicite à chaque fois. Message de commit au format §6.4. Sur la phase solo actuelle, le push se fait directement sur `main` (la stratégie feature-branch + PR ci-dessous s'appliquera à l'ouverture aux amis en v2.0).
+
 ### 8.1 Stratégie de branches : **main protégée + feature branches**
 
 ```

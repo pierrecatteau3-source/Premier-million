@@ -8,7 +8,6 @@ import { AllocationGap } from "@/components/portfolio/AllocationGap";
 import { PortfolioClient } from "@/components/portfolio/PortfolioClient";
 import { PortfolioHero } from "@/components/portfolio/PortfolioHero";
 import { RecurringInvestments } from "@/components/portfolio/RecurringInvestments";
-import { PilierChart } from "@/components/portfolio/PilierChart";
 import {
   Card,
   CardContent,
@@ -33,34 +32,15 @@ export default async function PortefeuillePage() {
 
   const userId = session.user.id;
 
-  const [summary, recurringRaw, user] = await Promise.all([
+  const [summary, recurringRaw] = await Promise.all([
     getPortfolioSummary(userId),
     prisma.recurringInvestment.findMany({
       where: { userId },
       include: { asset: { select: { name: true, pilier: true } } },
       orderBy: { createdAt: "desc" },
     }),
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        epargnePrecautionMontant: true,
-        epargnePrecaution: true,
-        epargneMensuelle: true,
-      },
-    }),
   ]);
   const { piliers, lastUpdated, liquiditeSummary } = summary;
-
-  // Formule canonique — identique à dashboard/page.tsx et risque/page.tsx
-  // epargnePrecautionMontant (saisie directe) est prioritaire ;
-  // sinon fallback calculé : nb mois × dépense mensuelle.
-  const matelasEur: number = user?.epargnePrecautionMontant
-    ?? ((user?.epargnePrecaution ?? 0) * (user?.epargneMensuelle ?? 0));
-
-  // summary.totalValue = somme des actifs investis (snapshots) + liquidités (LIQUIDITE).
-  // Le Cash externe (epargnePrecautionMontant) est hors actifs — on l'additionne.
-  // Patrimoine total brut = actifs investis + liquidités + Cash / précaution
-  const totalBrut = summary.totalValue + matelasEur;
 
   // Les piliers reçus du service sont déjà calculés sur totalInvestissable
   // (hors LIQUIDITE) — pas besoin de recalculer les pourcentages.
@@ -93,16 +73,8 @@ export default async function PortefeuillePage() {
       />
 
       <div className="p-6 space-y-6">
-        {/* Hero card + graphique (gestion du badge d'évolution dynamique) */}
-        <PortfolioHero totalBrut={totalBrut} />
-
-        {/* Répartition par pilier — diagramme */}
-        <div className="rounded-2xl border border-border/40 bg-card p-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">
-            Répartition par pilier
-          </p>
-          <PilierChart piliers={piliersNet} />
-        </div>
+        {/* Hero card + graphique évolution (gauche) + répartition par pilier (droite) */}
+        <PortfolioHero totalValue={summary.totalValue} piliers={piliersNet} />
 
         {/* Écart allocation */}
         <Card className="shadow-sm rounded-xl">
