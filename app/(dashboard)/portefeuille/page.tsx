@@ -89,24 +89,27 @@ export default async function PortefeuillePage() {
           </CardContent>
         </Card>
 
-        {/* Gestion des actifs */}
-        <PortfolioClient piliers={piliersForManager} />
+        {/* Détail des actifs (gauche) + Investissements automatiques (droite) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          {/* Gestion des actifs */}
+          <PortfolioClient piliers={piliersForManager} />
 
-        {/* Investissements automatiques */}
-        <Card className="shadow-sm rounded-xl">
-          <CardHeader>
-            <CardTitle className="text-base">Investissements automatiques</CardTitle>
-            <CardDescription>
-              Programmes d&apos;investissement récurrents sur vos actifs.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <RecurringInvestments
-              initialData={recurringData}
-              assets={assetsList}
-            />
-          </CardContent>
-        </Card>
+          {/* Investissements automatiques */}
+          <Card className="shadow-sm rounded-xl">
+            <CardHeader>
+              <CardTitle className="text-base">Investissements automatiques</CardTitle>
+              <CardDescription>
+                Programmes d&apos;investissement récurrents sur vos actifs.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <RecurringInvestments
+                initialData={recurringData}
+                assets={assetsList}
+              />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </>
   );

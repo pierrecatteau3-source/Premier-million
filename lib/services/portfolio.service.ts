@@ -272,6 +272,58 @@ export async function getPortfolioHistoryByRange(
   return buildHistoryFromRange(userId, range.startDate, range.endDate);
 }
 
+/**
+ * Historique de valeur d'UN actif sur une plage, avec carry-forward.
+ * `totalValue` représente ici la valeur de l'actif seul (réutilise HistoryPoint).
+ */
+export async function getAssetHistoryByRange(
+  userId: string,
+  assetId: string,
+  range: DateRange
+): Promise<HistoryPoint[]> {
+  const { startDate, endDate } = range;
+  const endOfDay = new Date(endDate);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const snapshots = await prisma.snapshot.findMany({
+    where: {
+      assetId,
+      asset: { userId },
+      date: { gte: new Date(0), lte: endOfDay },
+    },
+    orderBy: { date: "asc" },
+    select: { value: true, date: true },
+  });
+
+  if (snapshots.length === 0) return [];
+
+  // Valeur reportée avant la période + points épars dans la période
+  const sparsePoints: Record<string, number> = {};
+  let carryValue = 0;
+  for (const snap of snapshots) {
+    if (snap.date < startDate) {
+      carryValue = snap.value;
+    } else {
+      sparsePoints[toLocalDateKey(snap.date)] = snap.value;
+    }
+  }
+
+  // Remplissage journalier entre startDate et endDate
+  const result: HistoryPoint[] = [];
+  const cursor = new Date(startDate);
+  cursor.setHours(0, 0, 0, 0);
+  const endLocal = new Date(endDate);
+  endLocal.setHours(0, 0, 0, 0);
+  let lastKnown = carryValue;
+  while (cursor <= endLocal) {
+    const key = toLocalDateKey(cursor);
+    if (sparsePoints[key] !== undefined) lastKnown = sparsePoints[key];
+    result.push({ date: key, totalValue: lastKnown });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return result;
+}
+
 function buildEmpty(): PortfolioSummary {
   return {
     totalValue: 0,

@@ -24,6 +24,7 @@ import { ALLOCATION_TYPES, TYPE_TO_PILIER } from "@/lib/constants/allocation-typ
 import { AssetPriceRow } from "@/components/portfolio/AssetPriceRow";
 import { TransactionForm } from "@/components/portfolio/TransactionForm";
 import { MigrationPrompt } from "@/components/portfolio/MigrationPrompt";
+import { AssetDetailModal, type AssetDetailData } from "@/components/portfolio/AssetDetailModal";
 import type { PriceMap } from "@/types/prices";
 
 interface Props {
@@ -153,6 +154,9 @@ export function AssetManager({ piliers, priceMap = {} }: Props) {
 
   // ── Transaction form expansion ───────────────────────────────
   const [expandedAssetId, setExpandedAssetId] = useState<string | null>(null);
+
+  // ── Modal détail actif ───────────────────────────────────────
+  const [detailAsset, setDetailAsset] = useState<AssetDetailData | null>(null);
 
   function handleDelete(assetId: string) {
     if (!confirm("Supprimer cet actif et tous ses snapshots ?")) return;
@@ -312,7 +316,14 @@ export function AssetManager({ piliers, priceMap = {} }: Props) {
                           className="transition-colors hover:bg-muted/30"
                         >
                           <td className="px-4 py-3">
-                            <div className="font-medium">{asset.name}</div>
+                            <button
+                              type="button"
+                              onClick={() => setDetailAsset(asset)}
+                              className="text-left font-medium transition-colors hover:text-primary hover:underline"
+                              title="Voir le détail de l'actif"
+                            >
+                              {asset.name}
+                            </button>
                             <div className="mt-0.5">
                               <AssetPriceRow
                                 ticker={asset.ticker}
@@ -660,6 +671,9 @@ export function AssetManager({ piliers, priceMap = {} }: Props) {
           </CardContent>
         </Card>
       )}
+
+      {/* ── Modal détail d'un actif ──────────────────────────────── */}
+      <AssetDetailModal asset={detailAsset} onClose={() => setDetailAsset(null)} />
     </div>
   );
 }
