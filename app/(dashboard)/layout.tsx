@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { Sidebar } from "@/components/layout/Sidebar";
+import { AppSidebar } from "@/components/layout/AppSidebar";
+import { Topbar } from "@/components/layout/Topbar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { AchievementChecker } from "@/components/achievements/AchievementChecker";
 
@@ -17,13 +18,16 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen overflow-hidden">
       {/* Sidebar desktop (md+) */}
-      <Sidebar />
+      <AppSidebar />
 
       {/* Contenu principal */}
-      <main className="bg-background flex-1 overflow-y-auto pb-20 md:pb-0">
-        {children}
+      <main className="relative z-[1] flex-1 overflow-y-auto pb-24 md:pb-12">
+        <div className="mx-auto max-w-[1340px] px-5 pt-8 md:px-12 md:pt-9">
+          <Topbar />
+          {children}
+        </div>
       </main>
 
       {/* Navigation mobile (< md) */}

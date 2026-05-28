@@ -2,8 +2,8 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Header } from "@/components/layout/Header";
 import { AchievementGrid } from "@/components/achievements/AchievementGrid";
+import { SuccesHero } from "@/components/achievements/SuccesHero";
 import { ACHIEVEMENTS } from "@/lib/achievements/definitions";
 import type { UserAchievementStatus } from "@/types";
 
@@ -32,17 +32,27 @@ export default async function SuccesPage() {
     unlockedAt: unlockedMap.get(a.id)?.toISOString() ?? null,
   }));
 
+  const total = achievements.length;
   const totalUnlocked = achievements.filter((a) => a.unlocked).length;
+  const pct = total > 0 ? Math.round((totalUnlocked / total) * 100) : 0;
+
+  const tiers = { bronze: 0, silver: 0, gold: 0, diamond: 0 };
+  for (const a of achievements) {
+    if (a.unlocked && a.tier in tiers) tiers[a.tier] += 1;
+  }
+
+  const next = achievements.find((a) => !a.unlocked && !a.hidden)?.label ?? null;
 
   return (
     <>
-      <Header
-        title="Succès"
-        description={`${totalUnlocked} / ${achievements.length} succès débloqués`}
+      <SuccesHero
+        unlocked={totalUnlocked}
+        total={total}
+        pct={pct}
+        tiers={tiers}
+        next={next}
       />
-      <div className="p-6">
-        <AchievementGrid achievements={achievements} />
-      </div>
+      <AchievementGrid achievements={achievements} />
     </>
   );
 }
