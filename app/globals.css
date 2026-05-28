@@ -3,74 +3,92 @@
 @tailwind utilities;
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Premier Million — Design System (dark only, accent or #f59e0b)
-   Inspiration : Revolut × Finary
+   Premier Million — Design System v2 (dark only)
+   DA « Bâtisseur de trésor » · brun expresso + or champagne + cuivre + crème
+   Tokens shadcn (HSL triplets) + tokens custom --pm-* (hex / rgba)
    ───────────────────────────────────────────────────────────────────────────── */
 
 @layer base {
   :root,
   .dark {
-    /* Fond principal — noir chaud, légèrement warmer qu'un pur noir */
-    --background: 30 6% 5%;
-    --foreground: 30 10% 97%;
+    /* ── Mapping shadcn (triplets HSL, consommés via hsl(var(--x) / <alpha>)) ── */
+    --background: 36 24% 6%;        /* #14110d expresso quasi-noir */
+    --foreground: 41 60% 89%;       /* #f5ead0 crème ivoire */
 
-    /* Surfaces — cards et popover (popover plus contrasté pour bien se détacher) */
-    --card: 30 6% 8%;
-    --card-foreground: 30 10% 97%;
-    --popover: 30 6% 14%;
-    --popover-foreground: 30 10% 97%;
+    --card: 39 18% 10%;             /* #1e1a14 surface */
+    --card-foreground: 41 60% 89%;
+    --popover: 36 18% 11%;          /* surface opaque (pop-ups fond plein) */
+    --popover-foreground: 41 60% 89%;
 
-    /* Primaire — or (#f59e0b ≈ HSL 38 92% 50%) */
-    --primary: 38 92% 50%;
-    --primary-foreground: 30 10% 8%;
+    --primary: 42 70% 60%;          /* #e0b450 or champagne */
+    --primary-foreground: 36 40% 8%;
 
-    /* Secondaire — surface neutre élevée */
-    --secondary: 30 6% 14%;
-    --secondary-foreground: 30 10% 95%;
+    --secondary: 36 18% 12%;        /* #252019 surface-2 */
+    --secondary-foreground: 41 55% 89%;
 
-    /* Muted — texte secondaire / fonds discrets */
-    --muted: 30 6% 12%;
-    --muted-foreground: 30 5% 60%;
+    --muted: 36 16% 14%;
+    --muted-foreground: 36 24% 53%; /* #a08b6e ink-muted */
 
-    /* Accent — hover / état actif (or atténué) */
-    --accent: 38 50% 18%;
-    --accent-foreground: 38 80% 75%;
+    --accent: 40 40% 16%;           /* hover doré atténué */
+    --accent-foreground: 42 75% 70%;
 
-    /* Sémantique */
-    --destructive: 0 65% 55%;
-    --destructive-foreground: 0 0% 100%;
-    --success: 142 65% 45%;
-    --success-foreground: 0 0% 100%;
+    --destructive: 8 60% 62%;       /* #d97464 corail doux */
+    --destructive-foreground: 36 40% 96%;
+    --success: 96 44% 61%;          /* #94c870 vert olive */
+    --success-foreground: 36 40% 8%;
 
-    /* Inputs & focus */
-    --border: 30 5% 16%;
-    --input: 30 5% 16%;
-    --ring: 38 92% 50%;
+    --border: 36 16% 13%;           /* divider subtil (≈ rule) */
+    --input: 36 16% 16%;
+    --ring: 42 70% 60%;             /* or */
 
-    /* Charts — déclinaison de l'or + complémentaires */
-    --chart-1: 38 92% 50%;
-    --chart-2: 30 80% 45%;
-    --chart-3: 142 65% 45%;
-    --chart-4: 190 70% 50%;
-    --chart-5: 260 55% 60%;
+    /* Charts — or / cuivre / vert / ambre / corail */
+    --chart-1: 42 70% 60%;
+    --chart-2: 30 53% 54%;
+    --chart-3: 96 44% 61%;
+    --chart-4: 32 60% 45%;
+    --chart-5: 8 60% 62%;
 
-    --radius: 0.875rem;
+    --radius: 1rem;                 /* 16px (cards) */
+    --radius-md: 0.625rem;          /* 10px — référencé par les variantes de bouton */
+
+    /* ── Tokens custom Premier Million (hex / rgba, usage CSS direct) ── */
+    --pm-bg: #14110d;
+    --pm-bg-deep: #0b0908;
+    --pm-surface: #1e1a14;
+    --pm-surface-2: #252019;
+    --pm-surface-3: #2f2920;
+    --pm-surface-hover: #38301f;
+
+    --pm-gold: #e0b450;
+    --pm-gold-bright: #f5d57a;
+    --pm-gold-deep: #a07a30;
+    --pm-gold-glow: rgba(224, 180, 80, 0.18);
+    --pm-gold-faint: rgba(224, 180, 80, 0.10);
+
+    --pm-copper: #c8884a;
+    --pm-copper-bright: #dba566;
+    --pm-copper-deep: #8a5e2e;
+
+    --pm-ink: #f5ead0;
+    --pm-ink-soft: #d6c595;
+    --pm-ink-muted: #a08b6e;
+    --pm-ink-dim: #5a4a3e;
+    --pm-ink-faint: #3d2e26;
+
+    --pm-positive: #94c870;
+    --pm-positive-deep: #5a8b3e;
+    --pm-negative: #d97464;
+    --pm-negative-deep: #9a4434;
+
+    --pm-bronze: #c87a3e;
+    --pm-bronze-deep: #8a4a1e;
+    --pm-silver: #c5c0b0;
+    --pm-silver-deep: #7e7866;
+
+    --pm-rule: rgba(245, 230, 200, 0.07);
+    --pm-rule-strong: rgba(245, 230, 200, 0.16);
+    --pm-rule-gold: rgba(224, 180, 80, 0.28);
   }
-}
-
-/* ── Gradients utilitaires ──────────────────────────────────────────────── */
-.gradient-gold {
-  background: linear-gradient(135deg, hsl(38 92% 55%), hsl(28 90% 50%));
-}
-.gradient-gold-text {
-  background: linear-gradient(135deg, hsl(45 95% 65%), hsl(38 92% 50%) 40%, hsl(28 90% 45%));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  color: transparent;
-}
-.gradient-surface {
-  background: linear-gradient(180deg, hsl(30 6% 9% / 1), hsl(30 6% 6% / 1));
 }
 
 /* ── Base ───────────────────────────────────────────────────────────────── */
@@ -86,14 +104,40 @@
   }
 
   body {
-    @apply bg-background text-foreground;
-    font-family: var(--font-sans);
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01";
+    @apply text-foreground;
+    font-family: var(--font-sans), Geist, system-ui, sans-serif;
+    letter-spacing: -0.002em;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    /* Glow de fond doré (haut-droite + bas-gauche) sur le brun expresso */
+    background:
+      radial-gradient(ellipse 800px 600px at 100% 0%, rgba(224, 180, 80, 0.05), transparent 60%),
+      radial-gradient(ellipse 600px 800px at 0% 100%, rgba(184, 140, 62, 0.035), transparent 60%),
+      hsl(var(--background));
+    background-attachment: fixed;
   }
 
-  /* Select natif — style aligné avec la DA */
+  /* Grain film subtil sur toute l'app (une seule fois, global) */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    opacity: 0.5;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.95   0 0 0 0 0.9   0 0 0 0 0.7   0 0 0 0.45 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+
+  /* Titres et chiffres clés — police display caractérielle */
+  h1, h2, h3, h4 {
+    font-family: var(--font-display), "Bricolage Grotesque", system-ui, sans-serif;
+    letter-spacing: -0.025em;
+  }
+  h1 { font-weight: 700; }
+
+  /* Select natif — aligné DA */
   select {
     appearance: none;
     -webkit-appearance: none;
@@ -107,7 +151,7 @@
     height: 2.25rem;
     cursor: pointer;
     outline: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a08b6e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 0.625rem center;
     background-size: 1rem;
@@ -142,7 +186,21 @@
   }
 }
 
-/* ── Utilitaires ────────────────────────────────────────────────────────── */
+/* ── Gradients & helpers utilitaires ───────────────────────────────────────── */
+.gradient-gold {
+  background: linear-gradient(135deg, var(--pm-gold-bright), var(--pm-gold) 50%, var(--pm-gold-deep));
+}
+.gradient-gold-text {
+  background: linear-gradient(135deg, var(--pm-gold-bright), var(--pm-gold) 45%, var(--pm-gold-deep));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+.gradient-surface {
+  background: linear-gradient(180deg, var(--pm-surface), var(--pm-bg));
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
@@ -150,45 +208,33 @@
   .scrollbar-gutter {
     scrollbar-gutter: stable;
   }
+  .font-display {
+    font-family: var(--font-display), "Bricolage Grotesque", system-ui, sans-serif;
+  }
 
-  /* Hairline border — bordure douce premium */
+  /* Bordure douce premium */
   .border-hairline {
     border: 1px solid hsl(var(--border));
     background: hsl(var(--card));
   }
 
-  /* Glow autour d'éléments importants */
+  /* Filets dorés (cards accentuées, pills) */
+  .rule-gold {
+    border-color: var(--pm-rule-gold);
+  }
+
+  /* Glow doré autour d'éléments importants */
   .ring-gold {
-    box-shadow: 0 0 0 1px hsl(38 92% 50% / 0.4), 0 0 30px -10px hsl(38 92% 50% / 0.6);
+    box-shadow: 0 0 0 1px var(--pm-rule-gold), 0 0 30px -10px var(--pm-gold-glow);
   }
 }
 
-/* ── Typographie ─────────────────────────────────────────────────────────── */
-h1, h2, h3 { letter-spacing: -0.03em; }
-h1 { font-weight: 700; }
+/* ── Typographie helpers ────────────────────────────────────────────────────── */
 .tabular-nums { font-variant-numeric: tabular-nums; }
 
-/* ── Animations ──────────────────────────────────────────────────────────── */
+/* ── Animations ──────────────────────────────────────────────────────────────── */
 
-/* Courbes animées — fond style Revolut, drift horizontal lent */
-@keyframes curve-drift-slow {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-25%); }
-}
-@keyframes curve-drift-medium {
-  0%   { transform: translateX(-50%); }
-  100% { transform: translateX(-25%); }
-}
-@keyframes curve-drift-slowest {
-  0%   { transform: translateX(-12%); }
-  100% { transform: translateX(0); }
-}
-
-.animate-curve-drift-slow    { animation: curve-drift-slow    45s linear infinite alternate; }
-.animate-curve-drift-medium  { animation: curve-drift-medium  32s linear infinite alternate; }
-.animate-curve-drift-slowest { animation: curve-drift-slowest 60s linear infinite alternate; }
-
-/* Fade in — pour les transitions de pages */
+/* Fade in — transitions de pages */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -197,7 +243,25 @@ h1 { font-weight: 700; }
   animation: fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Shimmer — pour skeletons et highlights */
+/* Pulse — live-dot topbar */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.animate-pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* Glide — chibi skateur sur la crête de la courbe (perf positive) */
+@keyframes glide {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50%      { transform: translateY(-4px) rotate(2deg); }
+}
+.animate-glide {
+  animation: glide 2.4s ease-in-out infinite;
+}
+
+/* Shimmer — skeletons et highlights */
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position: 200% 0; }

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { SessionProvider } from "@/components/layout/SessionProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
-import { AnimatedCurvesBackground } from "@/components/ui/animated-curves-background";
 import NextTopLoader from "nextjs-toploader";
 
 const geistSans = localFont({
@@ -13,10 +13,15 @@ const geistSans = localFont({
   display: "swap",
 });
 
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
   variable: "--font-mono",
-  weight: "100 900",
   display: "swap",
 });
 
@@ -34,11 +39,10 @@ export default function RootLayout({
     <html lang="fr" className="dark" suppressHydrationWarning>
       <body
         suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
+        className={`${geistSans.variable} ${bricolage.variable} ${jetbrainsMono.variable} font-sans antialiased`}
       >
-        <NextTopLoader color="#f59e0b" showSpinner={false} height={2} />
+        <NextTopLoader color="#e0b450" showSpinner={false} height={2} />
         <ThemeProvider>
-          <AnimatedCurvesBackground />
           <SessionProvider>{children}</SessionProvider>
         </ThemeProvider>
       </body>
