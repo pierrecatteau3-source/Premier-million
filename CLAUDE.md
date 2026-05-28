@@ -524,6 +524,8 @@ Le système actuel (`lib/analysisRateLimit.ts`) limite :
 
 **Phase 1 — Design system global (en cours) :**
 
+> 📐 **Charte graphique** : patterns visuels réutilisables (pop-ups fond plein + titres or, tokens couleur, sticky tables, piège channels-only) documentés dans [`docs/charte-graphique.md`](docs/charte-graphique.md). À consulter et tenir à jour avant tout travail visuel.
+
 - [ ] Décision direction visuelle (palette, typo, mood)
 - [ ] Mise à jour `tailwind.config.ts` (couleurs custom, typo scale, spacing)
 - [ ] Mise à jour `app/globals.css` (variables CSS, base styles, dark theme)

@@ -289,7 +289,7 @@ export function AssetManager({ piliers, priceMap = {} }: Props) {
               <div className="max-h-[440px] overflow-y-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border [&>th]:sticky [&>th]:top-0 [&>th]:z-10 [&>th]:bg-muted">
+                  <tr className="border-b border-border [&>th]:sticky [&>th]:top-0 [&>th]:z-10 [&>th]:bg-[hsl(var(--muted))]">
                     <th className="px-4 py-3 text-left font-medium text-muted-foreground">
                       Actif
                     </th>
@@ -584,7 +584,7 @@ export function AssetManager({ piliers, priceMap = {} }: Props) {
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr className="border-t-2 border-border [&>td]:sticky [&>td]:bottom-0 [&>td]:z-10 [&>td]:bg-muted">
+                  <tr className="border-t-2 border-border [&>td]:sticky [&>td]:bottom-0 [&>td]:z-10 [&>td]:bg-[hsl(var(--muted))]">
                     <td colSpan={3} className="px-4 py-3 font-semibold">
                       Total portefeuille
                     </td>
