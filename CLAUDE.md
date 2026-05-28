@@ -540,12 +540,13 @@ Pour chaque onglet : audit visuel actuel → propositions → validation utilisa
 
 **Phase 3 — Gamification poussée (promue de v3.0 vers MVP, 2026-05-27) :**
 
+- [x] Page `/personnage` placeholder visuel (2 SVG : Stratège + Aventurière) — validation structure
+- [ ] **EN STANDBY — assets persos** : l'utilisateur fournira les modèles Midjourney finaux quand il aura le temps. Les SVG actuels dans `public/character/` sont des placeholders à remplacer (sans toucher au code, juste les fichiers `.svg` → `.png`).
 - [ ] Schéma Prisma : ajouter modèles `CharacterCustomization`, `UnlockedItem`, `ItemCatalog`
 - [ ] Migration de la table `User` : champs `avatarConfig`, `displayName`, `level`, `xp`
 - [ ] Flow de création de personnage (page `/onboarding/character` ou modal au premier login)
-- [ ] Catalogue d'items (skins, badges, frames, backgrounds, titles)
+- [ ] Catalogue d'items 5 slots : tenue / couvre-chef / lunettes / bijou / accessoire-main
 - [ ] Logique d'unlock : chaque achievement débloque 1+ items
-- [ ] Page `/profil` enrichie : aperçu personnage + inventaire + customisation
 - [ ] Affichage du personnage dans la sidebar + dashboard
 - [ ] Effets visuels d'unlock (animations)
 
