@@ -15,6 +15,7 @@ import {
   Sun,
   Moon,
   Trophy,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
@@ -49,6 +50,11 @@ const navItems = [
     href: "/profil",
     label: "Profil investisseur & Stratégie",
     icon: UserCircle,
+  },
+  {
+    href: "/personnage",
+    label: "Personnage",
+    icon: Sparkles,
   },
   {
     href: "/succes",

@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 360" width="240" height="360">
+  <defs>
+    <linearGradient id="s-skin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e3b58a"/>
+      <stop offset="100%" stop-color="#9a6f47"/>
+    </linearGradient>
+    <linearGradient id="s-skin-shadow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="transparent"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0.25"/>
+    </linearGradient>
+    <linearGradient id="s-suit" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a3a42"/>
+      <stop offset="100%" stop-color="#1c1c20"/>
+    </linearGradient>
+    <linearGradient id="s-shirt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f5f1e8"/>
+      <stop offset="100%" stop-color="#c8c0aa"/>
+    </linearGradient>
+    <linearGradient id="s-tie" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <linearGradient id="s-hair" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2a2118"/>
+      <stop offset="100%" stop-color="#150f0a"/>
+    </linearGradient>
+    <radialGradient id="s-shadow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#000" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Ombre au sol -->
+  <ellipse cx="120" cy="348" rx="65" ry="8" fill="url(#s-shadow)"/>
+
+  <!-- Jambes -->
+  <path d="M 96 240 L 91 345 L 113 345 L 117 248 Z" fill="url(#s-suit)"/>
+  <path d="M 123 248 L 127 345 L 149 345 L 144 240 Z" fill="url(#s-suit)"/>
+
+  <!-- Chaussures -->
+  <ellipse cx="102" cy="346" rx="14" ry="5" fill="#0a0a0c"/>
+  <ellipse cx="138" cy="346" rx="14" ry="5" fill="#0a0a0c"/>
+
+  <!-- Bras (derrière le corps) -->
+  <path d="M 64 140 Q 60 200 68 250 L 80 250 Q 76 200 78 140 Z" fill="url(#s-suit)"/>
+  <path d="M 162 140 Q 164 200 172 250 L 160 250 Q 164 200 162 140 Z" fill="url(#s-suit)"/>
+
+  <!-- Mains -->
+  <circle cx="74" cy="252" r="9" fill="url(#s-skin)"/>
+  <circle cx="166" cy="252" r="9" fill="url(#s-skin)"/>
+
+  <!-- Buste / costume -->
+  <path d="M 78 138 Q 80 130 92 130 L 148 130 Q 160 130 162 138 L 162 245 Q 160 252 150 252 L 90 252 Q 80 252 78 245 Z"
+        fill="url(#s-suit)"/>
+
+  <!-- Chemise (V ouvert) -->
+  <path d="M 105 130 L 135 130 L 130 175 L 120 200 L 110 175 Z" fill="url(#s-shirt)"/>
+
+  <!-- Cravate or -->
+  <path d="M 116 142 L 124 142 L 126 145 L 132 200 L 120 215 L 108 200 L 114 145 Z" fill="url(#s-tie)"/>
+
+  <!-- Revers du costume -->
+  <path d="M 105 130 L 80 145 L 95 175 L 110 142 Z" fill="#1a1a1e" opacity="0.7"/>
+  <path d="M 135 130 L 160 145 L 145 175 L 130 142 Z" fill="#1a1a1e" opacity="0.7"/>
+
+  <!-- Cou -->
+  <rect x="110" y="110" width="20" height="22" fill="url(#s-skin)"/>
+  <rect x="110" y="110" width="20" height="22" fill="url(#s-skin-shadow)"/>
+
+  <!-- Tête -->
+  <ellipse cx="120" cy="92" rx="32" ry="38" fill="url(#s-skin)"/>
+  <ellipse cx="120" cy="92" rx="32" ry="38" fill="url(#s-skin-shadow)"/>
+
+  <!-- Cheveux : coupe nette ramenée en arrière -->
+  <path d="M 92 78 Q 95 55 120 52 Q 145 55 148 78 Q 150 90 146 92 Q 142 80 130 78 Q 120 76 110 78 Q 96 81 94 92 Q 90 90 92 78 Z"
+        fill="url(#s-hair)"/>
+
+  <!-- Yeux -->
+  <ellipse cx="108" cy="93" rx="2" ry="2.5" fill="#1a1a1e"/>
+  <ellipse cx="132" cy="93" rx="2" ry="2.5" fill="#1a1a1e"/>
+
+  <!-- Sourcils -->
+  <path d="M 102 86 Q 108 84 114 86" stroke="#1a1a1e" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  <path d="M 126 86 Q 132 84 138 86" stroke="#1a1a1e" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+
+  <!-- Nez (subtle line) -->
+  <path d="M 120 96 Q 118 105 120 110" stroke="#000" stroke-opacity="0.15" stroke-width="1.5" fill="none"/>
+
+  <!-- Bouche -->
+  <path d="M 113 116 Q 120 119 127 116" stroke="#5b3a2a" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+
+  <!-- Pli costume central -->
+  <line x1="120" y1="220" x2="120" y2="252" stroke="#000" stroke-opacity="0.2" stroke-width="1"/>
+</svg>
