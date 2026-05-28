@@ -143,7 +143,7 @@ function AssetChart({ assetId }: { assetId: string }) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <p className="text-xs font-semibold uppercase tracking-wider text-primary">
           Évolution
         </p>
         <div className="flex gap-1">
@@ -247,7 +247,10 @@ function AssetChart({ assetId }: { assetId: string }) {
 
 function InfoRow({ label, value, accent }: { label: string; value: React.ReactNode; accent?: "up" | "down" }) {
   return (
-    <div className="flex flex-col gap-0.5 rounded-lg bg-muted/40 px-3 py-2">
+    <div
+      className="flex flex-col gap-0.5 rounded-lg px-3 py-2"
+      style={{ backgroundColor: "hsl(var(--card))" }}
+    >
       <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
         {label}
       </span>
@@ -298,11 +301,14 @@ export function AssetDetailModal({ asset, onClose }: Props) {
         onClick={onClose}
       />
 
-      <div className="relative z-10 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-border bg-card p-6 shadow-2xl">
+      <div
+        className="relative z-10 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-border p-6 shadow-2xl"
+        style={{ backgroundColor: "hsl(var(--popover))" }}
+      >
         {/* En-tête */}
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-xl font-bold leading-tight">{asset.name}</h2>
+            <h2 className="text-xl font-bold leading-tight text-primary">{asset.name}</h2>
             <span className="mt-1 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
               <span
                 className="h-2 w-2 rounded-full"
