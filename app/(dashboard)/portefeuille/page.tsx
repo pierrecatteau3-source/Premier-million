@@ -76,40 +76,40 @@ export default async function PortefeuillePage() {
         {/* Hero card + graphique évolution (gauche) + répartition par pilier (droite) */}
         <PortfolioHero totalValue={summary.totalValue} piliers={piliersNet} />
 
-        {/* Écart allocation */}
-        <Card className="shadow-sm rounded-xl">
-          <CardHeader>
-            <CardTitle className="text-base">Écart vs allocation cible</CardTitle>
-            <CardDescription>
-              La barre verticale indique l&apos;objectif d&apos;allocation.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AllocationGap piliers={piliersNet} />
-          </CardContent>
-        </Card>
-
-        {/* Détail des actifs (gauche) + Investissements automatiques (droite) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        {/* Détail des actifs (gauche) + Écart vs allocation cible (droite, même hauteur) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           {/* Gestion des actifs */}
           <PortfolioClient piliers={piliersForManager} />
 
-          {/* Investissements automatiques */}
-          <Card className="shadow-sm rounded-xl">
+          {/* Écart allocation — barres verticales, hauteur calée sur le détail des actifs */}
+          <Card className="flex flex-col shadow-sm rounded-xl">
             <CardHeader>
-              <CardTitle className="text-base">Investissements automatiques</CardTitle>
+              <CardTitle className="text-base">Écart vs allocation cible</CardTitle>
               <CardDescription>
-                Programmes d&apos;investissement récurrents sur vos actifs.
+                La ligne horizontale indique l&apos;objectif d&apos;allocation.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <RecurringInvestments
-                initialData={recurringData}
-                assets={assetsList}
-              />
+            <CardContent className="flex-1">
+              <AllocationGap piliers={piliersNet} />
             </CardContent>
           </Card>
         </div>
+
+        {/* Investissements automatiques — pleine largeur */}
+        <Card className="shadow-sm rounded-xl">
+          <CardHeader>
+            <CardTitle className="text-base">Investissements automatiques</CardTitle>
+            <CardDescription>
+              Programmes d&apos;investissement récurrents sur vos actifs.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RecurringInvestments
+              initialData={recurringData}
+              assets={assetsList}
+            />
+          </CardContent>
+        </Card>
       </div>
     </>
   );
