@@ -17,8 +17,10 @@ export interface AchievementDef {
   tier: AchievementTier;
   /** Nom du composant Lucide */
   icon: string;
-  /** Si true, l'achievement n'apparaît que quand débloqué (effet surprise) */
+  /** Si true, l'achievement n'révèle son label/description qu'une fois débloqué */
   hidden?: boolean;
+  /** Phrase d'indice affichée tant que l'achievement hidden est verrouillé */
+  hint?: string;
 }
 
 export interface UserAchievementStatus extends AchievementDef {

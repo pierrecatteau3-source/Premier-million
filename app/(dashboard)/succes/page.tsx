@@ -26,6 +26,8 @@ export default async function SuccesPage() {
     category: a.category,
     tier: a.tier,
     icon: a.icon,
+    hidden: a.hidden,
+    hint: a.hint,
     unlocked: unlockedMap.has(a.id),
     unlockedAt: unlockedMap.get(a.id)?.toISOString() ?? null,
   }));

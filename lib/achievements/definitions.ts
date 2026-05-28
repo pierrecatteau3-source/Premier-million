@@ -229,6 +229,7 @@ export const ACHIEVEMENTS: AchievementWithCriteria[] = [
     tier: "bronze",
     icon: "CircleSlash",
     hidden: true,
+    hint: "Reste sans actif assez longtemps pour qu'on s'inquiète.",
     criteria: (ctx) => ctx.assetCount === 0 && ctx.accountAgeDays >= 7,
   },
 
@@ -271,6 +272,7 @@ export const ACHIEVEMENTS: AchievementWithCriteria[] = [
     tier: "diamond",
     icon: "Flame",
     hidden: true,
+    hint: "Quand toute la conviction part dans un seul pilier volatile…",
     criteria: (ctx) => (ctx.piliersPct["CRYPTO"] ?? 0) > 80,
   },
 
@@ -359,6 +361,7 @@ export const ACHIEVEMENTS: AchievementWithCriteria[] = [
     tier: "silver",
     icon: "Bed",
     hidden: true,
+    hint: "Trop dormir sur son cash a un nom.",
     criteria: (ctx) => (ctx.piliersPct["LIQUIDITE"] ?? 0) > 80,
   },
   {
@@ -542,6 +545,7 @@ export const ACHIEVEMENTS: AchievementWithCriteria[] = [
     tier: "bronze",
     icon: "Brain",
     hidden: true,
+    hint: "Oublier d'investir pendant un trimestre, ça arrive… ou pas ?",
     criteria: (ctx) =>
       ctx.transactionCount >= 1 &&
       ctx.daysSinceLastTransaction !== null &&
@@ -555,6 +559,7 @@ export const ACHIEVEMENTS: AchievementWithCriteria[] = [
     tier: "silver",
     icon: "Bed",
     hidden: true,
+    hint: "Dormir comme un ours sur ses positions… très longtemps.",
     criteria: (ctx) =>
       ctx.transactionCount >= 1 &&
       ctx.daysSinceLastTransaction !== null &&
@@ -568,6 +573,7 @@ export const ACHIEVEMENTS: AchievementWithCriteria[] = [
     tier: "gold",
     icon: "Moon",
     hidden: true,
+    hint: "Manquer une année entière de marché sans s'en apercevoir.",
     criteria: (ctx) =>
       ctx.transactionCount >= 1 &&
       ctx.daysSinceLastTransaction !== null &&
@@ -581,6 +587,7 @@ export const ACHIEVEMENTS: AchievementWithCriteria[] = [
     tier: "silver",
     icon: "TrendingDown",
     hidden: true,
+    hint: "Quand le portefeuille rugit comme un ursidé.",
     criteria: (ctx) => ctx.currentDrawdownPct >= 30,
   },
   {
@@ -591,6 +598,7 @@ export const ACHIEVEMENTS: AchievementWithCriteria[] = [
     tier: "gold",
     icon: "AlertTriangle",
     hidden: true,
+    hint: "Une chute spectaculaire. Pas de gants pour rattraper.",
     criteria: (ctx) => ctx.currentDrawdownPct >= 50,
   },
   {
@@ -611,6 +619,7 @@ export const ACHIEVEMENTS: AchievementWithCriteria[] = [
     tier: "silver",
     icon: "Target",
     hidden: true,
+    hint: "Concentrer tout sur un seul cheval. Très peu de gens osent.",
     criteria: (ctx) => {
       const values = Object.values(ctx.piliersPct).filter((v) => v > 0);
       return ctx.totalValue > 1000 && values.length === 1 && values[0]! > 99;
@@ -624,6 +633,7 @@ export const ACHIEVEMENTS: AchievementWithCriteria[] = [
     tier: "bronze",
     icon: "Dices",
     hidden: true,
+    hint: "Un patrimoine pile sur un chiffre rond. Hasard ou destin ?",
     criteria: (ctx) => ctx.totalValue >= 99 && ctx.totalValue <= 101,
   },
   {
