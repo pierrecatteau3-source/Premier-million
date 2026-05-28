@@ -43,7 +43,7 @@ export function AchievementCard({ achievement }: Props) {
         render={
           <div className="flex flex-col items-center gap-2 cursor-help">
             {/* Hexagone */}
-            <div className="relative w-[72px] h-[72px]">
+            <div className="relative w-[80px] h-[80px] transition-transform duration-200 hover:scale-110">
               {/* Fond tier (légèrement plus grand, décalé — simule un contour) */}
               <div
                 className={cn(
@@ -63,13 +63,16 @@ export function AchievementCard({ achievement }: Props) {
                 )}
                 style={{ clipPath: HEX_CLIP }}
               >
-                <DisplayIcon className="h-7 w-7 text-white drop-shadow-sm" />
+                <DisplayIcon
+                  className="h-9 w-9 text-white drop-shadow-[0_2px_3px_rgba(0,0,0,0.5)]"
+                  strokeWidth={2.25}
+                />
               </div>
 
               {/* Cadenas si verrouillé */}
               {!achievement.unlocked && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Lock className="h-5 w-5 text-muted-foreground/70" />
+                  <Lock className="h-5 w-5 text-muted-foreground/70" strokeWidth={2.5} />
                 </div>
               )}
             </div>
@@ -96,13 +99,18 @@ export function AchievementCard({ achievement }: Props) {
 
       <TooltipContent
         side="top"
-        className="max-w-[260px] flex-col items-start gap-1 bg-card text-card-foreground ring-1 ring-foreground/15 shadow-elev-3 px-3.5 py-2.5"
+        className="max-w-[280px] flex-col items-start gap-1.5 px-4 py-3"
       >
         {/* Titre + tier */}
-        <div className="flex items-center gap-2 w-full">
+        <div className="flex items-center gap-3 w-full">
           <p className="text-sm font-semibold text-foreground">{tooltipTitle}</p>
           {!isHiddenLocked && (
-            <span className="ml-auto text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+            <span
+              className={cn(
+                "ml-auto bg-gradient-to-br bg-clip-text text-transparent text-[9px] font-bold uppercase tracking-wider",
+                gradient
+              )}
+            >
               {TIER_LABEL[achievement.tier]}
             </span>
           )}

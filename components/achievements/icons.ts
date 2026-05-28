@@ -57,6 +57,9 @@ import {
   AlertTriangle,
   Dices,
   Briefcase,
+  Repeat,
+  Boxes,
+  Bird,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -119,6 +122,9 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   AlertTriangle,
   Dices,
   Briefcase,
+  Repeat,
+  Boxes,
+  Bird,
 };
 
 export const TIER_GRADIENT: Record<string, string> = {

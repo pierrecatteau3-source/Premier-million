@@ -69,7 +69,7 @@ export const ACHIEVEMENTS: AchievementWithCriteria[] = [
     description: "Créer un investissement récurrent. Tic tac, tic tac, tu pèses.",
     category: "portefeuille",
     tier: "silver",
-    icon: "RefreshCcw",
+    icon: "Repeat",
     criteria: (ctx) => ctx.recurringCount >= 1,
   },
   {
@@ -96,7 +96,7 @@ export const ACHIEVEMENTS: AchievementWithCriteria[] = [
     description: "20+ actifs. Tu collectionnes les ISIN comme les vignettes Panini.",
     category: "portefeuille",
     tier: "gold",
-    icon: "Package2",
+    icon: "Boxes",
     criteria: (ctx) => ctx.assetCount >= 20,
   },
   {
@@ -607,7 +607,7 @@ export const ACHIEVEMENTS: AchievementWithCriteria[] = [
     description: "Plus haut patrimoine historique = patrimoine actuel. Tu chantes en haut du tas.",
     category: "comportement",
     tier: "silver",
-    icon: "Award",
+    icon: "Bird",
     criteria: (ctx) =>
       ctx.totalValue > 0 && ctx.peakValue > 0 && ctx.currentDrawdownPct < 1,
   },
