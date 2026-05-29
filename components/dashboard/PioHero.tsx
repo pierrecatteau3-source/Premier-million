@@ -1,4 +1,4 @@
-import { AvatarPio } from "@/components/icons";
+import Image from "next/image";
 
 interface Props {
   totalValue: number;
@@ -40,7 +40,14 @@ export function PioHero({
         <span className="absolute right-3 top-3 font-mono text-[9px] uppercase tracking-[0.18em] text-ink-muted">
           Niv. 4
         </span>
-        <AvatarPio size={150} />
+        <Image
+          src="/character/pio-avatar.png"
+          alt="Pio"
+          width={180}
+          height={180}
+          priority
+          className="object-contain"
+        />
       </div>
 
       {/* Bulle BD */}

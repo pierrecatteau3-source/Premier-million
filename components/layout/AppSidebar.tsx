@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -13,7 +14,6 @@ import {
   IconSparkles,
   IconTrophy,
   IconHistory,
-  AvatarMini,
   BrandMark,
   type IconProps,
 } from "@/components/icons";
@@ -133,7 +133,13 @@ export function AppSidebar() {
           background: "linear-gradient(180deg, var(--pm-surface), transparent)",
         }}
       >
-        <AvatarMini size={40} className="shrink-0" />
+        <Image
+          src="/character/pio-avatar.png"
+          alt="Pio"
+          width={40}
+          height={40}
+          className="shrink-0 rounded-full object-cover"
+        />
         <div className="font-display text-[12px] leading-tight tracking-[-0.01em] text-ink-soft">
           <span className="mb-1 block font-mono text-[9px] uppercase not-italic tracking-[0.16em] text-gold">
             Pio · niv. 4
