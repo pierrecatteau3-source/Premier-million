@@ -74,7 +74,7 @@ function PillarCard({ pilier }: { pilier: PilierSummary }) {
   const up = pvLatente >= 0;
 
   return (
-    <div className="group relative overflow-hidden rounded-lg border border-border bg-surface p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-gold/30 hover:bg-surface-2">
+    <div className="group relative overflow-hidden rounded-lg border border-border bg-surface p-5 transition-all duration-200 hover:-translate-y-1 hover:border-gold/60 hover:bg-surface-2 hover:shadow-gold">
       <div className="mb-[18px] flex items-start justify-between gap-3">
         <div
           className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-md border"
@@ -82,7 +82,7 @@ function PillarCard({ pilier }: { pilier: PilierSummary }) {
         >
           <cfg.Icon size={32} />
         </div>
-        <span className="whitespace-nowrap rounded-sm border border-border bg-surface-deep px-2 py-1 font-mono text-[9px] uppercase tracking-[0.18em] text-ink-muted">
+        <span className="whitespace-nowrap rounded-sm border border-border bg-surface-deep px-2 py-1 font-sans text-[9px] uppercase tracking-[0.18em] text-ink-muted">
           {assetCount > 0 ? `${assetCount} actif${assetCount > 1 ? "s" : ""}` : "Vide"}
         </span>
       </div>
@@ -90,16 +90,16 @@ function PillarCard({ pilier }: { pilier: PilierSummary }) {
       <h3 className="font-display text-[18px] font-bold leading-[1.1] tracking-[-0.02em] text-ink">
         {cfg.name}
       </h3>
-      <div className="mt-1.5 font-mono text-[9.5px] uppercase tracking-[0.15em] text-ink-muted">
+      <div className="mt-1.5 font-sans text-[9.5px] uppercase tracking-[0.15em] text-ink-muted">
         {cfg.sub}
       </div>
 
       <div className="mt-[18px] flex items-baseline gap-1.5 font-display text-[36px] font-bold leading-none tracking-[-0.03em] tabular-nums text-ink">
         {eur0(pilier.totalValue)}
-        <span className="font-mono text-[12px] tracking-[0.12em] text-ink-muted">€</span>
+        <span className="font-sans text-[12px] tracking-[0.12em] text-ink-muted">€</span>
       </div>
 
-      <div className="mt-1.5 flex items-baseline gap-2 font-mono text-[11px] tracking-[0.04em]">
+      <div className="mt-1.5 flex items-baseline gap-2 font-sans text-[11px] tracking-[0.04em]">
         {hasPnl ? (
           <>
             <span className={up ? "text-positive" : "text-negative"}>
@@ -134,7 +134,7 @@ function PillarCard({ pilier }: { pilier: PilierSummary }) {
             style={{ left: `${Math.min(pilier.targetPercentage, 100)}%` }}
           />
         </div>
-        <div className="mt-2 flex justify-between font-mono text-[9.5px] tracking-[0.08em] text-ink-muted">
+        <div className="mt-2 flex justify-between font-sans text-[9.5px] tracking-[0.08em] text-ink-muted">
           <span style={{ color: cfg.actualColor }}>
             {pilier.percentage.toFixed(1).replace(".", ",")} %
           </span>

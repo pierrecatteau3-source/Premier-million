@@ -8,7 +8,7 @@ export function MillionProgress({ percent }: Props) {
 
   return (
     <div className="mt-6 grid grid-cols-[64px_1fr_80px] items-center gap-4 rounded-lg border border-border bg-surface px-6 py-5 md:grid-cols-[80px_1fr_90px] md:gap-5">
-      <div className="font-mono text-[10px] uppercase leading-tight tracking-[0.16em] text-ink-muted">
+      <div className="font-sans text-[10px] uppercase leading-tight tracking-[0.16em] text-ink-muted">
         Vers le
         <br />
         million
@@ -33,7 +33,7 @@ export function MillionProgress({ percent }: Props) {
             ))}
           </div>
         </div>
-        <div className="mt-2.5 flex justify-between font-mono text-[9.5px] tracking-[0.1em] text-ink-dim">
+        <div className="mt-2.5 flex justify-between font-sans text-[9.5px] tracking-[0.1em] text-ink-dim">
           <span>0 €</span>
           <span>250 K</span>
           <span>500 K</span>
@@ -46,7 +46,7 @@ export function MillionProgress({ percent }: Props) {
         <div className="font-display text-[22px] font-bold tracking-tight text-gold-bright">
           {clamped.toFixed(2).replace(".", ",")} %
         </div>
-        <div className="mt-1 font-mono text-[9.5px] uppercase tracking-[0.12em] text-ink-muted">
+        <div className="mt-1 font-sans text-[9.5px] uppercase tracking-[0.12em] text-ink-muted">
           Parcouru
         </div>
       </div>

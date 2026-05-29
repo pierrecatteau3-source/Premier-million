@@ -10,6 +10,7 @@ import { MillionProgress } from "@/components/dashboard/MillionProgress";
 import { PillarsGrid } from "@/components/dashboard/PillarCard";
 import { EvolutionBlock } from "@/components/dashboard/EvolutionBlock";
 import { DashboardKpis } from "@/components/dashboard/DashboardKpis";
+import { SectionHeading } from "@/components/dashboard/SectionHeading";
 
 /** Projection de l'âge auquel l'objectif sera atteint avec intérêts composés. */
 function calculateTargetAge(
@@ -104,6 +105,10 @@ export default async function DashboardPage() {
 
   return (
     <>
+      <SectionHeading eyebrow="Vue d'ensemble" className="mt-1">
+        Dashboard
+      </SectionHeading>
+
       <PioHero
         totalValue={patrimoineTotal}
         monthlyChange={portfolio.monthlyChange}
@@ -125,20 +130,15 @@ export default async function DashboardPage() {
 
       <MillionProgress percent={progressionPercent} />
 
-      {/* Titre de section */}
-      <div className="mb-[22px] mt-12 flex items-baseline gap-3.5">
-        <h2 className="font-display text-[28px] font-bold leading-none tracking-[-0.025em]">
-          Les <em className="italic text-gold">4 piliers</em> du trésor
-        </h2>
-        <span className="h-px flex-1 bg-border" />
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-muted">
-          Cible vs réel
-        </span>
-      </div>
+      <SectionHeading eyebrow="Cible vs réel">
+        Les <em className="italic text-gold">4 piliers</em> du trésor
+      </SectionHeading>
       <PillarsGrid piliers={portfolio.piliers} />
 
+      <SectionHeading eyebrow="Évolution">Graphique</SectionHeading>
       <EvolutionBlock />
 
+      <SectionHeading eyebrow="Indicateurs clés">KPI</SectionHeading>
       <DashboardKpis
         perfPct={perfPct}
         perfEur={perfEur}

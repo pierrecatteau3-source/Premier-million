@@ -33,18 +33,18 @@ function KpiCard({
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="mb-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-ink-muted">
+        <div className="mb-1.5 font-sans text-[10px] uppercase tracking-[0.2em] text-ink-muted">
           {eyebrow}
         </div>
         <div className={`flex items-baseline gap-1.5 font-display text-[28px] font-bold leading-none tracking-[-0.025em] tabular-nums text-ink ${valueClass ?? ""}`}>
           {value}
           {unit && (
-            <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-ink-muted">
+            <span className="font-sans text-[10px] uppercase tracking-[0.16em] text-ink-muted">
               {unit}
             </span>
           )}
         </div>
-        <div className="mt-1.5 font-mono text-[9.5px] uppercase tracking-[0.06em] text-ink-muted">
+        <div className="mt-1.5 font-sans text-[9.5px] uppercase tracking-[0.06em] text-ink-muted">
           {foot}
         </div>
       </div>
@@ -62,7 +62,7 @@ export function DashboardKpis({
   const perfUp = (perfPct ?? 0) >= 0;
 
   return (
-    <div className="mt-8 grid grid-cols-1 gap-3.5 md:grid-cols-3">
+    <div className="grid grid-cols-1 gap-3.5 md:grid-cols-3">
       <KpiCard
         icon={<IconTarget size={24} />}
         eyebrow="Performance globale"

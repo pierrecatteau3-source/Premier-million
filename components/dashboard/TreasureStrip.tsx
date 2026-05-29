@@ -14,7 +14,7 @@ function eur0(v: number) {
 }
 
 const Eyebrow = ({ children }: { children: React.ReactNode }) => (
-  <div className="font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-ink-muted">
+  <div className="font-sans text-[10px] font-medium uppercase tracking-[0.2em] text-ink-muted">
     {children}
   </div>
 );
@@ -42,11 +42,11 @@ export function TreasureStrip({
           style={{ textShadow: "0 2px 24px rgba(224,180,80,0.18)" }}
         >
           {eur0(totalValue)}
-          <span className="font-mono text-[13px] uppercase tracking-[0.2em] text-gold-deep">
+          <span className="font-sans text-[13px] uppercase tracking-[0.2em] text-gold-deep">
             EUR
           </span>
         </div>
-        <div className="mt-3.5 flex flex-wrap items-center gap-3.5 font-mono text-[10.5px] tracking-[0.06em] text-ink-muted">
+        <div className="mt-3.5 flex flex-wrap items-center gap-3.5 font-sans text-[10.5px] tracking-[0.06em] text-ink-muted">
           <span className={up ? "text-positive" : "text-negative"}>
             {up ? "↑" : "↓"} {eur0(Math.abs(monthlyChange))} € période
           </span>
@@ -66,11 +66,11 @@ export function TreasureStrip({
         <Eyebrow>Épargne mensuelle</Eyebrow>
         <div className="mt-3.5 flex items-baseline gap-2.5 font-display text-[40px] font-bold leading-[0.95] tracking-[-0.035em] tabular-nums text-ink">
           {epargneMensuelle != null ? eur0(epargneMensuelle) : "—"}
-          <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-muted">
+          <span className="font-sans text-[11px] uppercase tracking-[0.2em] text-ink-muted">
             €/mois
           </span>
         </div>
-        <div className="mt-3.5 font-mono text-[10.5px] tracking-[0.06em] text-ink-muted">
+        <div className="mt-3.5 font-sans text-[10.5px] tracking-[0.06em] text-ink-muted">
           Versement régulier
         </div>
       </div>
@@ -80,11 +80,11 @@ export function TreasureStrip({
         <Eyebrow>Objectif atteint à</Eyebrow>
         <div className="mt-3.5 flex items-baseline gap-2.5 font-display text-[40px] font-bold leading-[0.95] tracking-[-0.035em] tabular-nums text-gold-bright">
           {targetAge != null ? targetAge : "—"}
-          <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-muted">
+          <span className="font-sans text-[11px] uppercase tracking-[0.2em] text-ink-muted">
             ans
           </span>
         </div>
-        <div className="mt-3.5 font-mono text-[10.5px] tracking-[0.06em] text-ink-muted">
+        <div className="mt-3.5 font-sans text-[10.5px] tracking-[0.06em] text-ink-muted">
           Projection intérêts composés
         </div>
       </div>

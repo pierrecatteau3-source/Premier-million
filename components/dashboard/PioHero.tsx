@@ -25,7 +25,7 @@ export function PioHero({
   const sign = up ? "+ " : "− ";
 
   return (
-    <section className="mt-7 grid gap-9 lg:grid-cols-[200px_1fr]">
+    <section className="grid gap-9 lg:grid-cols-[200px_1fr]">
       {/* Avatar Pio */}
       <div
         className="relative grid h-[200px] place-items-center overflow-hidden rounded-lg border"
@@ -37,7 +37,7 @@ export function PioHero({
         <span className="absolute left-3 top-3 font-display text-[13px] font-bold tracking-tight text-gold-bright">
           Pio
         </span>
-        <span className="absolute right-3 top-3 font-mono text-[9px] uppercase tracking-[0.18em] text-ink-muted">
+        <span className="absolute right-3 top-3 font-sans text-[9px] uppercase tracking-[0.18em] text-ink-muted">
           Niv. 4
         </span>
         <Image
@@ -59,7 +59,7 @@ export function PioHero({
           className="absolute left-[-9px] top-7 h-[18px] w-[18px] rotate-45 border-b border-l"
           style={{ background: "var(--pm-surface)", borderColor: "var(--pm-rule-strong)" }}
         />
-        <span className="mb-3 block font-mono text-[9.5px] font-medium uppercase tracking-[0.22em] text-gold">
+        <span className="mb-3 block font-sans text-[9.5px] font-medium uppercase tracking-[0.22em] text-gold">
           Pio · récap depuis ta dernière visite
         </span>
         Salut chef ! Le trésor a fait{" "}
@@ -75,7 +75,7 @@ export function PioHero({
             ? `« À ce rythme, millionnaire à ${targetAge} ans. Soit demain si tu gagnes au Loto. Je dis ça, je dis rien. »`
             : "« Renseigne ton âge et ton épargne, et je te dis quand on touche le million. »"}
         </span>
-        <div className="mt-[18px] flex flex-wrap items-center gap-4 border-t border-dashed border-border pt-3.5 font-mono text-[10px] tracking-[0.06em] text-ink-muted">
+        <div className="mt-[18px] flex flex-wrap items-center gap-4 border-t border-dashed border-border pt-3.5 font-sans text-[10px] tracking-[0.06em] text-ink-muted">
           <span className={up ? "text-positive" : "text-negative"}>
             {sign}
             {monthlyChangePercent.toFixed(1).replace(".", ",")} % période

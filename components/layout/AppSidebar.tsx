@@ -126,13 +126,20 @@ export function AppSidebar() {
         ))}
       </nav>
 
-      {/* Pio peek */}
-      <div
-        className="mt-auto flex items-center gap-3 rounded-lg border border-border p-4"
-        style={{
-          background: "linear-gradient(180deg, var(--pm-surface), transparent)",
-        }}
-      >
+      {/* Bas de sidebar : saison + Pio */}
+      <div className="mt-auto flex flex-col gap-3">
+        <span className="inline-flex items-center gap-2 self-start rounded-pill border border-border bg-surface px-[11px] py-1.5 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-muted">
+          <span className="inline-block h-1.5 w-1.5 animate-pulse-dot rounded-full bg-positive shadow-[0_0_0_3px_rgba(148,200,112,0.18)]" />
+          Vol. I · Saison 2026
+        </span>
+
+        {/* Pio peek */}
+        <div
+          className="flex items-center gap-3 rounded-lg border border-border p-4"
+          style={{
+            background: "linear-gradient(180deg, var(--pm-surface), transparent)",
+          }}
+        >
         <Image
           src="/character/pio-avatar.png"
           alt="Pio"
@@ -145,6 +152,7 @@ export function AppSidebar() {
             Pio · niv. 4
           </span>
           Tranquille, on a le temps.
+        </div>
         </div>
       </div>
     </aside>
