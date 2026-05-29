@@ -17,10 +17,11 @@ import {
   Loader2,
   ChevronUp,
 } from "lucide-react";
-import { PILIER_LABEL, PILIER_COLOR } from "@/types";
+import { PILIER_LABEL } from "@/types";
 import { cn } from "@/lib/utils";
 import type { PilierSummary } from "@/types";
 import { ALLOCATION_TYPES, TYPE_TO_PILIER } from "@/lib/constants/allocation-types";
+import { AssetLogo } from "@/components/portfolio/asset-logo";
 import { AssetPriceRow } from "@/components/portfolio/AssetPriceRow";
 import { TransactionForm } from "@/components/portfolio/TransactionForm";
 import { MigrationPrompt } from "@/components/portfolio/MigrationPrompt";
@@ -49,6 +50,14 @@ function formatPct(value: number | null | undefined) {
   const sign = value >= 0 ? "+" : "";
   return `${sign}${value.toFixed(1)} %`;
 }
+
+const PILIER_TAG: Record<string, string> = {
+  PEA: "bg-gold/10 text-gold-bright",
+  CRYPTO: "bg-copper/15 text-copper-bright",
+  IMMO: "bg-positive/[0.12] text-positive",
+  AUTRE: "bg-surface-2 text-ink-soft",
+  LIQUIDITE: "bg-surface-2 text-ink-soft",
+};
 
 function today() {
   return new Date().toISOString().split("T")[0];
@@ -223,7 +232,7 @@ export function AssetManager({ piliers, priceMap = {} }: Props) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="text-base">Détail des actifs</CardTitle>
+            <CardTitle className="text-[22px]">Mes <em className="italic text-gold">actifs</em></CardTitle>
             <CardDescription>
               Valeurs en temps réel pour les actifs cotés, dernier snapshot pour les autres.
             </CardDescription>
@@ -317,31 +326,41 @@ export function AssetManager({ piliers, priceMap = {} }: Props) {
                           className="transition-colors hover:bg-muted/30"
                         >
                           <td className="px-4 py-3">
-                            <button
-                              type="button"
-                              onClick={() => setDetailAsset(asset)}
-                              className="text-left font-medium transition-colors hover:text-primary hover:underline"
-                              title="Voir le détail de l'actif"
-                            >
-                              {asset.name}
-                            </button>
-                            <div className="mt-0.5">
-                              <AssetPriceRow
-                                ticker={asset.ticker}
-                                pricingMode={asset.pricingMode}
-                                priceData={asset.ticker ? (priceMap[asset.ticker] ?? null) : null}
-                              />
+                            <div className="flex items-center gap-2.5">
+                              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-border bg-surface-deep">
+                                <AssetLogo
+                                  name={asset.name}
+                                  ticker={asset.ticker}
+                                  pilier={asset.pilier}
+                                  size={22}
+                                />
+                              </span>
+                              <div className="min-w-0">
+                                <button
+                                  type="button"
+                                  onClick={() => setDetailAsset(asset)}
+                                  className="block text-left font-display font-semibold transition-colors hover:text-gold hover:underline"
+                                  title="Voir le détail de l'actif"
+                                >
+                                  {asset.name}
+                                </button>
+                                <div className="mt-0.5">
+                                  <AssetPriceRow
+                                    ticker={asset.ticker}
+                                    pricingMode={asset.pricingMode}
+                                    priceData={asset.ticker ? (priceMap[asset.ticker] ?? null) : null}
+                                  />
+                                </div>
+                              </div>
                             </div>
                           </td>
                           <td className="px-4 py-3">
-                            <span className="inline-flex items-center gap-1.5">
-                              <span
-                                className="h-2 w-2 rounded-full"
-                                style={{
-                                  backgroundColor:
-                                    PILIER_COLOR[asset.pilier].hex,
-                                }}
-                              />
+                            <span
+                              className={cn(
+                                "inline-block rounded-sm px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.12em]",
+                                PILIER_TAG[asset.pilier] ?? PILIER_TAG.AUTRE
+                              )}
+                            >
                               {PILIER_LABEL[asset.pilier]}
                             </span>
                           </td>
@@ -357,7 +376,7 @@ export function AssetManager({ piliers, priceMap = {} }: Props) {
                             {asset.pvLatente != null ? (
                               <span className={cn(
                                 "inline-flex flex-col items-end",
-                                asset.pvLatente >= 0 ? "text-emerald-500" : "text-red-500"
+                                asset.pvLatente >= 0 ? "text-positive" : "text-negative"
                               )}>
                                 <span className="font-medium">
                                   {asset.pvLatente >= 0 ? "+" : ""}
