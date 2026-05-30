@@ -36,6 +36,11 @@ function eur0(v: number) {
   return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(v);
 }
 
+function signedEur(v: number) {
+  const sign = v >= 0 ? "+ " : "− ";
+  return `${sign}${eur0(Math.abs(v))} €`;
+}
+
 export function PioHero({
   totalValue,
   capRestant,
@@ -46,8 +51,10 @@ export function PioHero({
 }: Props) {
   const delta = deltas[periodKey];
   const phrase = PERIOD_PHRASE[periodKey];
-  const up = delta.eur >= 0;
-  const sign = up ? "+ " : "− ";
+  const perfUp = delta.performance >= 0;
+  const perfSign = perfUp ? "+ " : "− ";
+  const hasApports = Math.round(delta.apports) !== 0;
+  const hasPerf = Math.round(delta.performance) !== 0;
 
   return (
     <section className="grid gap-6 lg:grid-cols-[200px_1fr_auto] lg:gap-9">
@@ -87,23 +94,54 @@ export function PioHero({
         <span className="mb-3 block font-sans text-[9.5px] font-medium uppercase tracking-[0.22em] text-gold">
           Pio · récap depuis ta dernière visite
         </span>
-        Salut chef ! Le trésor a fait{" "}
-        <strong className="font-semibold text-gold-bright">
-          {sign}
-          {eur0(Math.abs(delta.eur))} €
-        </strong>{" "}
-        {phrase}, on est à{" "}
-        <strong className="font-semibold text-gold-bright">{eur0(totalValue)} €</strong>. On
-        construit, pièce par pièce.
+        Salut chef !{" "}
+        {hasApports && hasPerf ? (
+          <>
+            Tu as{" "}
+            <strong className="font-semibold text-gold-bright">
+              {delta.apports >= 0 ? "mis" : "retiré"} {signedEur(delta.apports)}
+            </strong>{" "}
+            de ta poche {phrase}, et le trésor a{" "}
+            <strong className={cn("font-semibold", perfUp ? "text-positive" : "text-negative")}>
+              {delta.performance >= 0 ? "gagné" : "perdu"} {signedEur(delta.performance)} de valeur
+            </strong>
+            , on est à{" "}
+            <strong className="font-semibold text-gold-bright">{eur0(totalValue)} €</strong>.
+          </>
+        ) : hasApports ? (
+          <>
+            Tu as{" "}
+            <strong className="font-semibold text-gold-bright">
+              {delta.apports >= 0 ? "mis" : "retiré"} {signedEur(delta.apports)}
+            </strong>{" "}
+            de ta poche {phrase}, on est à{" "}
+            <strong className="font-semibold text-gold-bright">{eur0(totalValue)} €</strong>.
+          </>
+        ) : hasPerf ? (
+          <>
+            Le trésor a{" "}
+            <strong className={cn("font-semibold", perfUp ? "text-positive" : "text-negative")}>
+              {delta.performance >= 0 ? "gagné" : "perdu"} {signedEur(delta.performance)} de valeur
+            </strong>{" "}
+            {phrase}, on est à{" "}
+            <strong className="font-semibold text-gold-bright">{eur0(totalValue)} €</strong>.
+          </>
+        ) : (
+          <>
+            Pas de mouvement {phrase}, on est toujours à{" "}
+            <strong className="font-semibold text-gold-bright">{eur0(totalValue)} €</strong>.
+          </>
+        )}{" "}
+        On construit, pièce par pièce.
         <span className="mt-2.5 block text-[14px] italic text-ink-muted">
           {targetAge != null
             ? `« À ce rythme, millionnaire à ${targetAge} ans. Soit demain si tu gagnes au Loto. Je dis ça, je dis rien. »`
             : "« Renseigne ton âge et ton épargne, et je te dis quand on touche le million. »"}
         </span>
         <div className="mt-[18px] flex flex-wrap items-center gap-4 border-t border-dashed border-border pt-3.5 font-sans text-[10px] tracking-[0.06em] text-ink-muted">
-          <span className={up ? "text-positive" : "text-negative"}>
-            {sign}
-            {delta.pct.toFixed(1).replace(".", ",")} % {phrase}
+          <span className={perfUp ? "text-positive" : "text-negative"}>
+            {perfSign}
+            {Math.abs(delta.performancePct).toFixed(1).replace(".", ",")} % de valeur {phrase}
           </span>
           <span>·</span>
           <span>
@@ -112,9 +150,9 @@ export function PioHero({
         </div>
       </div>
 
-      {/* Toggle période */}
+      {/* Toggle période — hauteur calée sur la bulle de Pio */}
       <div
-        className="flex h-fit flex-col gap-1 rounded-lg border p-2 lg:self-start"
+        className="flex flex-col gap-1 rounded-lg border p-2 lg:h-full"
         style={{ background: "var(--pm-surface)", borderColor: "var(--pm-rule-strong)" }}
         role="radiogroup"
         aria-label="Période d'analyse"
@@ -132,7 +170,7 @@ export function PioHero({
               aria-checked={active}
               onClick={() => onPeriodChange(opt.key)}
               className={cn(
-                "rounded-md px-3 py-1.5 text-left font-sans text-[11px] uppercase tracking-[0.12em] transition-colors",
+                "flex-1 rounded-md px-3 py-1.5 text-left font-sans text-[11px] uppercase tracking-[0.12em] transition-colors",
                 active
                   ? "bg-gold/15 text-gold-bright"
                   : "text-ink-muted hover:bg-surface-2 hover:text-ink"

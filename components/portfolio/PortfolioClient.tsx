@@ -9,6 +9,7 @@ import type { PriceMap } from "@/types/prices";
 
 interface Props {
   piliers: PilierSummary[];
+  initialFilter?: string;
 }
 
 /** Injects live prices into pilier assets and recomputes totalValue per pilier */
@@ -43,7 +44,7 @@ function applyLivePrices(piliers: PilierSummary[], priceMap: PriceMap): PilierSu
   });
 }
 
-export function PortfolioClient({ piliers }: Props) {
+export function PortfolioClient({ piliers, initialFilter }: Props) {
   const router = useRouter();
   const syncedRef = useRef(false);
 
@@ -104,5 +105,5 @@ export function PortfolioClient({ piliers }: Props) {
     [piliers, prices]
   );
 
-  return <AssetManager piliers={piliersWithLive} priceMap={prices} />;
+  return <AssetManager piliers={piliersWithLive} priceMap={prices} initialFilter={initialFilter} />;
 }

@@ -31,6 +31,8 @@ import type { PriceMap } from "@/types/prices";
 interface Props {
   piliers: PilierSummary[];
   priceMap?: PriceMap;
+  /** Filtre initial du pilier — prime sur ?pilier= dans l'URL. Pour usage en modal. */
+  initialFilter?: string;
 }
 
 const inputCls =
@@ -65,12 +67,16 @@ function today() {
 
 const VALID_PILIER_FILTERS = new Set(["PEA", "CRYPTO", "IMMO", "AUTRE", "LIQUIDITE"]);
 
-export function AssetManager({ piliers, priceMap = {} }: Props) {
+export function AssetManager({ piliers, priceMap = {}, initialFilter }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialPilier = searchParams.get("pilier");
-  const initialFilter =
-    initialPilier && VALID_PILIER_FILTERS.has(initialPilier) ? initialPilier : "all";
+  const urlPilier = searchParams.get("pilier");
+  const resolvedInitial =
+    initialFilter && VALID_PILIER_FILTERS.has(initialFilter)
+      ? initialFilter
+      : urlPilier && VALID_PILIER_FILTERS.has(urlPilier)
+      ? urlPilier
+      : "all";
   const [isPending, startTransition] = useTransition();
   const tableRef = useRef<HTMLDivElement>(null);
 
@@ -158,10 +164,12 @@ export function AssetManager({ piliers, priceMap = {} }: Props) {
   type SortBy = "value_desc" | "value_asc" | "name_asc" | "name_desc" | "pilier";
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortBy>("value_desc");
-  const [filterPilier, setFilterPilier] = useState(initialFilter);
+  const [filterPilier, setFilterPilier] = useState(resolvedInitial);
 
   useEffect(() => {
-    if (initialFilter !== "all" && tableRef.current) {
+    // Pas de scroll quand on est en modal (initialFilter fourni par le parent)
+    if (initialFilter) return;
+    if (resolvedInitial !== "all" && tableRef.current) {
       tableRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

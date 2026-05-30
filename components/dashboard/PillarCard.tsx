@@ -1,7 +1,12 @@
-import type { CSSProperties } from "react";
-import Link from "next/link";
+"use client";
+
+import { useEffect, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
+import { X } from "lucide-react";
 import type { PilierSummary, Pilier } from "@/types";
+import { PILIER_LABEL } from "@/types";
 import { IconPEA, IconCrypto, IconImmo, IconAutre, type IconProps } from "@/components/icons";
+import { PortfolioClient } from "@/components/portfolio/PortfolioClient";
 
 type PillarConfig = {
   Icon: (p: IconProps) => React.ReactNode;
@@ -64,7 +69,13 @@ function eur0(v: number) {
   return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(v);
 }
 
-function PillarCard({ pilier }: { pilier: PilierSummary }) {
+function PillarCard({
+  pilier,
+  onOpen,
+}: {
+  pilier: PilierSummary;
+  onOpen: (code: Pilier) => void;
+}) {
   const cfg = CONFIG[pilier.pilier as Exclude<Pilier, "LIQUIDITE">] ?? CONFIG.AUTRE;
   const assetCount = pilier.assets.length;
 
@@ -75,10 +86,12 @@ function PillarCard({ pilier }: { pilier: PilierSummary }) {
   const up = pvLatente >= 0;
 
   return (
-    <Link
-      href={`/portefeuille?pilier=${pilier.pilier}`}
+    <button
+      type="button"
+      onClick={() => onOpen(pilier.pilier)}
       aria-label={`Voir les actifs du pilier ${cfg.name}`}
-      className="group relative block overflow-hidden rounded-lg border border-border bg-surface p-5 transition-all duration-200 hover:-translate-y-1 hover:border-gold/60 hover:bg-surface-2 hover:shadow-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+      className="group relative block w-full overflow-hidden rounded-lg border border-border bg-surface p-5 text-left transition-all duration-200 hover:-translate-y-1 hover:border-gold/60 hover:bg-surface-2 hover:shadow-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+    >
       <div className="mb-[18px] flex items-start justify-between gap-3">
         <div
           className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-md border"
@@ -145,17 +158,103 @@ function PillarCard({ pilier }: { pilier: PilierSummary }) {
           <span>cible {pilier.targetPercentage} %</span>
         </div>
       </div>
-    </Link>
+    </button>
   );
 }
 
-export function PillarsGrid({ piliers }: { piliers: PilierSummary[] }) {
+function PillarAssetsModal({
+  pilier,
+  piliersForManager,
+  onClose,
+}: {
+  pilier: Pilier;
+  piliersForManager: PilierSummary[];
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose]);
+
+  const cfg = CONFIG[pilier as Exclude<Pilier, "LIQUIDITE">] ?? CONFIG.AUTRE;
+
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:p-8"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Actifs du pilier ${cfg.name}`}
+    >
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-md"
+        onClick={onClose}
+      />
+      <div
+        className="relative z-10 my-8 w-full max-w-5xl rounded-2xl border border-border p-5 shadow-2xl sm:p-7"
+        style={{ backgroundColor: "hsl(var(--popover))" }}
+      >
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <span className="font-sans text-[10px] uppercase tracking-[0.2em] text-ink-muted">
+              Pilier
+            </span>
+            <h2 className="font-display text-[24px] font-bold leading-tight tracking-[-0.02em] text-ink">
+              {cfg.name}{" "}
+              <span className="font-sans text-[12px] uppercase tracking-[0.18em] text-ink-muted">
+                · {PILIER_LABEL[pilier]}
+              </span>
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            aria-label="Fermer"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <PortfolioClient piliers={piliersForManager} initialFilter={pilier} />
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+export function PillarsGrid({
+  piliers,
+  piliersForManager,
+}: {
+  piliers: PilierSummary[];
+  piliersForManager: PilierSummary[];
+}) {
+  const [open, setOpen] = useState<Pilier | null>(null);
   const reels = piliers.filter((p) => p.pilier !== "LIQUIDITE");
+
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {reels.map((p) => (
-        <PillarCard key={p.pilier} pilier={p} />
-      ))}
-    </div>
+    <>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {reels.map((p) => (
+          <PillarCard key={p.pilier} pilier={p} onOpen={setOpen} />
+        ))}
+      </div>
+      {open && (
+        <PillarAssetsModal
+          pilier={open}
+          piliersForManager={piliersForManager}
+          onClose={() => setOpen(null)}
+        />
+      )}
+    </>
   );
 }

@@ -327,17 +327,33 @@ export async function getAssetHistoryByRange(
 export type DashboardPeriodKey = "day" | "week" | "month" | "year";
 
 export interface PeriodDelta {
+  /** Variation totale (apports + performance) en EUR */
   eur: number;
+  /** Variation totale en % */
   pct: number;
+  /** Apports nets de l'utilisateur sur la période (somme des montants investis) */
+  apports: number;
+  /** Performance pure : variation de valeur hors apports (= eur − apports) */
+  performance: number;
+  /** Performance pure rapportée à la valeur de référence en % */
+  performancePct: number;
 }
 
 export type DashboardDeltas = Record<DashboardPeriodKey, PeriodDelta>;
 
+const EMPTY_DELTA: PeriodDelta = {
+  eur: 0,
+  pct: 0,
+  apports: 0,
+  performance: 0,
+  performancePct: 0,
+};
+
 const EMPTY_DELTAS: DashboardDeltas = {
-  day: { eur: 0, pct: 0 },
-  week: { eur: 0, pct: 0 },
-  month: { eur: 0, pct: 0 },
-  year: { eur: 0, pct: 0 },
+  day: EMPTY_DELTA,
+  week: EMPTY_DELTA,
+  month: EMPTY_DELTA,
+  year: EMPTY_DELTA,
 };
 
 /** Calcule la variation patrimoniale sur les 4 périodes pour le toggle du dashboard. */
@@ -347,7 +363,17 @@ export async function getDashboardDeltas(userId: string): Promise<DashboardDelta
   oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
   oneYearAgo.setHours(0, 0, 0, 0);
 
-  const history = await buildHistoryFromRange(userId, oneYearAgo, now);
+  const [history, transactions] = await Promise.all([
+    buildHistoryFromRange(userId, oneYearAgo, now),
+    prisma.transaction.findMany({
+      where: {
+        asset: { userId },
+        date: { gte: oneYearAgo, lte: now },
+      },
+      select: { date: true, montantInvesti: true },
+    }),
+  ]);
+
   if (history.length === 0) return EMPTY_DELTAS;
 
   const total = history[history.length - 1].totalValue;
@@ -363,15 +389,27 @@ export async function getDashboardDeltas(userId: string): Promise<DashboardDelta
     return lastBefore;
   }
 
+  function apportsSince(target: Date): number {
+    const targetTs = target.getTime();
+    return transactions.reduce(
+      (sum, t) => (t.date.getTime() >= targetTs ? sum + t.montantInvesti : sum),
+      0
+    );
+  }
+
   function delta(daysBack: number, useCalendar: "month" | "year" | null = null): PeriodDelta {
     const target = new Date(now);
     if (useCalendar === "month") target.setMonth(target.getMonth() - 1);
     else if (useCalendar === "year") target.setFullYear(target.getFullYear() - 1);
     else target.setDate(target.getDate() - daysBack);
-    const ref = valueAt(target);
+    target.setHours(0, 0, 0, 0);
+    const ref = valueAt(new Date(target));
     const eur = total - ref;
+    const apports = apportsSince(target);
+    const performance = eur - apports;
     const pct = ref > 0 ? (eur / ref) * 100 : 0;
-    return { eur, pct };
+    const performancePct = ref > 0 ? (performance / ref) * 100 : 0;
+    return { eur, pct, apports, performance, performancePct };
   }
 
   return {

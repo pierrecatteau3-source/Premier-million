@@ -101,6 +101,11 @@ export default async function DashboardPage() {
     allAssets.length + (portfolio.liquiditeSummary?.assets.length ?? 0);
   const pilierCount = portfolio.piliers.filter((p) => p.totalValue > 0).length;
 
+  // Piliers complets (4 piliers + LIQUIDITE) pour le modal d'actifs
+  const piliersForManager = portfolio.liquiditeSummary
+    ? [...portfolio.piliers, portfolio.liquiditeSummary]
+    : portfolio.piliers;
+
   // Prochain succès (premier non débloqué et non secret, dans l'ordre du catalogue)
   const unlockedIds = new Set(unlocked.map((u) => u.achievementId));
   const nextAchievement =
@@ -127,7 +132,7 @@ export default async function DashboardPage() {
       <SectionHeading eyebrow="Cible vs réel">
         Les <em className="italic text-gold">4 piliers</em> du trésor
       </SectionHeading>
-      <PillarsGrid piliers={portfolio.piliers} />
+      <PillarsGrid piliers={portfolio.piliers} piliersForManager={piliersForManager} />
 
       <SectionHeading eyebrow="Évolution">Graphique</SectionHeading>
       <EvolutionBlock />
