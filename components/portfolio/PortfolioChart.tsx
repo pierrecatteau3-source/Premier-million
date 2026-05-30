@@ -12,38 +12,11 @@ import {
 } from "recharts";
 import type { HistoryPoint } from "@/lib/services/portfolio.service";
 import { DateRangePicker } from "@/components/portfolio/DateRangePicker";
+import { SkaterOnPoint } from "@/components/portfolio/SkaterOnPoint";
 
 interface Evolution {
   deltaEur: number;
   deltaPct: number;
-}
-
-/**
- * Curseur vertical — démarre au point hovered et descend vers l'axe X.
- * La partie au-dessus du point est masquée pour ne pas surcharger la zone haute.
- */
-interface CursorProps {
-  points?: { x: number; y: number }[];
-  top?: number;
-  height?: number;
-}
-function VerticalCursor({ points, top = 0, height = 0 }: CursorProps) {
-  if (!points?.[0]) return null;
-  const { x, y } = points[0];
-  const bottom = top + height;
-  return (
-    <line
-      x1={x}
-      y1={y}
-      x2={x}
-      y2={bottom}
-      stroke="hsl(var(--foreground))"
-      strokeOpacity={0.35}
-      strokeWidth={1}
-      strokeDasharray="4 4"
-      pointerEvents="none"
-    />
-  );
 }
 
 /**
@@ -83,6 +56,8 @@ interface Props {
   compact?: boolean;
   /** Plage par défaut (en jours) avant aujourd'hui. Défaut : 1 (yesterday). */
   defaultRangeDays?: number;
+  /** Affiche le chibi skateur sur le dernier point de la courbe. */
+  showSkater?: boolean;
 }
 
 function formatEur(v: number) {
@@ -105,7 +80,12 @@ function formatXDate(dateStr: string, from: string, to: string): string {
   return new Intl.DateTimeFormat("fr-FR", { month: "short", year: "2-digit" }).format(d);
 }
 
-export function PortfolioChart({ onEvolutionChange, compact = false, defaultRangeDays = 1 }: Props) {
+export function PortfolioChart({
+  onEvolutionChange,
+  compact = false,
+  defaultRangeDays = 1,
+  showSkater = false,
+}: Props) {
   const today = new Date().toISOString().split("T")[0];
   const defaultFrom = new Date(Date.now() - defaultRangeDays * 86_400_000).toISOString().split("T")[0];
 
@@ -236,6 +216,7 @@ export function PortfolioChart({ onEvolutionChange, compact = false, defaultRang
                 tickLine={false}
                 axisLine={false}
                 interval="preserveStartEnd"
+                minTickGap={72}
                 tickMargin={12}
                 padding={{ left: 8, right: 8 }}
                 className="fill-muted-foreground"
@@ -255,7 +236,7 @@ export function PortfolioChart({ onEvolutionChange, compact = false, defaultRang
                 ]}
               />
               <Tooltip
-                cursor={<VerticalCursor />}
+                cursor={false}
                 formatter={(value) => [formatEur(Number(value)), "Patrimoine"]}
                 labelFormatter={(label) => label}
                 contentStyle={{
@@ -272,7 +253,25 @@ export function PortfolioChart({ onEvolutionChange, compact = false, defaultRang
                 dataKey="value"
                 stroke="url(#lineGradient)"
                 strokeWidth={2.5}
-                dot={false}
+                isAnimationActive={!showSkater}
+                dot={
+                  showSkater
+                    ? (dotProps) => {
+                        const { cx, cy, index, key } = dotProps as {
+                          cx?: number;
+                          cy?: number;
+                          index?: number;
+                          key?: React.Key | null;
+                        };
+                        const isLast = index === chartData.length - 1;
+                        const k = key ?? index ?? 0;
+                        if (!isLast || cx == null || cy == null) {
+                          return <g key={k} />;
+                        }
+                        return <SkaterOnPoint key={k} cx={cx} cy={cy} />;
+                      }
+                    : false
+                }
                 activeDot={(props) => <ActiveDotWithLine cx={props.cx} cy={props.cy} />}
               />
             </LineChart>

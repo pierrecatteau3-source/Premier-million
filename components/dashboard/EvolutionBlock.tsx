@@ -1,5 +1,4 @@
 import { PortfolioChart } from "@/components/portfolio/PortfolioChart";
-import { SkaterChibi } from "@/components/icons";
 
 export function EvolutionBlock() {
   return (
@@ -9,12 +8,7 @@ export function EvolutionBlock() {
           Évolution du <em className="italic text-gold">trésor</em>
         </h3>
       </div>
-      <div className="relative">
-        <PortfolioChart compact defaultRangeDays={30} />
-        <div className="pointer-events-none absolute right-3 top-0 animate-glide">
-          <SkaterChibi size={40} />
-        </div>
-      </div>
+      <PortfolioChart compact defaultRangeDays={30} showSkater />
     </div>
   );
 }
