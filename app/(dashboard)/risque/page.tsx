@@ -46,12 +46,19 @@ export default async function RisquePage() {
       <div className="space-y-6 p-6">
         {/* ── Score global ─────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <Card className="flex flex-col items-center justify-center lg:col-span-1">
-            <CardHeader className="pb-0 text-center">
-              <CardTitle className="text-base">Score de risque</CardTitle>
-              <CardDescription className="text-center">{levelDesc}</CardDescription>
+          <Card className="lg:col-span-1">
+            <CardHeader>
+              <span className="font-mono text-[9px] uppercase tracking-[0.22em] text-ink-muted">
+                Diagnostic
+              </span>
+              <CardTitle className="font-display text-[22px] tracking-[-0.025em]">
+                Score de <em className="italic text-gold">risque</em>
+              </CardTitle>
+              <CardDescription className="text-[13px] leading-snug text-ink-muted">
+                {levelDesc}
+              </CardDescription>
             </CardHeader>
-            <CardContent className="pt-4">
+            <CardContent className="flex items-center justify-center pt-4 pb-2">
               <RiskGauge score={risk.score} level={risk.level} />
             </CardContent>
           </Card>
@@ -59,17 +66,33 @@ export default async function RisquePage() {
           {/* ── Alertes ───────────────────────────────────────────────── */}
           <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle className="text-base">
-                Alertes d&apos;allocation
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <span className="font-mono text-[9px] uppercase tracking-[0.22em] text-ink-muted">
+                    Vigilance
+                  </span>
+                  <CardTitle className="font-display text-[22px] tracking-[-0.025em]">
+                    Alertes d&apos;<em className="italic text-gold">allocation</em>
+                  </CardTitle>
+                  <CardDescription className="mt-1 text-[13px] leading-snug text-ink-muted">
+                    Basé sur l&apos;écart entre la répartition actuelle et votre allocation cible.
+                  </CardDescription>
+                </div>
                 {risk.alerts.length > 0 && (
-                  <span className="ml-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">
-                    {risk.alerts.length}
+                  <span
+                    className="shrink-0 rounded-sm border px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.18em]"
+                    style={{
+                      color: "var(--pm-negative)",
+                      borderColor: "var(--pm-negative)",
+                      background:
+                        "linear-gradient(135deg, rgba(217,116,100,0.18), transparent 80%)",
+                    }}
+                  >
+                    {risk.alerts.length}{" "}
+                    {risk.alerts.length > 1 ? "alertes" : "alerte"}
                   </span>
                 )}
-              </CardTitle>
-              <CardDescription>
-                Basé sur l&apos;écart entre la répartition actuelle et votre allocation cible.
-              </CardDescription>
+              </div>
             </CardHeader>
             <CardContent>
               <AlertBanner alerts={risk.alerts} />

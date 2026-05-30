@@ -1,35 +1,49 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
 
 interface Props {
   score: number; // 0–1
   level: "faible" | "modéré" | "élevé";
 }
 
-const LEVEL_CONFIG = {
-  faible:  { label: "Risque faible",  color: "#22c55e", bg: "bg-green-50",  text: "text-green-700"  },
-  modéré:  { label: "Risque modéré",  color: "#f97316", bg: "bg-orange-50", text: "text-orange-700" },
-  élevé:   { label: "Risque élevé",   color: "#ef4444", bg: "bg-red-50",    text: "text-red-700"    },
+const LEVEL = {
+  faible: {
+    label: "Risque faible",
+    color: "var(--pm-positive)",
+    deep: "var(--pm-positive-deep)",
+    glow: "rgba(148, 200, 112, 0.22)",
+  },
+  modéré: {
+    label: "Risque modéré",
+    color: "var(--pm-gold)",
+    deep: "var(--pm-gold-deep)",
+    glow: "rgba(224, 180, 80, 0.22)",
+  },
+  élevé: {
+    label: "Risque élevé",
+    color: "var(--pm-negative)",
+    deep: "var(--pm-negative-deep)",
+    glow: "rgba(217, 116, 100, 0.22)",
+  },
 } as const;
 
 export function RiskGauge({ score, level }: Props) {
   const [animated, setAnimated] = useState(0);
 
   useEffect(() => {
-    const t = setTimeout(() => setAnimated(score), 150);
+    const t = setTimeout(() => setAnimated(score), 180);
     return () => clearTimeout(t);
   }, [score]);
 
-  const cfg = LEVEL_CONFIG[level];
+  const cfg = LEVEL[level];
 
-  // Arc SVG : demi-cercle 180° (gauche → droite)
-  const R = 80;
-  const cx = 100;
-  const cy = 100;
-  const startAngle = Math.PI;          // 180°
-  const endAngle = 0;                  // 0°
+  // Geometry — demi-cercle 180° → 0°
+  const R = 96;
+  const cx = 130;
+  const cy = 130;
+  const startAngle = Math.PI;
+  const endAngle = 0;
   const progressAngle = Math.PI - animated * Math.PI;
 
   const arcPath = (a1: number, a2: number) => {
@@ -43,76 +57,187 @@ export function RiskGauge({ score, level }: Props) {
 
   // Aiguille
   const needleAngle = Math.PI - animated * Math.PI;
-  const needleX = cx + (R - 10) * Math.cos(needleAngle);
-  const needleY = cy - (R - 10) * Math.sin(needleAngle);
+  const needleR = R - 14;
+  const needleX = cx + needleR * Math.cos(needleAngle);
+  const needleY = cy - needleR * Math.sin(needleAngle);
+
+  const gradId = `gauge-grad-${level}`;
+  const glowId = `gauge-glow-${level}`;
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      {/* SVG jauge */}
+    <div className="flex flex-col items-center gap-5">
       <div className="relative">
-        <svg width="200" height="110" viewBox="0 0 200 110">
-          {/* Piste grise */}
+        <svg
+          width="260"
+          height="160"
+          viewBox="0 0 260 160"
+          className="overflow-visible"
+          aria-label={`Score de risque ${Math.round(score * 100)} sur 100`}
+        >
+          <defs>
+            <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor={cfg.deep} />
+              <stop offset="55%" stopColor={cfg.color} />
+              <stop offset="100%" stopColor={cfg.color} stopOpacity="0.85" />
+            </linearGradient>
+            <filter id={glowId} x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="2.5" result="b" />
+              <feMerge>
+                <feMergeNode in="b" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          {/* Track */}
           <path
             d={arcPath(startAngle, endAngle)}
             fill="none"
-            stroke="#e5e7eb"
-            strokeWidth="16"
+            stroke="var(--pm-surface-3)"
+            strokeWidth="14"
             strokeLinecap="round"
           />
-          {/* Arc de progression */}
+          {/* Track inner shadow */}
+          <path
+            d={arcPath(startAngle, endAngle)}
+            fill="none"
+            stroke="var(--pm-bg-deep)"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            opacity="0.6"
+          />
+
+          {/* Progress arc */}
           <path
             d={arcPath(startAngle, progressAngle)}
             fill="none"
-            stroke={cfg.color}
-            strokeWidth="16"
+            stroke={`url(#${gradId})`}
+            strokeWidth="14"
             strokeLinecap="round"
-            style={{ transition: "d 0.7s cubic-bezier(0.4,0,0.2,1)" }}
+            filter={`url(#${glowId})`}
+            style={{ transition: "d 0.9s cubic-bezier(0.4,0,0.2,1)" }}
           />
-          {/* Jalons 33% / 66% */}
-          {[1/3, 2/3].map((frac) => {
+
+          {/* Jalons 1/3 et 2/3 */}
+          {[1 / 3, 2 / 3].map((frac) => {
             const a = Math.PI - frac * Math.PI;
-            const x1 = cx + (R - 10) * Math.cos(a);
-            const y1 = cy - (R - 10) * Math.sin(a);
-            const x2 = cx + (R + 10) * Math.cos(a);
-            const y2 = cy - (R + 10) * Math.sin(a);
+            const x1 = cx + (R - 16) * Math.cos(a);
+            const y1 = cy - (R - 16) * Math.sin(a);
+            const x2 = cx + (R + 6) * Math.cos(a);
+            const y2 = cy - (R + 6) * Math.sin(a);
             return (
               <line
                 key={frac}
-                x1={x1} y1={y1} x2={x2} y2={y2}
-                stroke="#d1d5db"
-                strokeWidth="2"
+                x1={x1}
+                y1={y1}
+                x2={x2}
+                y2={y2}
+                stroke="var(--pm-rule-strong)"
+                strokeWidth="1.4"
+                strokeLinecap="round"
               />
             );
           })}
+
           {/* Aiguille */}
           <line
-            x1={cx} y1={cy}
-            x2={needleX} y2={needleY}
-            stroke="#374151"
+            x1={cx}
+            y1={cy}
+            x2={needleX}
+            y2={needleY}
+            stroke="var(--pm-ink-soft)"
             strokeWidth="2.5"
             strokeLinecap="round"
-            style={{ transition: "x2 0.7s cubic-bezier(0.4,0,0.2,1), y2 0.7s cubic-bezier(0.4,0,0.2,1)" }}
+            style={{
+              transition:
+                "x2 0.9s cubic-bezier(0.4,0,0.2,1), y2 0.9s cubic-bezier(0.4,0,0.2,1)",
+            }}
           />
-          <circle cx={cx} cy={cy} r="4" fill="#374151" />
-          {/* Labels */}
-          <text x="18" y="108" fontSize="10" fill="#9ca3af">Faible</text>
-          <text x="84" y="22" fontSize="10" fill="#9ca3af" textAnchor="middle">Modéré</text>
-          <text x="168" y="108" fontSize="10" fill="#9ca3af" textAnchor="end">Élevé</text>
+          {/* Hub */}
+          <circle
+            cx={cx}
+            cy={cy}
+            r="9"
+            fill="var(--pm-surface-2)"
+            stroke="var(--pm-rule-gold)"
+            strokeWidth="1"
+          />
+          <circle cx={cx} cy={cy} r="4.5" fill="var(--pm-gold)" />
+          <circle cx={cx} cy={cy} r="1.8" fill="var(--pm-bg-deep)" />
+
+          {/* Tick labels — mono uppercase */}
+          <text
+            x={cx + (R + 14) * Math.cos(Math.PI)}
+            y={cy + 16}
+            fontSize="9"
+            fontFamily="var(--font-mono), JetBrains Mono, monospace"
+            letterSpacing="1.6"
+            fill="var(--pm-ink-muted)"
+            textAnchor="start"
+          >
+            FAIBLE
+          </text>
+          <text
+            x={cx}
+            y={cy - R - 14}
+            fontSize="9"
+            fontFamily="var(--font-mono), JetBrains Mono, monospace"
+            letterSpacing="1.6"
+            fill="var(--pm-ink-muted)"
+            textAnchor="middle"
+          >
+            MODÉRÉ
+          </text>
+          <text
+            x={cx + (R + 14) * Math.cos(0)}
+            y={cy + 16}
+            fontSize="9"
+            fontFamily="var(--font-mono), JetBrains Mono, monospace"
+            letterSpacing="1.6"
+            fill="var(--pm-ink-muted)"
+            textAnchor="end"
+          >
+            ÉLEVÉ
+          </text>
         </svg>
 
         {/* Score central */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center">
-          <span className="text-2xl font-bold tabular-nums">
-            {Math.round(score * 100)}
-          </span>
-          <span className="text-sm text-muted-foreground">/100</span>
+        <div className="pointer-events-none absolute inset-x-0 bottom-1 flex flex-col items-center">
+          <div className="flex items-baseline gap-1.5 font-display font-bold tabular-nums leading-none tracking-[-0.04em] text-ink">
+            <span className="text-[46px]">{Math.round(score * 100)}</span>
+            <span className="font-mono text-[11px] tracking-[0.12em] text-ink-muted">
+              /100
+            </span>
+          </div>
+          <div className="mt-1 font-mono text-[8.5px] uppercase tracking-[0.22em] text-ink-dim">
+            indice global
+          </div>
         </div>
       </div>
 
-      {/* Badge de niveau */}
-      <span className={cn("rounded-full px-4 py-1 text-sm font-semibold", cfg.bg, cfg.text)}>
-        {cfg.label}
-      </span>
+      {/* Level chip */}
+      <div
+        className="inline-flex items-center gap-2.5 rounded-sm border px-3.5 py-1.5"
+        style={{
+          background: `linear-gradient(135deg, ${cfg.glow}, transparent 70%)`,
+          borderColor: cfg.color,
+          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05), 0 0 18px -4px ${cfg.glow}`,
+        }}
+      >
+        <span
+          className="h-1.5 w-1.5 rounded-pill"
+          style={{
+            backgroundColor: cfg.color,
+            boxShadow: `0 0 8px ${cfg.color}`,
+          }}
+        />
+        <span
+          className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em]"
+          style={{ color: cfg.color }}
+        >
+          {cfg.label}
+        </span>
+      </div>
     </div>
   );
 }
