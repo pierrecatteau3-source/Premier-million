@@ -407,8 +407,17 @@ export async function getDashboardDeltas(userId: string): Promise<DashboardDelta
     const eur = total - ref;
     const apports = apportsSince(target);
     const performance = eur - apports;
+    // Base de performance : capital exposé sur la période = valeur au début + apports.
+    // Quand ref = 0 (rien avant la période), on tombe naturellement sur les apports,
+    // ce qui évite les divisions par zéro sur "1 an" pour un compte démarré récemment.
+    const basis = ref + apports;
     const pct = ref > 0 ? (eur / ref) * 100 : 0;
-    const performancePct = ref > 0 ? (performance / ref) * 100 : 0;
+    const performancePct =
+      basis > 0
+        ? (performance / basis) * 100
+        : apports > 0
+        ? (performance / apports) * 100
+        : 0;
     return { eur, pct, apports, performance, performancePct };
   }
 

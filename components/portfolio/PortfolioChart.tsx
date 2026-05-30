@@ -24,10 +24,11 @@ interface Evolution {
  * Le `cy` est la position SVG du point sur la courbe → la ligne y est alignée.
  */
 const CHART_LEFT_OFFSET = 98; // margin.left (8) + YAxis width (90)
-function ActiveDotWithLine(props: { cx?: number; cy?: number }) {
-  const { cx = 0, cy = 0 } = props;
+function ActiveDotWithLine(props: { cx?: number; cy?: number; plotBottom?: number }) {
+  const { cx = 0, cy = 0, plotBottom = 0 } = props;
   return (
     <g pointerEvents="none">
+      {/* Pointillé horizontal vers l'axe Y (au niveau du point) */}
       <line
         x1={CHART_LEFT_OFFSET}
         y1={cy}
@@ -38,6 +39,19 @@ function ActiveDotWithLine(props: { cx?: number; cy?: number }) {
         strokeWidth={1}
         strokeDasharray="4 4"
       />
+      {/* Pointillé vertical vers l'axe X (en-dessous du point uniquement) */}
+      {plotBottom > cy && (
+        <line
+          x1={cx}
+          y1={cy}
+          x2={cx}
+          y2={plotBottom}
+          stroke="hsl(var(--foreground))"
+          strokeOpacity={0.35}
+          strokeWidth={1}
+          strokeDasharray="4 4"
+        />
+      )}
       <circle
         cx={cx}
         cy={cy}
@@ -177,6 +191,9 @@ export function PortfolioChart({
 
   const chartHeight = compact ? 400 : 220;
   const emptyHeight = compact ? "h-[400px]" : "h-48";
+  // Approximation du bas de la zone de plot (sous laquelle se trouvent les ticks X) :
+  // chartHeight − margin.bottom (8) − xAxis room (~22 = fontSize 11 + tickMargin 12).
+  const plotBottom = chartHeight - 30;
 
   return (
     <div className="space-y-4">
@@ -272,7 +289,9 @@ export function PortfolioChart({
                       }
                     : false
                 }
-                activeDot={(props) => <ActiveDotWithLine cx={props.cx} cy={props.cy} />}
+                activeDot={(props) => (
+                  <ActiveDotWithLine cx={props.cx} cy={props.cy} plotBottom={plotBottom} />
+                )}
               />
             </LineChart>
           </ResponsiveContainer>
