@@ -324,6 +324,64 @@ export async function getAssetHistoryByRange(
   return result;
 }
 
+export type DashboardPeriodKey = "day" | "week" | "month" | "year";
+
+export interface PeriodDelta {
+  eur: number;
+  pct: number;
+}
+
+export type DashboardDeltas = Record<DashboardPeriodKey, PeriodDelta>;
+
+const EMPTY_DELTAS: DashboardDeltas = {
+  day: { eur: 0, pct: 0 },
+  week: { eur: 0, pct: 0 },
+  month: { eur: 0, pct: 0 },
+  year: { eur: 0, pct: 0 },
+};
+
+/** Calcule la variation patrimoniale sur les 4 périodes pour le toggle du dashboard. */
+export async function getDashboardDeltas(userId: string): Promise<DashboardDeltas> {
+  const now = new Date();
+  const oneYearAgo = new Date(now);
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+  oneYearAgo.setHours(0, 0, 0, 0);
+
+  const history = await buildHistoryFromRange(userId, oneYearAgo, now);
+  if (history.length === 0) return EMPTY_DELTAS;
+
+  const total = history[history.length - 1].totalValue;
+
+  function valueAt(target: Date): number {
+    target.setHours(0, 0, 0, 0);
+    const targetTs = target.getTime();
+    let lastBefore = history[0].totalValue;
+    for (const p of history) {
+      if (new Date(p.date).getTime() <= targetTs) lastBefore = p.totalValue;
+      else break;
+    }
+    return lastBefore;
+  }
+
+  function delta(daysBack: number, useCalendar: "month" | "year" | null = null): PeriodDelta {
+    const target = new Date(now);
+    if (useCalendar === "month") target.setMonth(target.getMonth() - 1);
+    else if (useCalendar === "year") target.setFullYear(target.getFullYear() - 1);
+    else target.setDate(target.getDate() - daysBack);
+    const ref = valueAt(target);
+    const eur = total - ref;
+    const pct = ref > 0 ? (eur / ref) * 100 : 0;
+    return { eur, pct };
+  }
+
+  return {
+    day: delta(1),
+    week: delta(7),
+    month: delta(0, "month"),
+    year: delta(0, "year"),
+  };
+}
+
 function buildEmpty(): PortfolioSummary {
   return {
     totalValue: 0,

@@ -1,12 +1,16 @@
+"use client";
+
 import { CoinStackDeco } from "@/components/icons";
+import type { PeriodDelta } from "@/lib/services/portfolio.service";
 
 interface Props {
   totalValue: number;
-  monthlyChange: number;
   epargneMensuelle: number | null;
   targetAge: number | null;
   assetCount: number;
   pilierCount: number;
+  delta: PeriodDelta;
+  periodLabel: string;
 }
 
 function eur0(v: number) {
@@ -21,13 +25,14 @@ const Eyebrow = ({ children }: { children: React.ReactNode }) => (
 
 export function TreasureStrip({
   totalValue,
-  monthlyChange,
   epargneMensuelle,
   targetAge,
   assetCount,
   pilierCount,
+  delta,
+  periodLabel,
 }: Props) {
-  const up = monthlyChange >= 0;
+  const up = delta.eur >= 0;
 
   return (
     <div className="mt-3 grid gap-px overflow-hidden rounded-lg border border-border bg-border md:grid-cols-[2fr_1fr_1fr]">
@@ -48,7 +53,7 @@ export function TreasureStrip({
         </div>
         <div className="mt-3.5 flex flex-wrap items-center gap-3.5 font-sans text-[10.5px] tracking-[0.06em] text-ink-muted">
           <span className={up ? "text-positive" : "text-negative"}>
-            {up ? "↑" : "↓"} {eur0(Math.abs(monthlyChange))} € période
+            {up ? "↑" : "↓"} {eur0(Math.abs(delta.eur))} € {periodLabel}
           </span>
           <span>·</span>
           <span>

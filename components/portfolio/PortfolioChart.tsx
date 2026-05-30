@@ -19,9 +19,8 @@ interface Evolution {
 }
 
 /**
- * Curseur vertical (du haut au bas du chart) — pour relier le hover à la date.
- * Note : `points[0].y` dans recharts = haut du chart, pas la valeur. La ligne
- * horizontale alignée sur la valeur est dessinée dans `ActiveDotWithLine`.
+ * Curseur vertical — démarre au point hovered et descend vers l'axe X.
+ * La partie au-dessus du point est masquée pour ne pas surcharger la zone haute.
  */
 interface CursorProps {
   points?: { x: number; y: number }[];
@@ -30,13 +29,14 @@ interface CursorProps {
 }
 function VerticalCursor({ points, top = 0, height = 0 }: CursorProps) {
   if (!points?.[0]) return null;
-  const { x } = points[0];
+  const { x, y } = points[0];
+  const bottom = top + height;
   return (
     <line
       x1={x}
-      y1={top}
+      y1={y}
       x2={x}
-      y2={top + height}
+      y2={bottom}
       stroke="hsl(var(--foreground))"
       strokeOpacity={0.35}
       strokeWidth={1}

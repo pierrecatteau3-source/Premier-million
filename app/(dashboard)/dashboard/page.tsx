@@ -1,11 +1,13 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
-import { getPortfolioSummary } from "@/lib/services/portfolio.service";
+import {
+  getPortfolioSummary,
+  getDashboardDeltas,
+} from "@/lib/services/portfolio.service";
 import { prisma } from "@/lib/prisma";
 import { ACHIEVEMENTS } from "@/lib/achievements/definitions";
-import { PioHero } from "@/components/dashboard/PioHero";
-import { TreasureStrip } from "@/components/dashboard/TreasureStrip";
+import { DashboardSummary } from "@/components/dashboard/DashboardSummary";
 import { MillionProgress } from "@/components/dashboard/MillionProgress";
 import { PillarsGrid } from "@/components/dashboard/PillarCard";
 import { EvolutionBlock } from "@/components/dashboard/EvolutionBlock";
@@ -40,7 +42,7 @@ export default async function DashboardPage() {
   if (!session?.user?.id) redirect("/login");
   const userId = session.user.id;
 
-  const [portfolio, user, unlocked] = await Promise.all([
+  const [portfolio, user, unlocked, deltas] = await Promise.all([
     getPortfolioSummary(userId),
     prisma.user.findUnique({
       where: { id: userId },
@@ -57,6 +59,7 @@ export default async function DashboardPage() {
       where: { userId },
       select: { achievementId: true },
     }),
+    getDashboardDeltas(userId),
   ]);
 
   const objectif = user?.objectif ?? 1_000_000;
@@ -109,23 +112,14 @@ export default async function DashboardPage() {
         Dashboard
       </SectionHeading>
 
-      <PioHero
+      <DashboardSummary
         totalValue={patrimoineTotal}
-        monthlyChange={portfolio.monthlyChange}
-        monthlyChangePercent={portfolio.monthlyChangePercent}
         capRestant={Math.max(objectif - patrimoineTotal, 0)}
         targetAge={targetAge}
         assetCount={assetCount}
         pilierCount={pilierCount}
-      />
-
-      <TreasureStrip
-        totalValue={patrimoineTotal}
-        monthlyChange={portfolio.monthlyChange}
         epargneMensuelle={epargneMensuelle}
-        targetAge={targetAge}
-        assetCount={assetCount}
-        pilierCount={pilierCount}
+        deltas={deltas}
       />
 
       <MillionProgress percent={progressionPercent} />

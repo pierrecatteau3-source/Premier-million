@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useRef, useState, useTransition } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -63,9 +63,16 @@ function today() {
   return new Date().toISOString().split("T")[0];
 }
 
+const VALID_PILIER_FILTERS = new Set(["PEA", "CRYPTO", "IMMO", "AUTRE", "LIQUIDITE"]);
+
 export function AssetManager({ piliers, priceMap = {} }: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialPilier = searchParams.get("pilier");
+  const initialFilter =
+    initialPilier && VALID_PILIER_FILTERS.has(initialPilier) ? initialPilier : "all";
   const [isPending, startTransition] = useTransition();
+  const tableRef = useRef<HTMLDivElement>(null);
 
   // ── Ajouter un actif ─────────────────────────────────────────
   const [showAddForm, setShowAddForm] = useState(false);
@@ -151,7 +158,14 @@ export function AssetManager({ piliers, priceMap = {} }: Props) {
   type SortBy = "value_desc" | "value_asc" | "name_asc" | "name_desc" | "pilier";
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortBy>("value_desc");
-  const [filterPilier, setFilterPilier] = useState("all");
+  const [filterPilier, setFilterPilier] = useState(initialFilter);
+
+  useEffect(() => {
+    if (initialFilter !== "all" && tableRef.current) {
+      tableRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Supprimer un actif ───────────────────────────────────────
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -229,6 +243,7 @@ export function AssetManager({ piliers, priceMap = {} }: Props) {
     <div className="space-y-4">
       <MigrationPrompt />
 
+      <div ref={tableRef} className="scroll-mt-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -619,6 +634,7 @@ export function AssetManager({ piliers, priceMap = {} }: Props) {
           )}
         </CardContent>
       </Card>
+      </div>
 
       {/* ── Formulaire ajout actif ───────────────────────────────── */}
       {showAddForm && (

@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import Link from "next/link";
 import type { PilierSummary, Pilier } from "@/types";
 import { IconPEA, IconCrypto, IconImmo, IconAutre, type IconProps } from "@/components/icons";
 
@@ -74,7 +75,10 @@ function PillarCard({ pilier }: { pilier: PilierSummary }) {
   const up = pvLatente >= 0;
 
   return (
-    <div className="group relative overflow-hidden rounded-lg border border-border bg-surface p-5 transition-all duration-200 hover:-translate-y-1 hover:border-gold/60 hover:bg-surface-2 hover:shadow-gold">
+    <Link
+      href={`/portefeuille?pilier=${pilier.pilier}`}
+      aria-label={`Voir les actifs du pilier ${cfg.name}`}
+      className="group relative block overflow-hidden rounded-lg border border-border bg-surface p-5 transition-all duration-200 hover:-translate-y-1 hover:border-gold/60 hover:bg-surface-2 hover:shadow-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background">
       <div className="mb-[18px] flex items-start justify-between gap-3">
         <div
           className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-md border"
@@ -141,7 +145,7 @@ function PillarCard({ pilier }: { pilier: PilierSummary }) {
           <span>cible {pilier.targetPercentage} %</span>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
