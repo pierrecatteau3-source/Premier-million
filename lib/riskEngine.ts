@@ -87,7 +87,7 @@ const VOL_BY_SUBTYPE: Record<string, number> = {
 };
 
 /** Fallback par type de pilier quand allocationDetaillee est null */
-const VOL_FALLBACK: Record<string, number> = {
+export const VOL_FALLBACK: Record<string, number> = {
   PEA: 0.15,
   CRYPTO: 0.65,
   IMMO: 0.08,
@@ -153,7 +153,8 @@ const LIQ_FALLBACK: Record<string, number> = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function volForSubtype(subtype: string): number {
+/** Volatilité de référence d'un sous-type (fallback 0.20 si inconnu). */
+export function volForSubtype(subtype: string): number {
   return VOL_BY_SUBTYPE[subtype] ?? 0.20;
 }
 

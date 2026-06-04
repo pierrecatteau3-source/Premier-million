@@ -1,8 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Info, X } from "lucide-react";
+import { ChevronDown, Info, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+/** Une ligne de composition (sous-type) derrière la volatilité ajustée d'un pilier. */
+export interface VolLine {
+  subtype: string;
+  /** Poids relatif du sous-type dans le pilier (%) */
+  weightPct: number;
+  /** Volatilité de référence du sous-type (%) */
+  volPct: number;
+}
 
 export interface RiskRow {
   pilier: string;
@@ -17,6 +27,12 @@ export interface RiskRow {
   percentage: number;
   /** Contribution au score (ex. 8.10) */
   points: number;
+  /** Composition de la vol. ajustée (vide si allocation détaillée non renseignée) */
+  breakdown: VolLine[];
+  /** Volatilité par défaut du pilier (%) — non-null seulement si breakdown vide */
+  fallbackVolPct: number | null;
+  /** Pénalité de concentration sectorielle PEA (×1.20) appliquée */
+  concentrationPenalty: boolean;
 }
 
 interface Props {
@@ -34,7 +50,8 @@ const VOL_REFERENCE = [
 ] as const;
 
 export function RiskAtoutsTable({ rows, scoreTotal }: Props) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false); // pop-up "Volatilités de référence" (via le « i »)
+  const [expanded, setExpanded] = useState<string | null>(null); // ligne dépliée
 
   useEffect(() => {
     if (!open) return;
@@ -45,6 +62,9 @@ export function RiskAtoutsTable({ rows, scoreTotal }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
+  const toggleRow = (pilier: string) =>
+    setExpanded((cur) => (cur === pilier ? null : pilier));
+
   return (
     <div className="flex-1">
       <table className="w-full text-sm">
@@ -52,15 +72,18 @@ export function RiskAtoutsTable({ rows, scoreTotal }: Props) {
           <tr className="border-b border-border/50">
             <th className="py-2 text-left text-xs font-medium text-muted-foreground">Actif</th>
             <th className="py-2 text-right text-xs font-medium text-muted-foreground hidden sm:table-cell">
-              <button
-                type="button"
-                onClick={() => setOpen(true)}
-                className="ml-auto inline-flex items-center gap-1 transition-colors hover:text-foreground"
-                title="Voir les volatilités de référence"
-              >
+              <span className="ml-auto inline-flex items-center justify-end gap-1">
                 Vol. ajustée
-                <Info className="h-3 w-3" />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setOpen(true)}
+                  className="rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+                  title="Volatilités de référence par classe d'actif"
+                  aria-label="Volatilités de référence"
+                >
+                  <Info className="h-3.5 w-3.5" />
+                </button>
+              </span>
             </th>
             <th className="py-2 text-right text-xs font-medium text-muted-foreground">Valeur</th>
             <th className="py-2 text-right text-xs font-medium text-muted-foreground">Poids</th>
@@ -68,36 +91,98 @@ export function RiskAtoutsTable({ rows, scoreTotal }: Props) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
-            <tr
-              key={r.pilier}
-              className="border-b border-border/30 transition-colors hover:bg-muted/20"
-            >
-              <td className="py-2.5">
-                <div className="flex items-center gap-2">
-                  <span className={`h-2 w-2 rounded-full ${r.colorClass}`} />
-                  <span>{r.label}</span>
-                </div>
-              </td>
-              <td className="py-2.5 text-right tabular-nums hidden sm:table-cell">
-                <button
-                  type="button"
-                  onClick={() => setOpen(true)}
-                  className="underline decoration-dotted decoration-muted-foreground/50 underline-offset-2 transition-colors hover:text-primary hover:decoration-primary"
-                  title="Voir les volatilités de référence"
+          {rows.map((r) => {
+            const isOpen = expanded === r.pilier;
+            return (
+              <Fragment key={r.pilier}>
+                <tr
+                  onClick={() => toggleRow(r.pilier)}
+                  aria-expanded={isOpen}
+                  className="cursor-pointer border-b border-border/30 transition-colors hover:bg-muted/20"
                 >
-                  {r.volAjusteePct.toFixed(1)} %
-                </button>
-              </td>
-              <td className="py-2.5 text-right tabular-nums">{r.valueLabel}</td>
-              <td className="py-2.5 text-right tabular-nums font-medium">
-                {r.percentage.toFixed(1)} %
-              </td>
-              <td className="py-2.5 text-right tabular-nums text-primary">
-                {r.points.toFixed(2)}
-              </td>
-            </tr>
-          ))}
+                  <td className="py-2.5">
+                    <div className="flex items-center gap-2">
+                      <ChevronDown
+                        className={cn(
+                          "h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform",
+                          isOpen && "rotate-180"
+                        )}
+                      />
+                      <span className={`h-2 w-2 rounded-full ${r.colorClass}`} />
+                      <span>{r.label}</span>
+                    </div>
+                  </td>
+                  <td className="py-2.5 text-right tabular-nums hidden sm:table-cell">
+                    {r.volAjusteePct.toFixed(1)} %
+                  </td>
+                  <td className="py-2.5 text-right tabular-nums">{r.valueLabel}</td>
+                  <td className="py-2.5 text-right tabular-nums font-medium">
+                    {r.percentage.toFixed(1)} %
+                  </td>
+                  <td className="py-2.5 text-right tabular-nums text-primary">
+                    {r.points.toFixed(2)}
+                  </td>
+                </tr>
+
+                {isOpen && (
+                  <tr className="border-b border-border/30">
+                    <td colSpan={5} className="bg-muted/10 p-0">
+                      <div className="space-y-2 px-3 py-3 sm:px-9">
+                        <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                          Composition de la volatilité ajustée
+                        </p>
+
+                        {r.breakdown.length > 0 ? (
+                          <>
+                            <div className="space-y-1">
+                              {r.breakdown.map((b) => (
+                                <div
+                                  key={b.subtype}
+                                  className="flex items-center justify-between gap-3 text-xs"
+                                >
+                                  <span className="min-w-0 truncate text-foreground/90">
+                                    {b.subtype}
+                                  </span>
+                                  <span className="flex shrink-0 items-center gap-3 tabular-nums text-muted-foreground">
+                                    <span>poids {b.weightPct.toFixed(0)} %</span>
+                                    <span className="text-foreground">
+                                      vol. réf. {b.volPct.toFixed(1)} %
+                                    </span>
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+
+                            {r.concentrationPenalty && (
+                              <p className="text-[11px] text-amber-500">
+                                + pénalité de concentration sectorielle ×1,20 (une ligne &gt; 50 %
+                                du pilier)
+                              </p>
+                            )}
+
+                            <div className="flex items-center justify-between border-t border-border/40 pt-1.5 text-xs font-medium">
+                              <span>Vol. ajustée pondérée</span>
+                              <span className="tabular-nums text-primary">
+                                {r.volAjusteePct.toFixed(1)} %
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">
+                            Allocation détaillée non renseignée — volatilité par défaut du pilier&nbsp;:{" "}
+                            <span className="font-medium text-foreground">
+                              {(r.fallbackVolPct ?? 0).toFixed(1)} %
+                            </span>
+                            .
+                          </p>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            );
+          })}
         </tbody>
         <tfoot>
           <tr className="border-t border-border/50">
@@ -132,8 +217,9 @@ export function RiskAtoutsTable({ rows, scoreTotal }: Props) {
                     Volatilités de référence
                   </h2>
                   <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
-                    Estimations annuelles utilisées par le modèle de risque. La « vol. ajustée »
-                    du tableau pondère ces références selon votre allocation détaillée.
+                    Estimations annuelles par classe d&apos;actif utilisées par le modèle. La
+                    « vol. ajustée » de chaque ligne pondère ces références selon votre allocation
+                    détaillée (clique une ligne pour voir le détail).
                   </p>
                 </div>
                 <button

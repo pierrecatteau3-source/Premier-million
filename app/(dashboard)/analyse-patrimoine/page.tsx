@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getPortfolioSummary } from "@/lib/services/portfolio.service";
-import { computeAdvancedRiskScore } from "@/lib/riskEngine";
+import { computeAdvancedRiskScore, volForSubtype, VOL_FALLBACK } from "@/lib/riskEngine";
 import { TYPE_TO_PILIER } from "@/lib/constants/allocation-types";
 import { Header } from "@/components/layout/Header";
 import { AnalysisCard } from "@/components/analysis/AnalysisCard";
@@ -159,10 +159,24 @@ export default async function AnalysePatrimoinePage({
   const riskLevel: "faible" | "modéré" | "élevé" =
     riskScore < 3.5 ? "faible" : riskScore < 5.5 ? "modéré" : "élevé";
 
-  // Lignes sérialisables pour le tableau Risque & Atouts (composant client)
+  // Lignes sérialisables pour le tableau Risque & Atouts (composant client).
+  // breakdown = composition de la vol. ajustée (sous-types + vol. de référence + poids),
+  // reconstruite à l'identique de computePilierVol (poids relatif au pilier).
   const riskRows: RiskRow[] = piliersNet.map((p) => {
     const d = riskResult.detail.find((x) => x.pilier === p.pilier);
     const volAjustee = d?.volAjustee ?? 0;
+
+    const lines = allocationLines.filter((l) => TYPE_TO_PILIER[l.type] === p.pilier);
+    const totalPct = lines.reduce((s, l) => s + l.pct, 0);
+    const breakdown =
+      totalPct > 0
+        ? lines.map((l) => ({
+            subtype: l.subtype,
+            weightPct: (l.pct / totalPct) * 100,
+            volPct: volForSubtype(l.subtype) * 100,
+          }))
+        : [];
+
     return {
       pilier: p.pilier,
       label: PILIER_LABELS[p.pilier] ?? p.pilier,
@@ -171,6 +185,10 @@ export default async function AnalysePatrimoinePage({
       valueLabel: formatEur(p.totalValue),
       percentage: p.percentage,
       points: (p.percentage / 100) * volAjustee * 10,
+      breakdown,
+      fallbackVolPct: totalPct > 0 ? null : (VOL_FALLBACK[p.pilier] ?? 0.15) * 100,
+      concentrationPenalty:
+        p.pilier === "PEA" && totalPct > 0 && lines.some((l) => l.pct / totalPct > 0.5),
     };
   });
 
