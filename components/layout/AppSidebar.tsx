@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { usePioChat } from "@/components/pio/PioChatProvider";
 import {
   IconDashboard,
   IconWallet,
@@ -49,6 +50,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { openChat } = usePioChat();
 
   return (
     <aside className="hidden md:flex h-screen w-64 shrink-0 flex-col gap-8 border-r border-border bg-surface-deep px-6 pb-6 pt-7">
@@ -129,27 +131,30 @@ export function AppSidebar() {
           Vol. I · Saison 2026
         </span>
 
-        {/* Pio peek */}
-        <div
-          className="flex items-center gap-3 rounded-lg border border-border p-4"
+        {/* Pio peek — clic sur sa tête = ouverture du chat */}
+        <button
+          type="button"
+          onClick={openChat}
+          aria-label="Discuter avec Pio"
+          className="group flex w-full items-center gap-3 rounded-lg border border-border p-4 text-left transition-colors hover:border-gold/50"
           style={{
             background: "linear-gradient(180deg, var(--pm-surface), transparent)",
           }}
         >
-        <Image
-          src="/character/pio-avatar.png"
-          alt="Pio"
-          width={40}
-          height={40}
-          className="shrink-0 rounded-full object-cover"
-        />
-        <div className="font-display text-[12px] leading-tight tracking-[-0.01em] text-ink-soft">
-          <span className="mb-1 block font-mono text-[9px] uppercase not-italic tracking-[0.16em] text-gold">
-            Pio · niv. 4
-          </span>
-          Tranquille, on a le temps.
-        </div>
-        </div>
+          <Image
+            src="/character/pio-avatar.png"
+            alt="Pio"
+            width={40}
+            height={40}
+            className="shrink-0 rounded-full object-cover ring-0 transition-all group-hover:ring-2 group-hover:ring-gold/40"
+          />
+          <div className="font-display text-[12px] leading-tight tracking-[-0.01em] text-ink-soft">
+            <span className="mb-1 block font-mono text-[9px] uppercase not-italic tracking-[0.16em] text-gold">
+              Pio · niv. 4
+            </span>
+            <span className="text-ink-soft group-hover:text-ink">Discuter avec Pio →</span>
+          </div>
+        </button>
       </div>
     </aside>
   );

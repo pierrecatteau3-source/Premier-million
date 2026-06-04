@@ -25,6 +25,15 @@ export const MAX_TOKENS = 1500;
 // Modèle optimisé pour les analyses — rapide, économique, suffisant pour analyse structurée
 export const ANALYSIS_MODEL = "claude-haiku-4-5";
 
+// Modèle du chat Pio — Haiku 4.5 pour l'instant (changera par la suite : une seule ligne à éditer)
+export const CHAT_MODEL = "claude-haiku-4-5";
+
+// Réponses de Pio = courtes ; budget de sortie volontairement serré
+const CHAT_MAX_OUTPUT_TOKENS = 700;
+
+// Timeout chat plus court que les analyses — le chat doit rester réactif
+const CHAT_TIMEOUT_MS = 30_000;
+
 // Token budget pour les analyses — ~900 mots, suffisant pour une analyse complète
 export const ANALYSIS_MAX_OUTPUT_TOKENS = parseInt(
   process.env.ANTHROPIC_MAX_OUTPUT_TOKENS ?? "10000",
@@ -81,6 +90,56 @@ export async function callClaudeAnalysis(
         max_tokens: ANALYSIS_MAX_OUTPUT_TOKENS,
         system: systemPrompt,
         messages: [{ role: "user", content: userMessage }],
+      },
+      { signal: controller.signal }
+    );
+
+    const block = message.content[0];
+    if (!block || block.type !== "text") {
+      throw new Error("Réponse Claude inattendue (type non-text)");
+    }
+
+    return {
+      text: block.text,
+      outputTokens: message.usage.output_tokens,
+    };
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * Appel Claude pour le chat Pio.
+ *
+ * - Modèle : CHAT_MODEL (Haiku 4.5)
+ * - System en 2 blocs : persona (statique, marquée pour le cache) + contexte (volatil)
+ * - Token budget serré + timeout court pour rester réactif
+ *
+ * @param persona  Custom instructions statiques (caractère de Pio)
+ * @param context  Contexte dynamique (patrimoine, marché du jour, heure…)
+ * @param messages Historique de la conversation (doit commencer par un message "user")
+ */
+export async function callPioChat(
+  persona: string,
+  context: string,
+  messages: { role: "user" | "assistant"; content: string }[]
+): Promise<{ text: string; outputTokens: number }> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), CHAT_TIMEOUT_MS);
+
+  try {
+    const message = await anthropic.messages.create(
+      {
+        model: CHAT_MODEL,
+        max_tokens: CHAT_MAX_OUTPUT_TOKENS,
+        system: [
+          // Bloc statique → candidat au cache (sans effet sous le seuil min, mais
+          // pattern correct et gratuit si la persona grossit ou si le modèle change).
+          { type: "text", text: persona, cache_control: { type: "ephemeral" } },
+          // Bloc volatil (heure, patrimoine, marché) → après le breakpoint, jamais caché.
+          { type: "text", text: context },
+        ],
+        messages,
       },
       { signal: controller.signal }
     );
