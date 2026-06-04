@@ -7,9 +7,7 @@ import { cn } from "@/lib/utils";
 import {
   IconDashboard,
   IconWallet,
-  IconShield,
   IconAnalyse,
-  IconGlobe,
   IconTarget,
   IconSparkles,
   IconTrophy,
@@ -30,15 +28,12 @@ const NAV: { group: string; items: NavItem[] }[] = [
     items: [
       { href: "/dashboard", label: "Dashboard", Icon: IconDashboard },
       { href: "/portefeuille", label: "Portefeuille", Icon: IconWallet },
-      { href: "/risque", label: "Risque & atouts", Icon: IconShield },
     ],
   },
   {
     group: "Analyse",
     items: [
-      { href: "/analyse", label: "Analyse", Icon: IconAnalyse },
       { href: "/analyse-patrimoine", label: "Analyse patrimoine", Icon: IconAnalyse },
-      { href: "/vision-marche", label: "Vision marché", Icon: IconGlobe },
       { href: "/profil", label: "Profil & stratégie", Icon: IconTarget },
     ],
   },

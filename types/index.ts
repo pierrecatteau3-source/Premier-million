@@ -9,7 +9,6 @@
 export * from "./enums";
 export * from "./portfolio";
 export * from "./analysis";
-export * from "./risk";
 export * from "./profile";
 export * from "./api";
 export * from "./achievements";

@@ -47,13 +47,3 @@ export const PILIER_COLOR: Record<Pilier, { tailwind: string; hex: string }> = {
   AUTRE: { tailwind: "bg-gray-400", hex: "#9ca3af" },
   LIQUIDITE: { tailwind: "bg-cyan-500", hex: "#06b6d4" },
 };
-
-// Volatilité estimée par pilier (utilisée dans lib/risk.ts)
-export const PILIER_VOLATILITY: Record<Pilier, number> = {
-  PEA: 0.15,
-  CRYPTO: 0.65,
-  IMMO: 0.08,
-  AUTRE: 0.05,
-  // LIQUIDITE : exclu du calcul de risque — valeur nulle pour éviter toute contribution
-  LIQUIDITE: 0,
-};
