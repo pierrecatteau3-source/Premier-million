@@ -1,10 +1,10 @@
 /**
  * Banque de 30 salutations de Pio, par tranche horaire.
- * Module pur (importable côté client pour le fallback). Pas d'import serveur.
+ * Module pur (importable côté client pour le fallback). Pas d'import serveur (sauf un type).
  *
  * Le choix est aléatoire mais toujours cohérent avec l'heure locale.
- * Une "vanne marché du jour" peut être ajoutée à partir de données live
- * (voir buildMarketJab), côté serveur.
+ * Une vanne sur la PERF RÉELLE du portefeuille de la semaine peut être ajoutée
+ * (buildPerfJab) — c'est ça qui chambre vraiment l'utilisateur.
  */
 
 import type { MarketSnapshot } from "@/lib/services/market-data.service";
@@ -18,42 +18,42 @@ interface Greeting {
 
 export const GREETINGS: Greeting[] = [
   // ── Nuit (0h–6h) ──────────────────────────────────────────────
-  { slot: "nuit", text: "Oula, il est tard. Le marché dort, toi aussi tu devrais." },
-  { slot: "nuit", text: "Tu check ton patrimoine à cette heure ? Respect. Mais va dormir un peu." },
-  { slot: "nuit", text: "La nuit porte conseil, jamais les ordres de bourse. On verra ça demain, au calme." },
-  { slot: "nuit", text: "Insomnie ou motivation ? Dans les deux cas, je suis là." },
-  { slot: "nuit", text: "À cette heure, même les bougies japonaises sont au dodo. Pose-toi." },
-  { slot: "nuit", text: "Coucou noctambule. Rien d'urgent ce soir : le million attendra le réveil." },
+  { slot: "nuit", text: "Il est genre 3h et tu check ton patrimoine. Tout va bien dans ta vie ?" },
+  { slot: "nuit", text: "À cette heure, les seuls qui bougent c'est les marchés asiatiques et toi. Va dormir." },
+  { slot: "nuit", text: "Insomnie ? Compter les moutons c'est gratuit, contrairement à tes nuits blanches sur les graphiques." },
+  { slot: "nuit", text: "Tu sais que fixer ton portefeuille à 4h du mat' le fera pas monter, hein ?" },
+  { slot: "nuit", text: "La nuit on rêve d'être riche, le jour on bosse pour. Là, t'es juste censé dormir." },
+  { slot: "nuit", text: "Coucou le vampire de la bourse. Rien n'a bougé depuis 22h, promis. Au lit." },
 
   // ── Matin (6h–12h) ────────────────────────────────────────────
-  { slot: "matin", text: "Bien dormi ? Allez, nouvelle journée, nouveau petit pas vers le million." },
-  { slot: "matin", text: "Café d'abord, patrimoine ensuite. Dans cet ordre, sinon ça pique." },
-  { slot: "matin", text: "Le marché ouvre : on respire, on regarde, on panique pas." },
-  { slot: "matin", text: "Bonjour ! Aujourd'hui on construit, brique par brique." },
-  { slot: "matin", text: "Réveil tranquille ? Parfait, les meilleures décisions se prennent à froid." },
-  { slot: "matin", text: "Salut l'investisseur. On garde le cap, comme d'hab." },
-  { slot: "matin", text: "Matinée idéale pour ne rien faire de précipité. C'est ça, la force." },
-  { slot: "matin", text: "Hello ! T'as pensé à ton versement du mois ? Je dis ça, je dis rien." },
-  { slot: "matin", text: "Le soleil se lève, ton patrimoine aussi — sur le long terme, hein." },
+  { slot: "matin", text: "Bien dormi ? Parfait, parce que ton portefeuille, lui, a fait des cauchemars." },
+  { slot: "matin", text: "Café, douche, et on évite de regarder les cours avant le 2e expresso." },
+  { slot: "matin", text: "Bonjour ! Nouvelle journée pour prendre des décisions que tu regretteras dans 6 mois." },
+  { slot: "matin", text: "Réveil difficile ? Attends de voir l'ouverture des marchés." },
+  { slot: "matin", text: "Salut champion. Aujourd'hui on enrichit pas le courtier, on s'enrichit nous." },
+  { slot: "matin", text: "Le marché ouvre bientôt. Respire. Pose ce bouton 'acheter'." },
+  { slot: "matin", text: "Hello ! T'as fait ton versement du mois ou tu comptes sur la chance ?" },
+  { slot: "matin", text: "Matinée idéale pour faire semblant d'avoir une stratégie." },
 
   // ── Après-midi (12h–18h) ──────────────────────────────────────
-  { slot: "aprem", text: "Petite pause patrimoine en plein aprem ? Bonne idée." },
-  { slot: "aprem", text: "Coup de barre de 14h ? Regarder ses progrès, ça réveille." },
-  { slot: "aprem", text: "L'après-midi, le moment parfait pour relire ta stratégie au calme." },
-  { slot: "aprem", text: "Salut ! Le marché s'agite, nous on reste posés sur la planche." },
-  { slot: "aprem", text: "Yo. Rien ne presse, on glisse vers l'objectif tranquillement." },
-  { slot: "aprem", text: "Bonjour ! Un petit check rapide et on retourne vivre sa vie ?" },
-  { slot: "aprem", text: "Milieu de journée, milieu de chemin vers le million. On avance." },
-  { slot: "aprem", text: "Re ! T'inquiète, j'ai gardé un œil sur tout pendant ce temps." },
+  { slot: "aprem", text: "Petite pause boulot pour stresser sur tes investissements ? Très sain." },
+  { slot: "aprem", text: "14h, le coup de barre. Tes plus-values aussi font la sieste on dirait." },
+  { slot: "aprem", text: "Tu rafraîchis la page toutes les 5 minutes ? Spoiler : ça change rien." },
+  { slot: "aprem", text: "Salut ! Le marché monte, descend, remonte... un vrai skatepark. Accroche-toi." },
+  { slot: "aprem", text: "Yo. T'inquiète, j'ai tout surveillé pendant que tu 'travaillais'." },
+  { slot: "aprem", text: "L'aprem, le moment parfait pour relire ta strat et te demander à quoi tu pensais." },
+  { slot: "aprem", text: "Bonjour ! Tu veux la version qui rassure ou les vrais chiffres ?" },
+  { slot: "aprem", text: "Re ! Alors, on vient prendre des nouvelles ou se faire chambrer ?" },
 
   // ── Soir (18h–0h) ─────────────────────────────────────────────
-  { slot: "soir", text: "Bonsoir ! Journée finie, on fait le point sans stress ?" },
-  { slot: "soir", text: "Le marché ferme, l'esprit bientôt aussi. On regarde vite fait." },
-  { slot: "soir", text: "Soirée tranquille ? Parfait pour penser long terme, pas court terme." },
-  { slot: "soir", text: "Salut ! Bilan du soir : t'es un cran plus près du million qu'hier." },
-  { slot: "soir", text: "Bonne soirée. Les paniques de fin de journée, c'est pas notre style." },
-  { slot: "soir", text: "Yo, l'heure de débrancher approche. Un dernier coup d'œil et au lit." },
-  { slot: "soir", text: "Coucou ! On souffle, on relativise : demain est un autre jour de bourse." },
+  { slot: "soir", text: "Bonsoir ! Bilan du jour : toujours pas millionnaire. Mais on y bosse." },
+  { slot: "soir", text: "Le marché ferme, le stress aussi normalement. Normalement." },
+  { slot: "soir", text: "Soirée Netflix et lignes de bourse ? T'as une vie passionnante toi." },
+  { slot: "soir", text: "Salut ! Range le téléphone, tes actions vont pas s'envoler pendant le dîner." },
+  { slot: "soir", text: "Bonne soirée. Demain, un autre jour pour perdre de l'argent intelligemment." },
+  { slot: "soir", text: "Yo, l'heure du débrief. T'as fait combien de bêtises aujourd'hui ?" },
+  { slot: "soir", text: "Coucou ! On souffle. Même Warren Buffett éteint son écran à un moment." },
+  { slot: "soir", text: "Fin de journée. Un dernier coup d'œil paniqué et au lit, allez." },
 ];
 
 export function slotForHour(hour: number): Slot {
@@ -75,32 +75,53 @@ export function pickGreetingForHour(hour: number): string {
   return list[Math.floor(Math.random() * list.length)].text;
 }
 
-/** Petit pic sur le marché du jour à partir d'un snapshot live. "" si pas de données. */
-export function buildMarketJab(snapshot: MarketSnapshot | null): string {
-  if (!snapshot) return "";
-
-  const btc = snapshot.crypto?.btc?.change24h;
-  if (typeof btc === "number" && Number.isFinite(btc)) {
-    const v = Math.round(btc * 10) / 10;
-    if (v >= 5) return `Et le BTC qui fait +${v} % aujourd'hui — t'as bien fait de pas tout vendre 😏`;
-    if (v >= 1.5) return `Le BTC est dans le vert (+${v} %), mais on s'enflamme pas hein.`;
-    if (v <= -5) return `Le BTC se prend ${v} % aujourd'hui. Respire, on joue le long terme.`;
-    if (v <= -1.5) return `Petit coup de mou sur le BTC (${v} %), rien de dramatique.`;
-    return `BTC quasi à plat aujourd'hui (${v >= 0 ? "+" : ""}${v} %) — journée parfaite pour rien faire de bête.`;
-  }
-
-  const cac = snapshot.indices?.cac40?.change1d;
-  if (typeof cac === "number" && Number.isFinite(cac)) {
-    const v = Math.round(cac * 10) / 10;
-    return v >= 0
-      ? `Le CAC est à +${v} % aujourd'hui, tranquille.`
-      : `Le CAC fait ${v} % aujourd'hui, on garde le cap.`;
-  }
-
-  return "";
+function pick(arr: string[]): string {
+  return arr[Math.floor(Math.random() * arr.length)];
 }
 
-/** Ligne marché factuelle pour le contexte du chat (pas une vanne). "" si rien. */
+/**
+ * Vanne sur la PERF RÉELLE du portefeuille sur 7 jours (en %).
+ * Plus c'est rouge, plus Pio chambre. "" si pas de donnée.
+ */
+export function buildPerfJab(perfPct: number | null): string {
+  if (perfPct == null || !Number.isFinite(perfPct)) return "";
+  const v = Math.round(perfPct * 10) / 10;
+  const abs = Math.abs(v);
+
+  if (v <= -5) {
+    return pick([
+      `Et... -${abs} % cette semaine. T'as investi ou tu fais du don aux marchés ? 😂`,
+      `-${abs} % en 7 jours. À ce rythme, le million c'est pour ta prochaine vie.`,
+      `Aïe. -${abs} % cette semaine. Même moi sur ma planche je tombe moins souvent.`,
+      `-${abs} % ! Bon. On respire... et on évite surtout de tout vendre maintenant.`,
+    ]);
+  }
+  if (v <= -2) {
+    return pick([
+      `Petit -${abs} % cette semaine. Rien de fou, mais on va éviter d'en rajouter hein.`,
+      `-${abs} % sur 7 jours. Le marché te teste. Tiens bon, lâche pas la rampe.`,
+      `On est à -${abs} % cette semaine. C'est le jeu. On vend pas dans la panique.`,
+    ]);
+  }
+  if (v < 2) {
+    return pick([
+      `Semaine plate (${v >= 0 ? "+" : ""}${v} %). Ennuyeux ? Non, sain. Le calme avant le million.`,
+      `Quasi à l'équilibre cette semaine. Parfait pour rien faire de bête.`,
+    ]);
+  }
+  if (v < 5) {
+    return pick([
+      `+${v} % cette semaine, joli. Garde la tête froide, c'est pas encore la villa à Saint-Barth.`,
+      `+${v} % sur 7 jours, pas mal du tout. On reste humble par contre.`,
+    ]);
+  }
+  return pick([
+    `+${v} % cette semaine ?! Doucement le loup de Wall Street, ça monte pas toujours.`,
+    `+${v} % ! Grosse semaine. Profite, mais rappelle-toi : ça redescend aussi.`,
+  ]);
+}
+
+/** Ligne marché GÉNÉRAL pour le contexte du chat (pas les actifs de l'utilisateur). "" si rien. */
 export function formatMarketContext(snapshot: MarketSnapshot | null): string {
   if (!snapshot) return "";
   const parts: string[] = [];

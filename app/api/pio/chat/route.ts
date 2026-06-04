@@ -3,7 +3,10 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 import { callPioChat } from "@/lib/claude";
-import { getPortfolioSummary } from "@/lib/services/portfolio.service";
+import {
+  getPortfolioSummary,
+  getWeeklyPerformancePct,
+} from "@/lib/services/portfolio.service";
 import { fetchMarketSnapshot } from "@/lib/services/market-data.service";
 import { PIO_PERSONA, buildPioContext } from "@/lib/pio/persona";
 import { formatMarketContext } from "@/lib/pio/greetings";
@@ -54,10 +57,11 @@ export async function POST(req: NextRequest) {
   const messages = parsed.data.messages.slice(firstUser);
 
   try {
-    const [portfolio, user, market] = await Promise.all([
+    const [portfolio, user, market, weeklyPerfPct] = await Promise.all([
       getPortfolioSummary(userId).catch(() => null),
       prisma.user.findUnique({ where: { id: userId }, select: { objectif: true } }),
       fetchMarketSnapshot().catch(() => null),
+      getWeeklyPerformancePct(userId).catch(() => null),
     ]);
 
     const objectifEur = user?.objectif ?? 1_000_000;
@@ -84,6 +88,7 @@ export async function POST(req: NextRequest) {
       patrimoineEur,
       objectifEur,
       progressPct,
+      weeklyPerfPct,
       allocation,
       marketLine: formatMarketContext(market),
     });

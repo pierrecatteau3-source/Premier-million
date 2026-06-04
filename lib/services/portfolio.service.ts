@@ -265,6 +265,20 @@ export async function getPortfolioHistory(
   return buildHistoryFromRange(userId, startDate, now);
 }
 
+/**
+ * Performance brute du portefeuille sur 7 jours, en % (valeur de fin vs début).
+ * Renvoie null si l'historique est insuffisant ou si la valeur de départ est nulle.
+ * Utilisé par Pio pour chambrer l'utilisateur sur sa semaine.
+ */
+export async function getWeeklyPerformancePct(userId: string): Promise<number | null> {
+  const history = await getPortfolioHistory(userId, "7d");
+  if (history.length < 2) return null;
+  const start = history[0].totalValue;
+  const end = history[history.length - 1].totalValue;
+  if (start <= 0) return null;
+  return Math.round(((end - start) / start) * 1000) / 10;
+}
+
 export async function getPortfolioHistoryByRange(
   userId: string,
   range: DateRange
