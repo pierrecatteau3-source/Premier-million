@@ -4,10 +4,10 @@ import { requireSession } from "@/lib/session";
 import { HORIZON } from "@/types";
 import type { Horizon } from "@/types";
 
-const CACHE_DAYS = 30;
 const validHorizons = Object.values(HORIZON);
 
-// GET /api/analysis/[horizon]?type=PORTFOLIO|MARKET — retourne l'analyse en cache pour cet horizon
+// GET /api/analysis/[horizon]?type=PORTFOLIO|MARKET — retourne la dernière analyse pour cet horizon
+// (aucune expiration : les analyses sont conservées en base indéfiniment)
 export async function GET(
   req: NextRequest,
   { params }: { params: { horizon: string } }
@@ -26,14 +26,11 @@ export async function GET(
   const { searchParams } = new URL(req.url);
   const analysisType = searchParams.get("type") ?? "PORTFOLIO";
 
-  const cacheLimit = new Date(Date.now() - CACHE_DAYS * 24 * 60 * 60 * 1000);
-
   const analysis = await prisma.analysis.findFirst({
     where: {
       userId,
       horizon: params.horizon as Horizon,
       type: analysisType,
-      createdAt: { gte: cacheLimit },
     },
     orderBy: { createdAt: "desc" },
   });

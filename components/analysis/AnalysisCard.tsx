@@ -9,6 +9,10 @@ import { Loader2, RefreshCw, Clock, Zap, AlertTriangle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+/** Au-delà de ce nombre de jours, l'analyse est signalée obsolète (vignette).
+ *  Elle reste conservée en base indéfiniment — aucune suppression. */
+const STALE_DAYS = 30;
+
 interface Analysis {
   id: string;
   horizon: string;
@@ -86,7 +90,7 @@ function ConfirmModal({
         </p>
 
         <p className="text-xs text-muted-foreground mb-5 rounded-md bg-muted/50 px-3 py-2">
-          Une mise à jour automatique est disponible après 30 jours. Il est conseillé de ne régénérer qu&apos;en cas de changement significatif de votre situation.
+          L&apos;analyse est conservée en base sans limite de temps. Il est conseillé de ne l&apos;actualiser qu&apos;en cas de changement significatif de votre situation.
         </p>
 
         <div className="flex gap-2 justify-end">
@@ -148,11 +152,11 @@ export function AnalysisCard({ horizon, analysisType = "PORTFOLIO", initial }: P
 
     const age = ageDays(result.analysis.createdAt);
 
-    if (age < 30) {
+    if (age < STALE_DAYS) {
       // Analyse récente → demander confirmation
       setShowConfirm(true);
     } else {
-      // Analyse expirée (> 30 jours) → régénération directe
+      // Analyse obsolète (≥ STALE_DAYS jours) → actualisation directe
       void generate(true);
     }
   }
@@ -168,7 +172,7 @@ export function AnalysisCard({ horizon, analysisType = "PORTFOLIO", initial }: P
 
   const horizonLabel = HORIZON_LABEL[horizon];
   const age = result ? ageDays(result.analysis.createdAt) : null;
-  const isExpired = age !== null && age >= 30;
+  const isStale = age !== null && age >= STALE_DAYS;
 
   const loadingLabel =
     analysisType === "MARKET"
@@ -192,7 +196,7 @@ export function AnalysisCard({ horizon, analysisType = "PORTFOLIO", initial }: P
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             {result ? (
               <>
-                {result.cached && !isExpired ? (
+                {result.cached && !isStale ? (
                   <Clock className="h-4 w-4" />
                 ) : (
                   <Zap className="h-4 w-4 text-primary" />
@@ -210,17 +214,18 @@ export function AnalysisCard({ horizon, analysisType = "PORTFOLIO", initial }: P
                   Mis à jour le {formatDate(result.analysis.createdAt)}
                 </span>
 
-                {/* Badge âge */}
+                {/* Vignette âge / obsolescence */}
                 {age !== null && age > 0 && (
                   <span
                     className={cn(
-                      "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                      isExpired
+                      "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+                      isStale
                         ? "bg-amber-100 text-amber-700 border border-amber-200"
                         : "bg-green-100 text-green-700 border border-green-200"
                     )}
                   >
-                    {isExpired ? "Expirée" : `il y a ${age} j`}
+                    {isStale && <AlertTriangle className="h-3 w-3" />}
+                    {isStale ? `Obsolète · ${age} j` : `il y a ${age} j`}
                   </span>
                 )}
               </>
@@ -232,7 +237,7 @@ export function AnalysisCard({ horizon, analysisType = "PORTFOLIO", initial }: P
           <Button
             onClick={handleRegenerateClick}
             disabled={isPending}
-            variant={result && !isExpired ? "outline" : "default"}
+            variant={result && !isStale ? "outline" : "default"}
             size="sm"
           >
             {isPending ? (
@@ -241,18 +246,18 @@ export function AnalysisCard({ horizon, analysisType = "PORTFOLIO", initial }: P
               <RefreshCw className="mr-2 h-3.5 w-3.5" />
             )}
             {result
-              ? isExpired
+              ? isStale
                 ? "Mettre à jour l'analyse"
                 : "Régénérer"
               : "Générer l'analyse"}
           </Button>
         </div>
 
-        {/* Message d'expiration */}
-        {isExpired && result && (
+        {/* Vignette d'obsolescence */}
+        {isStale && result && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
-            Cette analyse date de{" "}
-            <strong>{age} jours</strong>. Une mise à jour est recommandée pour refléter votre situation actuelle.
+            Cette analyse a <strong>{age} jours</strong> — elle reste conservée mais commence à
+            dater. Une actualisation est recommandée pour refléter votre situation actuelle.
           </div>
         )}
 
@@ -347,7 +352,7 @@ export function AnalysisCard({ horizon, analysisType = "PORTFOLIO", initial }: P
               Génère une analyse Claude pour l&apos;horizon {horizonLabel}
             </p>
             <p className="text-xs text-muted-foreground">
-              L&apos;analyse sera mise en cache 30 jours pour éviter les coûts inutiles.
+              L&apos;analyse est conservée en base ; tu pourras l&apos;actualiser quand tu veux.
             </p>
           </div>
         )}

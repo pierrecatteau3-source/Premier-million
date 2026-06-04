@@ -13,7 +13,6 @@ import { ShieldCheck, TrendingUp, BarChart2, Sparkles } from "lucide-react";
 import { HORIZON_LABEL } from "@/types";
 import type { Horizon } from "@/types";
 
-const CACHE_DAYS = 30;
 const TAB_HORIZONS: Horizon[] = ["YEAR_1", "YEAR_3", "YEAR_5", "YEAR_10"];
 
 const PILIER_LABELS: Record<string, string> = {
@@ -55,11 +54,10 @@ function calculateTargetAge(
 }
 
 async function getLatestAnalysesByType(userId: string) {
-  const cacheLimit = new Date(Date.now() - CACHE_DAYS * 24 * 60 * 60 * 1000);
-
-  // Récupère les analyses récentes pour les deux types
+  // Aucune expiration : les analyses sont conservées en base indéfiniment.
+  // On charge toujours la plus récente par type+horizon, quel que soit son âge.
   const analyses = await prisma.analysis.findMany({
-    where: { userId, createdAt: { gte: cacheLimit } },
+    where: { userId },
     orderBy: { createdAt: "desc" },
   });
 
@@ -284,7 +282,7 @@ export default async function AnalysePatrimoinePage({
             </div>
             <div>
               <h2 className="text-base font-semibold">Analyse de Pio</h2>
-              <p className="text-xs text-muted-foreground">Analyse personnalisée de votre portefeuille par Pio · Cache 30 jours</p>
+              <p className="text-xs text-muted-foreground">Analyse personnalisée de votre portefeuille par Pio · conservée en base</p>
             </div>
           </div>
 
@@ -329,7 +327,7 @@ export default async function AnalysePatrimoinePage({
 
           <div className="rounded-xl border border-border/40 p-4">
             <p className="text-xs text-muted-foreground mb-3">
-              Analyse de Pio — {HORIZON_LABEL[activeHorizon]} · mise en cache 30 jours
+              Analyse de Pio — {HORIZON_LABEL[activeHorizon]} · conservée, actualisable à tout moment
             </p>
             {(() => {
               const cached = portfolioByHorizon.get(activeHorizon);
@@ -366,7 +364,7 @@ export default async function AnalysePatrimoinePage({
             </div>
             <div>
               <h2 className="text-base font-semibold">Vision Marché</h2>
-              <p className="text-xs text-muted-foreground">Veille opportunités tech émergentes par Claude · Cache 30 jours</p>
+              <p className="text-xs text-muted-foreground">Veille opportunités tech émergentes par Claude · conservée en base</p>
             </div>
           </div>
 
@@ -396,7 +394,7 @@ export default async function AnalysePatrimoinePage({
 
           <div className="rounded-xl border border-border/40 p-4">
             <p className="text-xs text-muted-foreground mb-3">
-              Vision Marché — {HORIZON_LABEL[activeHorizon]} · mise en cache 30 jours
+              Vision Marché — {HORIZON_LABEL[activeHorizon]} · conservée, actualisable à tout moment
             </p>
             {(() => {
               const cached = marketByHorizon.get(activeHorizon);
