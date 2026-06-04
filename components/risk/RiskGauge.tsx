@@ -65,8 +65,8 @@ export function RiskGauge({ score, level }: Props) {
   const glowId = `gauge-glow-${level}`;
 
   return (
-    <div className="flex flex-col items-center gap-5">
-      <div className="relative">
+    <div className="flex flex-col items-center gap-4">
+      <div>
         <svg
           width="260"
           height="160"
@@ -200,18 +200,25 @@ export function RiskGauge({ score, level }: Props) {
             ÉLEVÉ
           </text>
         </svg>
+      </div>
 
-        {/* Score central */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-1 flex flex-col items-center">
-          <div className="flex items-baseline gap-1.5 font-display font-bold tabular-nums leading-none tracking-[-0.04em] text-ink">
-            <span className="text-[46px]">{Math.round(score * 100)}</span>
-            <span className="font-mono text-[11px] tracking-[0.12em] text-ink-muted">
-              /100
-            </span>
-          </div>
-          <div className="mt-1 font-mono text-[8.5px] uppercase tracking-[0.22em] text-ink-dim">
-            indice global
-          </div>
+      {/* Score — cadre dédié, plus de superposition sur la jauge */}
+      <div
+        className="flex flex-col items-center gap-1 rounded-md border px-7 py-2.5"
+        style={{
+          borderColor: "var(--pm-rule-strong)",
+          background: "var(--pm-surface-2)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
+        }}
+      >
+        <div className="flex items-baseline gap-1.5 font-display font-bold tabular-nums leading-none tracking-[-0.04em] text-ink">
+          <span className="text-[44px]">{Math.round(score * 100)}</span>
+          <span className="font-mono text-[12px] tracking-[0.12em] text-ink-muted">
+            /100
+          </span>
+        </div>
+        <div className="font-mono text-[8.5px] uppercase tracking-[0.22em] text-ink-dim">
+          indice global
         </div>
       </div>
 
