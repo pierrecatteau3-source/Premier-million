@@ -128,17 +128,14 @@ export async function callPioChat(
   const timeoutId = setTimeout(() => controller.abort(), CHAT_TIMEOUT_MS);
 
   try {
+    // system en simple chaîne (persona + contexte), comme callClaudeAnalysis.
+    // Pas de cache_control : la persona est sous le seuil de cache de Haiku (4096 tokens),
+    // donc le marquer n'apporte rien et ajoutait une variable inutile.
     const message = await anthropic.messages.create(
       {
         model: CHAT_MODEL,
         max_tokens: CHAT_MAX_OUTPUT_TOKENS,
-        system: [
-          // Bloc statique → candidat au cache (sans effet sous le seuil min, mais
-          // pattern correct et gratuit si la persona grossit ou si le modèle change).
-          { type: "text", text: persona, cache_control: { type: "ephemeral" } },
-          // Bloc volatil (heure, patrimoine, marché) → après le breakpoint, jamais caché.
-          { type: "text", text: context },
-        ],
+        system: `${persona}\n\n${context}`,
         messages,
       },
       { signal: controller.signal }

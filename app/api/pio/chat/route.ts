@@ -97,15 +97,19 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ data: { reply: text } });
   } catch (err) {
+    const status = (err as { status?: number })?.status;
+    const name = err instanceof Error ? err.name : "Error";
     const message = err instanceof Error ? err.message : "Erreur inconnue";
     const isTimeout =
       message.includes("abort") || message.toLowerCase().includes("timeout");
-    console.error(`[Pio] error="${message}"`);
+    console.error(`[Pio] error status=${status ?? "n/a"} name=${name} msg="${message}"`);
+
+    // ⚠️ Diagnostic temporaire : on remonte l'erreur réelle pour debug (à re-masquer ensuite).
     return NextResponse.json(
       {
         error: isTimeout
           ? "Pio a mis trop de temps à répondre, réessaie."
-          : "Pio a un petit souci, réessaie dans un instant.",
+          : `Pio a un souci${status ? ` (HTTP ${status})` : ""} : ${message}`,
       },
       { status: 502 }
     );
