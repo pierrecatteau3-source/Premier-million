@@ -172,6 +172,19 @@ export function PortfolioChart({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [from, to]);
 
+  // Plage pilotée par le parent (mode compact + sélecteur de vue) :
+  // recalculer la fenêtre quand defaultRangeDays change → l'effet [from, to] refetch.
+  // Au montage les valeurs sont identiques à l'état initial → no-op (pas de double fetch).
+  useEffect(() => {
+    const t = new Date().toISOString().split("T")[0];
+    const f = new Date(Date.now() - defaultRangeDays * 86_400_000)
+      .toISOString()
+      .split("T")[0];
+    setFrom(f);
+    setTo(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultRangeDays]);
+
   const rawData = data;
   const displayData =
     rawData.length === 1
