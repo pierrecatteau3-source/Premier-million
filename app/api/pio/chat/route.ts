@@ -104,12 +104,11 @@ export async function POST(req: NextRequest) {
       message.includes("abort") || message.toLowerCase().includes("timeout");
     console.error(`[Pio] error status=${status ?? "n/a"} name=${name} msg="${message}"`);
 
-    // ⚠️ Diagnostic temporaire : on remonte l'erreur réelle pour debug (à re-masquer ensuite).
     return NextResponse.json(
       {
         error: isTimeout
           ? "Pio a mis trop de temps à répondre, réessaie."
-          : `Pio a un souci${status ? ` (HTTP ${status})` : ""} : ${message}`,
+          : "Pio a un petit souci, réessaie dans un instant.",
       },
       { status: 502 }
     );
