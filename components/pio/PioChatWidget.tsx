@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Loader2, Send, X } from "lucide-react";
 import { usePioChat } from "./PioChatProvider";
 import { pickGreeting } from "@/lib/pio/greetings";
@@ -60,6 +62,7 @@ export function PioChatWidget() {
     const next: Msg[] = [...messages, { role: "user", content: text }];
     setMessages(next);
     setInput("");
+    if (inputRef.current) inputRef.current.style.height = "auto";
     setPending(true);
     try {
       const res = await fetch("/api/pio/chat", {
@@ -111,7 +114,7 @@ export function PioChatWidget() {
         <div
           role="dialog"
           aria-label="Chat avec Pio"
-          className="fixed bottom-4 right-4 z-50 flex h-[min(560px,calc(100vh-2rem))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border shadow-2xl"
+          className="fixed bottom-4 right-4 z-50 flex h-[min(600px,calc(100vh-2rem))] w-[min(440px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border shadow-2xl"
           style={{ backgroundColor: "hsl(var(--popover))" }}
         >
           {/* En-tête */}
@@ -147,12 +150,16 @@ export function PioChatWidget() {
                 </span>
               </PioBubble>
             ) : (
-              <PioBubble>{greeting}</PioBubble>
+              <PioBubble>
+                <ChatMarkdown>{greeting}</ChatMarkdown>
+              </PioBubble>
             )}
 
             {messages.map((m, i) =>
               m.role === "assistant" ? (
-                <PioBubble key={i}>{m.content}</PioBubble>
+                <PioBubble key={i}>
+                  <ChatMarkdown>{m.content}</ChatMarkdown>
+                </PioBubble>
               ) : (
                 <UserBubble key={i}>{m.content}</UserBubble>
               )
@@ -182,11 +189,14 @@ export function PioChatWidget() {
               <textarea
                 ref={inputRef}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  autoGrow(e.target);
+                }}
                 onKeyDown={onKeyDown}
                 rows={1}
                 placeholder="Écris à Pio…"
-                className="max-h-24 flex-1 resize-none bg-transparent text-sm text-ink outline-none placeholder:text-ink-dim"
+                className="max-h-[140px] flex-1 resize-none overflow-y-auto bg-transparent text-sm leading-snug text-ink outline-none placeholder:text-ink-dim"
               />
               <button
                 onClick={() => void send()}
@@ -205,6 +215,53 @@ export function PioChatWidget() {
         </div>
       )}
     </>
+  );
+}
+
+/** Ajuste la hauteur du textarea à son contenu (pour voir tout le message multi-lignes). */
+function autoGrow(el: HTMLTextAreaElement) {
+  el.style.height = "auto";
+  el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
+}
+
+/** Rendu markdown compact pour les messages de Pio (gras, listes, liens…). */
+function ChatMarkdown({ children }: { children: string }) {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
+        strong: ({ children }) => (
+          <strong className="font-semibold text-ink">{children}</strong>
+        ),
+        em: ({ children }) => <em className="italic">{children}</em>,
+        ul: ({ children }) => (
+          <ul className="mb-1.5 ml-4 list-disc space-y-0.5 last:mb-0">{children}</ul>
+        ),
+        ol: ({ children }) => (
+          <ol className="mb-1.5 ml-4 list-decimal space-y-0.5 last:mb-0">{children}</ol>
+        ),
+        li: ({ children }) => <li>{children}</li>,
+        a: ({ href, children }) => (
+          <a
+            href={href}
+            target="_blank"
+            rel="noreferrer"
+            className="text-gold underline underline-offset-2"
+          >
+            {children}
+          </a>
+        ),
+        code: ({ children }) => (
+          <code className="rounded bg-surface px-1 py-0.5 text-[12px]">{children}</code>
+        ),
+        h1: ({ children }) => <p className="mb-1 font-semibold text-ink">{children}</p>,
+        h2: ({ children }) => <p className="mb-1 font-semibold text-ink">{children}</p>,
+        h3: ({ children }) => <p className="mb-1 font-semibold text-ink">{children}</p>,
+      }}
+    >
+      {children}
+    </ReactMarkdown>
   );
 }
 
