@@ -12,7 +12,9 @@ const globalForAnthropic = globalThis as unknown as {
 
 export const anthropic =
   globalForAnthropic.anthropic ??
-  new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  // .trim() : évite un 401 "invalid x-api-key" si la clé a été collée avec
+  // un espace ou un retour à la ligne parasite (cas fréquent sur Railway).
+  new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY?.trim() });
 
 if (process.env.NODE_ENV !== "production") {
   globalForAnthropic.anthropic = anthropic;
