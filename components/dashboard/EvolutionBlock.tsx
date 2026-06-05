@@ -15,12 +15,7 @@ const RANGE_OPTIONS = [
 
 const DEFAULT_RANGE_DAYS = 30;
 
-interface Props {
-  /** Affiche le sélecteur de plage (7j / 30j…) en haut à droite du cadre. */
-  rangeSelector?: boolean;
-}
-
-export function EvolutionBlock({ rangeSelector = false }: Props) {
+export function EvolutionBlock() {
   const [rangeDays, setRangeDays] = useState<number>(DEFAULT_RANGE_DAYS);
 
   return (
@@ -29,26 +24,20 @@ export function EvolutionBlock({ rangeSelector = false }: Props) {
         <h3 className="font-display text-[22px] font-bold tracking-[-0.025em]">
           Évolution du <em className="italic text-gold">trésor</em>
         </h3>
-        {rangeSelector && (
-          <select
-            value={rangeDays}
-            onChange={(e) => setRangeDays(Number(e.target.value))}
-            aria-label="Choisir la plage du graphique"
-            className="cursor-pointer rounded-lg border border-border bg-surface-2 px-3 py-1.5 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            {RANGE_OPTIONS.map((o) => (
-              <option key={o.days} value={o.days}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        )}
+        <select
+          value={rangeDays}
+          onChange={(e) => setRangeDays(Number(e.target.value))}
+          aria-label="Choisir la plage du graphique"
+          className="cursor-pointer rounded-lg border border-border bg-surface-2 px-3 py-1.5 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          {RANGE_OPTIONS.map((o) => (
+            <option key={o.days} value={o.days}>
+              {o.label}
+            </option>
+          ))}
+        </select>
       </div>
-      <PortfolioChart
-        compact
-        defaultRangeDays={rangeSelector ? rangeDays : DEFAULT_RANGE_DAYS}
-        showSkater
-      />
+      <PortfolioChart compact defaultRangeDays={rangeDays} showSkater />
     </div>
   );
 }

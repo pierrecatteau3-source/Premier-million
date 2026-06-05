@@ -72,8 +72,8 @@ export default async function HistoriquePage() {
     <>
       <Header title="Historique" description="Évolution · Décisions · Achats" />
       <div className="p-6 space-y-6">
-        {/* Graphique évolution — même bloc que le Dashboard, avec sélecteur de plage */}
-        <EvolutionBlock rangeSelector />
+        {/* Graphique évolution — même bloc que le Dashboard */}
+        <EvolutionBlock />
 
         {/* Journal décisions */}
         <div className="rounded-2xl border border-border/50 bg-card shadow-sm p-6">
