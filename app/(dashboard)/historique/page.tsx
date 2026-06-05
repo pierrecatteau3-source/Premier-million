@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Header } from "@/components/layout/Header";
-import { PortfolioChart } from "@/components/portfolio/PortfolioChart";
+import { EvolutionBlock } from "@/components/dashboard/EvolutionBlock";
 import { DecisionList } from "@/components/profile/DecisionList";
 import { TransactionHistoryTable } from "@/components/history/TransactionHistoryTable";
 import type { TransactionWithAsset } from "@/types/transactions";
@@ -72,13 +72,8 @@ export default async function HistoriquePage() {
     <>
       <Header title="Historique" description="Évolution · Décisions · Achats" />
       <div className="p-6 space-y-6">
-        {/* Graphique évolution */}
-        <div className="rounded-2xl border border-border/50 bg-card shadow-sm p-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">
-            Évolution du patrimoine
-          </p>
-          <PortfolioChart />
-        </div>
+        {/* Graphique évolution — même bloc que le Dashboard */}
+        <EvolutionBlock />
 
         {/* Journal décisions */}
         <div className="rounded-2xl border border-border/50 bg-card shadow-sm p-6">
