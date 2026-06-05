@@ -17,20 +17,19 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
-    select: { xtbApiKey: true, bitpandaApiKey: true },
+    select: { bitpandaApiKey: true },
   });
 
   return NextResponse.json({
     data: {
-      xtb: mask(user?.xtbApiKey ?? null),
       bitpanda: mask(user?.bitpandaApiKey ?? null),
     },
   });
 }
 
 // Règle par champ : chaîne non vide = nouvelle valeur · "" = effacer · absent = inchangé
+// XTB n'a pas encore d'API publique → seule la clé BitPanda est gérée.
 const patchSchema = z.object({
-  xtbApiKey: z.string().max(500).optional(),
   bitpandaApiKey: z.string().max(500).optional(),
 });
 
@@ -45,11 +44,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Données invalides." }, { status: 400 });
   }
 
-  const data: { xtbApiKey?: string | null; bitpandaApiKey?: string | null } = {};
-  if (parsed.data.xtbApiKey !== undefined) {
-    const v = parsed.data.xtbApiKey.trim();
-    data.xtbApiKey = v === "" ? null : v;
-  }
+  const data: { bitpandaApiKey?: string | null } = {};
   if (parsed.data.bitpandaApiKey !== undefined) {
     const v = parsed.data.bitpandaApiKey.trim();
     data.bitpandaApiKey = v === "" ? null : v;
@@ -62,12 +57,11 @@ export async function PATCH(req: NextRequest) {
   const updated = await prisma.user.update({
     where: { id: session.userId },
     data,
-    select: { xtbApiKey: true, bitpandaApiKey: true },
+    select: { bitpandaApiKey: true },
   });
 
   return NextResponse.json({
     data: {
-      xtb: mask(updated.xtbApiKey),
       bitpanda: mask(updated.bitpandaApiKey),
     },
   });

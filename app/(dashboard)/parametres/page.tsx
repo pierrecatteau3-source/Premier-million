@@ -18,7 +18,7 @@ export default async function ParametresPage() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { xtbApiKey: true, bitpandaApiKey: true },
+    select: { bitpandaApiKey: true },
   });
 
   return (
@@ -28,7 +28,6 @@ export default async function ParametresPage() {
       <div className="p-6 space-y-6">
         <ApiKeysForm
           initial={{
-            xtb: mask(user?.xtbApiKey ?? null),
             bitpanda: mask(user?.bitpandaApiKey ?? null),
           }}
         />

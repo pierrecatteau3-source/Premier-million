@@ -1,18 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Check, KeyRound, Loader2, Trash2 } from "lucide-react";
+import { Check, Clock, KeyRound, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type KeyState = { configured: boolean; hint: string | null };
 
 interface Props {
-  initial: { xtb: KeyState; bitpanda: KeyState };
+  initial: { bitpanda: KeyState };
 }
 
 export function ApiKeysForm({ initial }: Props) {
   const [state, setState] = useState(initial);
-  const [xtb, setXtb] = useState("");
   const [bitpanda, setBitpanda] = useState("");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
@@ -42,22 +41,18 @@ export function ApiKeysForm({ initial }: Props) {
   }
 
   async function handleSave() {
-    const body: Record<string, string> = {};
-    if (xtb.trim()) body.xtbApiKey = xtb.trim();
-    if (bitpanda.trim()) body.bitpandaApiKey = bitpanda.trim();
-    if (Object.keys(body).length === 0) {
-      setMsg({ kind: "err", text: "Saisis au moins une clé à enregistrer." });
+    if (!bitpanda.trim()) {
+      setMsg({ kind: "err", text: "Saisis une clé à enregistrer." });
       return;
     }
-    if (await patch(body)) {
-      setXtb("");
+    if (await patch({ bitpandaApiKey: bitpanda.trim() })) {
       setBitpanda("");
-      setMsg({ kind: "ok", text: "Clés enregistrées." });
+      setMsg({ kind: "ok", text: "Clé enregistrée." });
     }
   }
 
-  async function handleClear(field: "xtbApiKey" | "bitpandaApiKey") {
-    if (await patch({ [field]: "" })) {
+  async function handleClear() {
+    if (await patch({ bitpandaApiKey: "" })) {
       setMsg({ kind: "ok", text: "Clé supprimée." });
     }
   }
@@ -77,14 +72,9 @@ export function ApiKeysForm({ initial }: Props) {
       </div>
 
       <div className="space-y-5">
-        <ProviderField
+        <ComingSoonField
           label="XTB"
-          placeholder="Colle ta clé API XTB"
-          state={state.xtb}
-          value={xtb}
-          onChange={setXtb}
-          onClear={() => handleClear("xtbApiKey")}
-          disabled={saving}
+          note="XTB n'expose pas encore d'API publique. L'import automatique sera ajouté dès qu'elle sera disponible."
         />
         <ProviderField
           label="BitPanda"
@@ -92,7 +82,7 @@ export function ApiKeysForm({ initial }: Props) {
           state={state.bitpanda}
           value={bitpanda}
           onChange={setBitpanda}
-          onClear={() => handleClear("bitpandaApiKey")}
+          onClear={handleClear}
           disabled={saving}
         />
       </div>
@@ -114,9 +104,25 @@ export function ApiKeysForm({ initial }: Props) {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Ces clés sont stockées telles quelles en base (usage perso). Elles serviront à
-        l&apos;import automatique de tes positions XTB / BitPanda.
+        La clé est stockée telle quelle en base (usage perso). Elle servira à
+        l&apos;import automatique de tes positions BitPanda.
       </p>
+    </div>
+  );
+}
+
+function ComingSoonField({ label, note }: { label: string; note: string }) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-3">
+        <label className="text-sm font-medium text-muted-foreground">{label}</label>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-gold/10 px-2.5 py-0.5 text-xs font-medium text-gold">
+          <Clock className="h-3.5 w-3.5" /> Arrive bientôt
+        </span>
+      </div>
+      <div className="rounded-lg border border-dashed border-border bg-[hsl(var(--muted))]/40 px-3 py-2 text-sm text-muted-foreground">
+        {note}
+      </div>
     </div>
   );
 }
