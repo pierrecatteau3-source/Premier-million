@@ -26,6 +26,9 @@ model User {
   /// [{ type, subtype, pct }] — allocation détaillée par type/sous-type
   allocationDetaillee      Json?
   epargnePrecautionMontant Float?
+  /// Clés API courtiers (saisie manuelle, perso). null = non renseignée.
+  xtbApiKey                String?
+  bitpandaApiKey           String?
   achievements             UserAchievement[]
   analyses                 Analysis[]
   assets                   Asset[]

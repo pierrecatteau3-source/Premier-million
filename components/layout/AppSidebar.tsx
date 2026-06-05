@@ -13,6 +13,7 @@ import {
   IconSparkles,
   IconTrophy,
   IconHistory,
+  IconSettings,
   BrandMark,
   type IconProps,
 } from "@/components/icons";
@@ -44,6 +45,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
       { href: "/personnage", label: "Mon associé", Icon: IconSparkles },
       { href: "/succes", label: "Succès", Icon: IconTrophy },
       { href: "/historique", label: "Historique", Icon: IconHistory },
+      { href: "/parametres", label: "Paramètres", Icon: IconSettings },
     ],
   },
 ];
