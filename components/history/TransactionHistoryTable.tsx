@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Check, X, Loader2 } from "lucide-react";
+import { Pencil, Check, X, Loader2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { TransactionWithAsset } from "@/types/transactions";
 import {
@@ -42,6 +42,8 @@ export function TransactionHistoryTable({ transactions }: Props) {
   const [error, setError] = useState<string>("");
   const [isPending, startTransition] = useTransition();
   const [toast, setToast] = useState<string>("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   function startEdit(t: TransactionWithAsset) {
     setEditState({
@@ -104,6 +106,38 @@ export function TransactionHistoryTable({ transactions }: Props) {
     if (e.key === "Escape") cancelEdit();
   }
 
+  function askDelete(id: string) {
+    setEditState(null);
+    setError("");
+    setConfirmDeleteId(id);
+  }
+
+  function cancelDelete() {
+    setConfirmDeleteId(null);
+    setError("");
+  }
+
+  async function confirmDelete(id: string) {
+    setDeletingId(id);
+    setError("");
+    try {
+      const res = await fetch(`/api/transactions/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError((data as { error?: string }).error ?? "Suppression impossible");
+        return;
+      }
+      setConfirmDeleteId(null);
+      setToast("Transaction supprimée");
+      setTimeout(() => setToast(""), 3000);
+      startTransition(() => router.refresh());
+    } catch {
+      setError("Erreur réseau");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   if (transactions.length === 0) {
     return <p className="text-sm text-muted-foreground">Aucun achat enregistré.</p>;
   }
@@ -127,7 +161,7 @@ export function TransactionHistoryTable({ transactions }: Props) {
               <th className="py-2 text-right text-xs font-medium text-muted-foreground">Quantité</th>
               <th className="py-2 text-right text-xs font-medium text-muted-foreground">Prix unitaire</th>
               <th className="py-2 text-right text-xs font-medium text-muted-foreground">Montant investi</th>
-              <th className="py-2 w-10" />
+              <th className="py-2 w-20" />
             </tr>
           </thead>
           <tbody>
@@ -260,23 +294,60 @@ export function TransactionHistoryTable({ transactions }: Props) {
                           <span className="text-xs text-destructive">{error}</span>
                         )}
                       </div>
-                    ) : editable ? (
-                      <button
-                        onClick={() => startEdit(t)}
-                        className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                        title="Modifier la transaction"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
+                    ) : confirmDeleteId === t.id ? (
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => confirmDelete(t.id)}
+                          disabled={deletingId === t.id}
+                          className="rounded p-1 text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                          title="Confirmer la suppression"
+                        >
+                          {deletingId === t.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Check className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                        <button
+                          onClick={cancelDelete}
+                          disabled={deletingId === t.id}
+                          className="rounded p-1 text-muted-foreground hover:bg-muted disabled:opacity-50"
+                          title="Annuler"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="text-xs text-destructive whitespace-nowrap">
+                          {error || "Supprimer ?"}
+                        </span>
+                      </div>
                     ) : (
-                      <Tooltip>
-                        <TooltipTrigger className="inline-flex rounded p-1 text-muted-foreground/30 cursor-not-allowed">
-                          <Pencil className="h-3.5 w-3.5" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          Modification impossible au-delà de 3 mois
-                        </TooltipContent>
-                      </Tooltip>
+                      <div className="flex items-center gap-1">
+                        {editable ? (
+                          <button
+                            onClick={() => startEdit(t)}
+                            className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                            title="Modifier la transaction"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                        ) : (
+                          <Tooltip>
+                            <TooltipTrigger className="inline-flex rounded p-1 text-muted-foreground/30 cursor-not-allowed">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              Modification impossible au-delà de 3 mois
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                        <button
+                          onClick={() => askDelete(t.id)}
+                          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-destructive transition-colors"
+                          title="Supprimer la transaction"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>
