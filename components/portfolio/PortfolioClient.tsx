@@ -3,16 +3,14 @@
 import { useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { usePrices } from "@/hooks/usePrices";
+import { useSparklines } from "@/hooks/useSparklines";
 import { AssetManager } from "@/components/portfolio/AssetManager";
 import type { PilierSummary, PilierAsset } from "@/types";
 import type { PriceMap } from "@/types/prices";
-import type { SparkPoint } from "@/lib/services/portfolio.service";
 
 interface Props {
   piliers: PilierSummary[];
   initialFilter?: string;
-  /** Séries de valeur par actif (sur ~8 jours) pour les mini-courbes de performance. */
-  sparklines?: Record<string, SparkPoint[]>;
 }
 
 /** Injects live prices into pilier assets and recomputes totalValue per pilier */
@@ -47,7 +45,7 @@ function applyLivePrices(piliers: PilierSummary[], priceMap: PriceMap): PilierSu
   });
 }
 
-export function PortfolioClient({ piliers, initialFilter, sparklines }: Props) {
+export function PortfolioClient({ piliers, initialFilter }: Props) {
   const router = useRouter();
   const syncedRef = useRef(false);
 
@@ -81,6 +79,9 @@ export function PortfolioClient({ piliers, initialFilter, sparklines }: Props) {
   }, [piliers]);
 
   const { prices } = usePrices(requests);
+  // Mini-courbes de performance prix (CoinGecko / Yahoo), cache 3 h. On récupère
+  // 7 jours ; la colonne tranche ensuite la fenêtre 1J/3J/7J côté client.
+  const sparklines = useSparklines(requests, 7);
 
   // Auto-sync when live prices arrive and some assets have no snapshot yet (latestValue === undefined)
   const hasLiveAssets = requests.length > 0;

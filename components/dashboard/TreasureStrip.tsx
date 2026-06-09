@@ -32,7 +32,9 @@ export function TreasureStrip({
   delta,
   periodLabel,
 }: Props) {
-  const up = delta.eur >= 0;
+  // Performance pure = variation de valeur hors apports (comme les phrases de Pio).
+  // On ne compte PAS l'argent injecté comme de la performance.
+  const up = delta.performance >= 0;
 
   return (
     <div className="mt-3 grid gap-px overflow-hidden rounded-lg border border-border bg-border md:grid-cols-[2fr_1fr_1fr]">
@@ -53,7 +55,7 @@ export function TreasureStrip({
         </div>
         <div className="mt-3.5 flex flex-wrap items-center gap-3.5 font-sans text-[10.5px] tracking-[0.06em] text-ink-muted">
           <span className={up ? "text-positive" : "text-negative"}>
-            {up ? "↑" : "↓"} {eur0(Math.abs(delta.eur))} € {periodLabel}
+            {up ? "↑" : "↓"} {eur0(Math.abs(delta.performance))} € {periodLabel}
           </span>
           <span>·</span>
           <span>

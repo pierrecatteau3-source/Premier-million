@@ -28,16 +28,15 @@ import { Sparkline } from "@/components/portfolio/Sparkline";
 import { TransactionForm } from "@/components/portfolio/TransactionForm";
 import { MigrationPrompt } from "@/components/portfolio/MigrationPrompt";
 import { AssetDetailModal, type AssetDetailData } from "@/components/portfolio/AssetDetailModal";
-import type { PriceMap } from "@/types/prices";
-import type { SparkPoint } from "@/lib/services/portfolio.service";
+import type { PriceMap, SparkPoint, SparklineMap } from "@/types/prices";
 
 interface Props {
   piliers: PilierSummary[];
   priceMap?: PriceMap;
   /** Filtre initial du pilier — prime sur ?pilier= dans l'URL. Pour usage en modal. */
   initialFilter?: string;
-  /** Séries de valeur par actif (~8 jours) pour les mini-courbes de performance. */
-  sparklines?: Record<string, SparkPoint[]>;
+  /** Séries de prix par ticker (id CoinGecko / ticker Yahoo) pour les mini-courbes. */
+  sparklines?: SparklineMap;
 }
 
 /** Fenêtres proposées dans l'en-tête de la colonne Performance (en jours). */
@@ -45,12 +44,15 @@ const SPARK_PERIODS = [1, 3, 7] as const;
 type SparkDays = (typeof SPARK_PERIODS)[number];
 
 /**
- * Tranche une série par nombre de points : pour N jours on garde les N+1 derniers
- * points (snapshots quotidiens → N intervalles). Robuste aux trous de snapshots.
+ * Tranche une série de prix sur la fenêtre temporelle choisie. Données horaires
+ * (CoinGecko / Yahoo) → on filtre par timestamp ; fallback sur les 2 derniers
+ * points si la fenêtre est trop courte pour tracer une courbe.
  */
 function sliceSparkWindow(points: SparkPoint[], days: SparkDays): SparkPoint[] {
   if (!points || points.length === 0) return [];
-  return points.slice(-(days + 1));
+  const cutoff = Date.now() - days * 86_400_000;
+  const windowed = points.filter((p) => p.t >= cutoff);
+  return windowed.length >= 2 ? windowed : points.slice(-2);
 }
 
 const inputCls =
@@ -470,7 +472,8 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines
                           </td>
                           <td className="hidden px-4 py-3 sm:table-cell">
                             {(() => {
-                              const series = sliceSparkWindow(sparklines[asset.id] ?? [], sparkDays);
+                              const rawSeries = asset.ticker ? sparklines[asset.ticker] : undefined;
+                              const series = sliceSparkWindow(rawSeries ?? [], sparkDays);
                               const values = series.map((p) => p.v);
                               const valid = values.length >= 2 && values[0] > 0;
                               const perf = valid

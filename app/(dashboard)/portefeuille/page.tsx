@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
-import { getPortfolioSummary, getAssetSparklines } from "@/lib/services/portfolio.service";
+import { getPortfolioSummary } from "@/lib/services/portfolio.service";
 import { prisma } from "@/lib/prisma";
 import { PortfolioClient } from "@/components/portfolio/PortfolioClient";
 import { TreasureHeader } from "@/components/portfolio/TreasureHeader";
@@ -21,7 +21,7 @@ export default async function PortefeuillePage() {
   if (!session?.user?.id) redirect("/login");
   const userId = session.user.id;
 
-  const [summary, recurringRaw, decisionsRaw, sparklines] = await Promise.all([
+  const [summary, recurringRaw, decisionsRaw] = await Promise.all([
     getPortfolioSummary(userId),
     prisma.recurringInvestment.findMany({
       where: { userId },
@@ -34,7 +34,6 @@ export default async function PortefeuillePage() {
       take: 6,
       select: { id: true, date: true, description: true },
     }),
-    getAssetSparklines(userId, 8),
   ]);
 
   const { piliers, liquiditeSummary } = summary;
@@ -83,7 +82,7 @@ export default async function PortefeuillePage() {
       />
 
       <div className="mt-3.5">
-        <PortfolioClient piliers={piliersForManager} sparklines={sparklines} />
+        <PortfolioClient piliers={piliersForManager} />
       </div>
 
       <div className="mt-3.5 grid grid-cols-1 gap-3.5 lg:grid-cols-2">
