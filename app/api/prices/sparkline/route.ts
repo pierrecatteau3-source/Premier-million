@@ -3,8 +3,8 @@ export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import type { SparkPoint, SparklineMap } from "@/types/prices";
 
-// Rafraîchissement toutes les 3 h : la donnée upstream (CoinGecko) est mise en
-// cache par Next pendant 3 h, donc 1 appel externe / actif / 3 h max.
+// Rafraîchissement toutes les 3 h : la donnée upstream est mise en cache par Next
+// (`revalidate`), donc 1 appel externe / actif / 3 h max.
 const REVALIDATE = 10_800; // 3 h en secondes
 
 function parseDays(raw: string | null): number {
@@ -13,8 +13,15 @@ function parseDays(raw: string | null): number {
   return Math.min(Math.max(n, 1), 30);
 }
 
+function splitParam(raw: string | null): string[] {
+  return (raw ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 // GET /api/prices/sparkline?mode=crypto&ids=bitcoin,ethereum&days=7
-// GET /api/prices/sparkline?mode=equity&tickers=EWLD.PA,CW8.PA&days=7
+// GET /api/prices/sparkline?mode=equity&tickers=CW8.PA,HO.PA&days=7
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const mode = searchParams.get("mode") ?? "crypto";
@@ -22,10 +29,7 @@ export async function GET(req: NextRequest) {
   const updatedAt = new Date().toISOString();
 
   if (mode === "crypto") {
-    const ids = (searchParams.get("ids") ?? "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const ids = splitParam(searchParams.get("ids"));
     if (ids.length === 0) return NextResponse.json({ data: {}, updatedAt });
 
     const apiKey = process.env.COINGECKO_API_KEY;
@@ -41,10 +45,7 @@ export async function GET(req: NextRequest) {
           id
         )}/market_chart?vs_currency=eur&days=${days}`;
         try {
-          const res = await fetch(url, {
-            headers,
-            next: { revalidate: REVALIDATE },
-          });
+          const res = await fetch(url, { headers, next: { revalidate: REVALIDATE } });
           if (!res.ok) {
             data[id] = [];
             return;
@@ -60,35 +61,51 @@ export async function GET(req: NextRequest) {
   }
 
   // mode === "equity"
-  const tickers = (searchParams.get("tickers") ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
+  // Endpoint chart v8 de Yahoo en fetch direct. On N'UTILISE PAS yahoo-finance2 ici :
+  // son fetch interne casse sous le runtime Next (les actions revenaient toutes vides).
+  // /v8/chart ne réclame pas de crumb ; un fetch direct profite aussi du cache 3 h.
+  const tickers = splitParam(searchParams.get("tickers"));
   if (tickers.length === 0) return NextResponse.json({ data: {}, updatedAt });
 
-  try {
-    const YahooFinance = (await import("yahoo-finance2")).default;
-    const yahooFinance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
-    const period1 = new Date(Date.now() - (days + 1) * 86_400_000);
+  const period2 = Math.floor(Date.now() / 1000);
+  const period1 = period2 - (days + 1) * 86_400;
 
-    const data: SparklineMap = {};
-    await Promise.all(
-      tickers.map(async (t) => {
-        try {
-          const result = await yahooFinance.chart(t, { period1, interval: "1h" });
-          const points: SparkPoint[] = (result.quotes ?? [])
-            .filter((q) => q.close != null)
-            .map((q) => ({ t: q.date.getTime(), v: q.close as number }));
-          data[t] = points;
-        } catch {
+  const data: SparklineMap = {};
+  await Promise.all(
+    tickers.map(async (t) => {
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(
+        t
+      )}?period1=${period1}&period2=${period2}&interval=1h`;
+      try {
+        const res = await fetch(url, {
+          headers: { "User-Agent": "Mozilla/5.0", Accept: "application/json" },
+          next: { revalidate: REVALIDATE },
+        });
+        if (!res.ok) {
           data[t] = [];
+          return;
         }
-      })
-    );
-    return NextResponse.json({ data, updatedAt });
-  } catch {
-    const data: SparklineMap = {};
-    for (const t of tickers) data[t] = [];
-    return NextResponse.json({ data, updatedAt }, { status: 502 });
-  }
+        const json = (await res.json()) as {
+          chart?: {
+            result?: {
+              timestamp?: number[];
+              indicators?: { quote?: { close?: (number | null)[] }[] };
+            }[];
+          };
+        };
+        const result = json.chart?.result?.[0];
+        const ts = result?.timestamp ?? [];
+        const closes = result?.indicators?.quote?.[0]?.close ?? [];
+        const points: SparkPoint[] = [];
+        for (let i = 0; i < ts.length; i++) {
+          const c = closes[i];
+          if (c != null) points.push({ t: ts[i] * 1000, v: c });
+        }
+        data[t] = points;
+      } catch {
+        data[t] = [];
+      }
+    })
+  );
+  return NextResponse.json({ data, updatedAt });
 }

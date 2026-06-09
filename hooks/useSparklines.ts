@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { SparklineMap } from "@/types/prices";
 
-const CACHE_KEY = "pm_sparklines_v1";
+const CACHE_KEY = "pm_sparklines_v2";
 const TTL = 10_800_000; // 3 h — un appel externe toutes les 3 h max
 
 interface PriceRequest {
