@@ -75,13 +75,8 @@ export default async function HistoriquePage() {
         {/* Graphique évolution — même bloc que le Dashboard */}
         <EvolutionBlock />
 
-        {/* Journal décisions */}
-        <div className="rounded-2xl border border-border/50 bg-card shadow-sm p-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">
-            Historique des stratégies
-          </p>
-          <DecisionList initial={decisionsTyped} />
-        </div>
+        {/* Journal décisions — card premium auto-portante */}
+        <DecisionList initial={decisionsTyped} />
 
         {/* Historique des achats — source : transactions du Portefeuille */}
         <div className="rounded-2xl border border-border/50 bg-card shadow-sm p-6">

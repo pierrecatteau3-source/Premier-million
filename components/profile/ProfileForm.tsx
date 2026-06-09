@@ -1,28 +1,53 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Loader2, Save, Lock, Plus, Trash2 } from "lucide-react";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Loader2, Save, Lock, ShieldCheck, TrendingUp, Plus, Trash2 } from "lucide-react";
-import type { UserProfile } from "@/types";
-import type { AllocationDetaillee } from "@/types";
+  IconTarget,
+  IconWallet,
+  IconShield,
+  IconSparkles,
+  IconBricks,
+  IconPEA,
+  IconCrypto,
+  IconImmo,
+  IconAutre,
+  type IconProps,
+} from "@/components/icons";
+import type { UserProfile, AllocationDetaillee } from "@/types";
+import { PILIER_LABEL } from "@/types";
 import { calculateProjection, MARKET_RATE_DEFAULT } from "@/lib/utils/projection";
-import { ALLOCATION_TYPES } from "@/lib/constants/allocation-types";
+import { ALLOCATION_TYPES, TYPE_TO_PILIER } from "@/lib/constants/allocation-types";
 
 const OBJECTIF_FIXE = 1_000_000;
 
 const inputCls =
-  "h-9 w-full rounded border border-input bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1";
+  "h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-ink outline-none transition focus:border-gold/50 focus:ring-2 focus:ring-ring/40";
 
 const inputNarrow =
-  "h-9 w-16 rounded border border-input bg-background px-2 py-1.5 text-sm text-right outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1";
+  "h-10 w-20 rounded-md border border-input bg-background px-2.5 text-right text-sm tabular-nums text-ink outline-none transition focus:border-gold/50 focus:ring-2 focus:ring-ring/40";
+
+// Boîte d'icône dorée — réutilise le pattern des PillarCards du Dashboard.
+const goldIconBox: CSSProperties = {
+  background:
+    "linear-gradient(135deg, rgba(224,180,80,0.18), rgba(224,180,80,0.04))",
+  borderColor: "var(--pm-rule-gold)",
+  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)",
+};
+
+// Icône + couleur de marque par pilier (pour l'allocation cible).
+const PILIER_VISUAL: Record<
+  string,
+  { Icon: (p: IconProps) => React.ReactNode; color: string }
+> = {
+  PEA: { Icon: IconPEA, color: "#e0b450" },
+  CRYPTO: { Icon: IconCrypto, color: "#dba566" },
+  IMMO: { Icon: IconImmo, color: "#94c870" },
+  AUTRE: { Icon: IconAutre, color: "#a08b6e" },
+  LIQUIDITE: { Icon: IconWallet, color: "#c5c0b0" },
+};
 
 interface Props {
   profile: UserProfile;
@@ -87,6 +112,16 @@ export function ProfileForm({ profile }: Props) {
   const allocationValid = allocationSum === 100;
 
   const addTypeData = ALLOCATION_TYPES.find((t) => t.type === addType) ?? ALLOCATION_TYPES[0];
+
+  // Répartition agrégée par pilier (barre de visualisation).
+  const byPilier = (() => {
+    const m = new Map<string, number>();
+    for (const l of allocationDetaillee) {
+      const p = TYPE_TO_PILIER[l.type] ?? "AUTRE";
+      m.set(p, (m.get(p) ?? 0) + l.pct);
+    }
+    return Array.from(m.entries(), ([pilier, pct]) => ({ pilier, pct }));
+  })();
 
   function handleAddLine() {
     const pct = parseFloat(addPct);
@@ -205,412 +240,485 @@ export function ProfileForm({ profile }: Props) {
     });
   }
 
+  const projeteVsObjectif = projection
+    ? Math.min((projection.projectedValue / OBJECTIF_FIXE) * 100, 100)
+    : 0;
+
   return (
     <div className="space-y-6">
-      {/* ── Informations générales ─────────────────────────────────── */}
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-base">Informations générales</CardTitle>
-          <CardDescription>Compte : {profile.email}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Section A — Identité */}
-          <div>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Identité
-            </p>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Prénom / Pseudo">
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="ex. Cash"
-                  className={inputCls}
-                />
-              </Field>
-              <Field label="Âge actuel">
-                <input
-                  type="number"
-                  value={ageActuel}
-                  onChange={(e) => setAgeActuel(e.target.value)}
-                  placeholder="ex. 32"
-                  min={1}
-                  max={120}
-                  className={inputCls}
-                />
-              </Field>
+      {/* ── Identité & objectif ─────────────────────────────────────── */}
+      <SectionCard
+        Icon={IconTarget}
+        title="Identité & objectif"
+        subtitle={`Compte · ${profile.email}`}
+        delay={0}
+      >
+        <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+          <Field label="Prénom / Pseudo">
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="ex. Cash"
+              className={inputCls}
+            />
+          </Field>
+          <Field label="Âge actuel">
+            <input
+              type="number"
+              value={ageActuel}
+              onChange={(e) => setAgeActuel(e.target.value)}
+              placeholder="ex. 32"
+              min={1}
+              max={120}
+              className={inputCls}
+            />
+          </Field>
+          <Field label="Objectif patrimonial">
+            <div className="flex h-10 items-center gap-2 rounded-md border border-input bg-surface-deep px-3">
+              <Lock className="h-3.5 w-3.5 shrink-0 text-ink-muted" />
+              <span className="text-sm font-semibold tabular-nums text-gold">
+                1 000 000 €
+              </span>
             </div>
-          </div>
+          </Field>
+          <Field label="Âge cible (optionnel)">
+            <input
+              type="number"
+              value={ageCible}
+              onChange={(e) => setAgeCible(e.target.value)}
+              placeholder="ex. 45"
+              min={18}
+              max={100}
+              className={inputCls}
+            />
+          </Field>
+        </div>
+      </SectionCard>
 
-          <div className="border-t border-border" />
-
-          {/* Section B — Objectif & Horizon */}
-          <div>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Objectif & Horizon
-            </p>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Objectif patrimonial">
-                <div className="flex items-center gap-2 rounded border border-input bg-muted/50 px-2.5 py-1.5">
-                  <Lock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                  <span className="text-sm font-semibold tabular-nums">1 000 000 €</span>
-                </div>
-              </Field>
-              <Field label="Âge cible (optionnel)">
-                <input
-                  type="number"
-                  value={ageCible}
-                  onChange={(e) => setAgeCible(e.target.value)}
-                  placeholder="ex. 45"
-                  min={18}
-                  max={100}
-                  className={inputCls}
-                />
-              </Field>
+      {/* ── Épargne ─────────────────────────────────────────────────── */}
+      <SectionCard
+        Icon={IconWallet}
+        title="Épargne"
+        subtitle="Capacité d'investissement"
+        delay={60}
+      >
+        <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+          <Field label="Épargne mensuelle (€)">
+            <input
+              type="number"
+              value={epargneMensuelle}
+              onChange={(e) => setEpargneMensuelle(e.target.value)}
+              placeholder="ex. 2 000"
+              min={0}
+              step={100}
+              className={inputCls}
+            />
+          </Field>
+          <Field
+            label="Épargne de précaution (€)"
+            helper="Montant total conservé en liquidités (livrets, comptes) pour faire face aux imprévus"
+          >
+            <input
+              type="number"
+              value={epargnePrecautionMontant}
+              onChange={(e) => setEpargnePrecautionMontant(e.target.value)}
+              placeholder="ex. 10 000"
+              min={0}
+              step={500}
+              className={inputCls}
+            />
+          </Field>
+          <Field
+            label="Progression annuelle de l'épargne"
+            helper="Hausse prévisionnelle de ta capacité d'épargne chaque année (augmentation de salaire, charges en moins…)"
+          >
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                value={evolutionEpargne}
+                onChange={(e) => setEvolutionEpargne(e.target.value)}
+                placeholder="5"
+                min={-50}
+                max={100}
+                step={0.5}
+                maxLength={3}
+                className={inputNarrow}
+              />
+              <span className="shrink-0 text-xs text-ink-muted">% / an</span>
             </div>
-          </div>
+          </Field>
+        </div>
+      </SectionCard>
 
-          <div className="border-t border-border" />
-
-          {/* Section C — Épargne */}
-          <div>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Épargne
-            </p>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field label="Épargne mensuelle (€)">
-                <input
-                  type="number"
-                  value={epargneMensuelle}
-                  onChange={(e) => setEpargneMensuelle(e.target.value)}
-                  placeholder="ex. 2 000"
-                  min={0}
-                  step={100}
-                  className={inputCls}
-                />
-              </Field>
-              <Field
-                label="Épargne de précaution (€)"
-                helper="Montant total conservé en liquidités (livrets, comptes) pour faire face aux imprévus"
-              >
-                <input
-                  type="number"
-                  value={epargnePrecautionMontant}
-                  onChange={(e) => setEpargnePrecautionMontant(e.target.value)}
-                  placeholder="ex. 10 000"
-                  min={0}
-                  step={500}
-                  className={inputCls}
-                />
-              </Field>
-              <Field
-                label="Progression annuelle de l'épargne"
-                helper="Hausse prévisionnelle de ta capacité d'épargne chaque année (augmentation de salaire, charges en moins…)"
-              >
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    value={evolutionEpargne}
-                    onChange={(e) => setEvolutionEpargne(e.target.value)}
-                    placeholder="5"
-                    min={-50}
-                    max={100}
-                    step={0.5}
-                    maxLength={3}
-                    className={inputNarrow}
-                  />
-                  <span className="shrink-0 text-xs text-muted-foreground">% / an</span>
-                </div>
-              </Field>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ── Faisabilité ────────────────────────────────────────────── */}
+      {/* ── Faisabilité ─────────────────────────────────────────────── */}
       {showFaisabilite && projection && (
-        <Card className="border-primary/20 bg-primary/5 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Faisabilité de l&apos;objectif</CardTitle>
-            <CardDescription>
-              Basé sur 8 %/an — moyenne S&P 500 depuis 1957
-              {evolutionEpargne !== "" && !isNaN(evolutionEpargneNum) && (
-                <> · Épargne croissante de {evolutionEpargneNum > 0 ? "+" : ""}{evolutionEpargneNum} %/an</>
-              )}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-3 gap-4 text-sm">
-              <div>
-                <p className="text-xs text-muted-foreground">Horizon</p>
-                <p className="font-semibold">{years} ans</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Valeur projetée</p>
-                <p className="font-semibold tabular-nums">
-                  {formatEur(projection.projectedValue)}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Verdict</p>
-                {projection.reachable ? (
-                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-emerald-500/10 text-emerald-700">✅ Atteignable</span>
-                ) : (
-                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-orange-500/10 text-orange-700">⚠️ Insuffisant</span>
+        <section
+          className="animate-fade-in overflow-hidden rounded-lg border p-5 sm:p-6"
+          style={{
+            borderColor: "var(--pm-rule-gold)",
+            background:
+              "linear-gradient(160deg, rgba(224,180,80,0.08), transparent 72%)",
+            animationDelay: "100ms",
+            animationFillMode: "backwards",
+          }}
+        >
+          <div className="mb-5 flex items-center gap-3.5">
+            <div
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-md border"
+              style={goldIconBox}
+            >
+              <IconSparkles size={24} className="text-gold" />
+            </div>
+            <div>
+              <h3 className="font-display text-[18px] font-bold leading-tight tracking-[-0.02em] text-ink">
+                Faisabilité de l&apos;objectif
+              </h3>
+              <p className="mt-0.5 font-sans text-[10px] uppercase tracking-[0.16em] text-ink-muted">
+                Basé sur 8 %/an — moyenne S&amp;P 500 depuis 1957
+                {evolutionEpargne !== "" && !isNaN(evolutionEpargneNum) && (
+                  <>
+                    {" · "}épargne {evolutionEpargneNum > 0 ? "+" : ""}
+                    {evolutionEpargneNum} %/an
+                  </>
                 )}
-              </div>
-            </div>
-
-            {epargneFinaleProjete !== null && (
-              <div className="rounded-md bg-background/60 px-3 py-2 text-sm">
-                <span className="text-muted-foreground">Épargne mensuelle à {ageCibleNum} ans : </span>
-                <span className="font-semibold tabular-nums">{formatEur(epargneFinaleProjete)}/mois</span>
-              </div>
-            )}
-
-            {matelasEur !== null && (
-              <div className="rounded-md bg-background/60 px-3 py-2 text-sm">
-                <span className="text-muted-foreground">Épargne de précaution constituée : </span>
-                <span className="font-semibold tabular-nums">{formatEur(matelasEur)}</span>
-              </div>
-            )}
-
-            {!projection.reachable && (
-              <p className="text-xs text-muted-foreground">
-                Augmente ton épargne mensuelle ou allonge ton horizon pour atteindre 1 000 000 €.
               </p>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ── Profil de risque & Stratégie ──────────────────────────── */}
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-base">Profil de risque & Stratégie</CardTitle>
-          <CardDescription>
-            Tolérance aux pertes, expérience et rendement cible.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Profil de risque */}
-          <div>
-            <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              Profil de risque
-            </p>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field
-                label="Perte maximale acceptable (%)"
-                helper="Ex. 20 = tu acceptes de perdre jusqu'à 20 % de ton capital"
-              >
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    value={risqueMaxPerte}
-                    onChange={(e) => setRisqueMaxPerte(e.target.value)}
-                    placeholder="20"
-                    min={0}
-                    max={100}
-                    step={5}
-                    className={inputCls}
-                  />
-                  <span className="shrink-0 text-xs text-muted-foreground">%</span>
-                </div>
-              </Field>
-              <Field label="Niveau de connaissance">
-                <select
-                  value={niveauConnaissance}
-                  onChange={(e) => setNiveauConnaissance(e.target.value)}
-                  className={inputCls}
-                >
-                  <option value="Débutant">Débutant</option>
-                  <option value="Intermédiaire">Intermédiaire</option>
-                  <option value="Avancé">Avancé</option>
-                </select>
-              </Field>
             </div>
           </div>
 
-          <div className="border-t border-border" />
-
-          {/* Objectif de croissance */}
-          <div>
-            <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              <TrendingUp className="h-3.5 w-3.5" />
-              Objectif de croissance
-            </p>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field
-                label="Croissance annuelle cible (%)"
-                helper="Taux de rendement annualisé moyen visé"
-              >
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    value={objectifCroissance}
-                    onChange={(e) => setObjectifCroissance(e.target.value)}
-                    placeholder="8"
-                    min={0}
-                    max={100}
-                    step={0.5}
-                    className={inputCls}
-                  />
-                  <span className="shrink-0 text-xs text-muted-foreground">% / an</span>
-                </div>
-              </Field>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ── Allocation cible ───────────────────────────────────────── */}
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-base">Allocation cible</CardTitle>
-          <CardDescription>
-            Répartition souhaitée par type et sous-type — doit totaliser 100 %.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Lines list */}
-          {allocationDetaillee.length > 0 && (
+          <div className="grid grid-cols-3 gap-4">
+            <Stat label="Horizon" value={`${years} ans`} />
+            <Stat
+              label="Valeur projetée"
+              value={formatEur(projection.projectedValue)}
+              gold
+            />
             <div className="space-y-1.5">
-              {allocationDetaillee.map((line, idx) => (
-                <div key={idx} className="group flex items-center gap-2 rounded-md border border-border px-3 py-1.5 hover:bg-muted/50 transition-colors">
-                  <div className="min-w-0 flex-1">
-                    <span className="text-xs font-medium">{line.type}</span>
-                    <span className="mx-1.5 text-muted-foreground">·</span>
-                    <span className="text-xs text-muted-foreground">{line.subtype}</span>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <input
-                      type="number"
-                      value={line.pct}
-                      onChange={(e) => handleUpdatePct(idx, e.target.value)}
-                      min={0}
-                      max={100}
-                      step={1}
-                      className="w-14 rounded border border-input bg-background px-2 py-1 text-right text-xs outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
-                    />
-                    <span className="text-xs text-muted-foreground">%</span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveLine(idx)}
-                      className="ml-1 rounded p-0.5 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Supprimer"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+              <p className="font-sans text-[10px] uppercase tracking-[0.14em] text-ink-muted">
+                Verdict
+              </p>
+              {projection.reachable ? (
+                <span className="inline-flex items-center gap-1 rounded-pill border border-positive/30 bg-positive/10 px-2.5 py-1 text-xs font-semibold text-positive">
+                  Atteignable
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-pill border border-negative/30 bg-negative/10 px-2.5 py-1 text-xs font-semibold text-negative">
+                  Insuffisant
+                </span>
+              )}
             </div>
-          )}
+          </div>
 
-          {/* Total bar */}
-          <div className="flex items-center gap-2">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+          {/* Barre projeté vs objectif */}
+          <div className="mt-5">
+            <div className="h-2 overflow-hidden rounded-pill bg-surface-deep">
               <div
-                className={`h-full rounded-full transition-all ${
-                  allocationValid ? "bg-green-500" : allocationSum > 100 ? "bg-red-500" : "bg-orange-400"
-                }`}
-                style={{ width: `${Math.min(allocationSum, 100)}%` }}
+                className="h-full rounded-pill transition-[width] duration-700"
+                style={{
+                  width: `${projeteVsObjectif}%`,
+                  background: projection.reachable
+                    ? "var(--pm-positive)"
+                    : "var(--pm-gold)",
+                }}
               />
             </div>
-            <span
-              className={`text-xs font-medium tabular-nums ${
-                allocationValid ? "text-green-600" : allocationSum > 100 ? "text-red-600" : "text-orange-500"
-              }`}
-            >
-              {allocationSum} %
-            </span>
+            <p className="mt-1.5 text-right text-[11px] tabular-nums text-ink-muted">
+              {projeteVsObjectif.toFixed(0).replace(".", ",")} % de l&apos;objectif
+            </p>
           </div>
-          {allocationDetaillee.length > 0 && !allocationValid && (
-            <p className="text-xs text-orange-600">
-              Total : {allocationSum} % — ajuste les pourcentages pour atteindre 100 %.
+
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            {epargneFinaleProjete !== null && (
+              <div className="rounded-md border border-border bg-surface-deep/60 px-3 py-2 text-sm">
+                <span className="text-ink-muted">Épargne à {ageCibleNum} ans : </span>
+                <span className="font-semibold tabular-nums text-ink">
+                  {formatEur(epargneFinaleProjete)}/mois
+                </span>
+              </div>
+            )}
+            {matelasEur !== null && (
+              <div className="rounded-md border border-border bg-surface-deep/60 px-3 py-2 text-sm">
+                <span className="text-ink-muted">Épargne de précaution : </span>
+                <span className="font-semibold tabular-nums text-ink">
+                  {formatEur(matelasEur)}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {!projection.reachable && (
+            <p className="mt-3 text-xs text-ink-muted">
+              Augmente ton épargne mensuelle ou allonge ton horizon pour atteindre
+              1 000 000 €.
             </p>
           )}
+        </section>
+      )}
 
-          {/* Add form */}
-          <div className="flex flex-wrap items-end gap-2 rounded-md border border-dashed border-border bg-muted/30 p-3">
-            <div className="flex-1 min-w-[130px] space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Type</label>
-              <select
-                value={addType}
-                onChange={(e) => {
-                  setAddType(e.target.value);
-                  const found = ALLOCATION_TYPES.find((t) => t.type === e.target.value);
-                  setAddSubtype(found ? found.subtypes[0] : "");
-                }}
+      {/* ── Profil de risque & stratégie ────────────────────────────── */}
+      <SectionCard
+        Icon={IconShield}
+        title="Profil de risque & stratégie"
+        subtitle="Tolérance · expérience · rendement cible"
+        delay={120}
+      >
+        <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+          <Field
+            label="Perte maximale acceptable (%)"
+            helper="Ex. 20 = tu acceptes de perdre jusqu'à 20 % de ton capital"
+          >
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                value={risqueMaxPerte}
+                onChange={(e) => setRisqueMaxPerte(e.target.value)}
+                placeholder="20"
+                min={0}
+                max={100}
+                step={5}
                 className={inputCls}
-              >
-                {ALLOCATION_TYPES.map((t) => (
-                  <option key={t.type} value={t.type}>{t.type}</option>
-                ))}
-              </select>
+              />
+              <span className="shrink-0 text-xs text-ink-muted">%</span>
             </div>
-            <div className="flex-1 min-w-[160px] space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Sous-type</label>
-              <select
-                value={addSubtype}
-                onChange={(e) => setAddSubtype(e.target.value)}
-                className={inputCls}
-              >
-                {addTypeData.subtypes.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">%</label>
-              <div className="flex items-center gap-1">
-                <input
-                  type="number"
-                  value={addPct}
-                  onChange={(e) => setAddPct(e.target.value)}
-                  placeholder="10"
-                  min={0}
-                  max={100}
-                  step={1}
-                  className="w-16 rounded border border-input bg-background px-2 py-1.5 text-right text-sm outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
-                />
-                <span className="text-xs text-muted-foreground">%</span>
-              </div>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleAddLine}
-              disabled={!addPct || isNaN(parseFloat(addPct)) || parseFloat(addPct) <= 0}
+          </Field>
+          <Field label="Niveau de connaissance">
+            <select
+              value={niveauConnaissance}
+              onChange={(e) => setNiveauConnaissance(e.target.value)}
+              className="w-full"
             >
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
-              Ajouter
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+              <option value="Débutant">Débutant</option>
+              <option value="Intermédiaire">Intermédiaire</option>
+              <option value="Avancé">Avancé</option>
+            </select>
+          </Field>
+          <Field
+            label="Croissance annuelle cible (%)"
+            helper="Taux de rendement annualisé moyen visé"
+          >
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                value={objectifCroissance}
+                onChange={(e) => setObjectifCroissance(e.target.value)}
+                placeholder="8"
+                min={0}
+                max={100}
+                step={0.5}
+                className={inputCls}
+              />
+              <span className="shrink-0 text-xs text-ink-muted">% / an</span>
+            </div>
+          </Field>
+        </div>
+      </SectionCard>
 
-      {/* ── Sauvegarde ────────────────────────────────────────────── */}
+      {/* ── Allocation cible ────────────────────────────────────────── */}
+      <SectionCard
+        Icon={IconBricks}
+        title="Allocation cible"
+        subtitle="Répartition souhaitée · total 100 %"
+        delay={180}
+      >
+        {/* Barre de répartition par pilier */}
+        {allocationDetaillee.length > 0 && (
+          <div className="mb-5">
+            <div className="flex h-3 w-full overflow-hidden rounded-pill bg-surface-deep">
+              {byPilier.map(({ pilier, pct }) => (
+                <div
+                  key={pilier}
+                  className="h-full transition-[width] duration-500"
+                  style={{
+                    width: `${pct}%`,
+                    background: PILIER_VISUAL[pilier]?.color ?? "#a08b6e",
+                  }}
+                  title={`${PILIER_LABEL[pilier as keyof typeof PILIER_LABEL] ?? pilier} · ${pct} %`}
+                />
+              ))}
+            </div>
+            <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5">
+              {byPilier.map(({ pilier, pct }) => (
+                <span
+                  key={pilier}
+                  className="inline-flex items-center gap-1.5 text-[11px] text-ink-muted"
+                >
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ background: PILIER_VISUAL[pilier]?.color ?? "#a08b6e" }}
+                  />
+                  {PILIER_LABEL[pilier as keyof typeof PILIER_LABEL] ?? pilier}
+                  <span className="font-medium tabular-nums text-ink-soft">
+                    {Math.round(pct)} %
+                  </span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Lignes d'allocation */}
+        {allocationDetaillee.length > 0 && (
+          <div className="space-y-1.5">
+            {allocationDetaillee.map((line, idx) => {
+              const pilier = TYPE_TO_PILIER[line.type] ?? "AUTRE";
+              const vis = PILIER_VISUAL[pilier] ?? PILIER_VISUAL.AUTRE;
+              return (
+                <div
+                  key={idx}
+                  className="group flex items-center gap-3 rounded-md border border-border bg-surface-2/40 px-3 py-2 transition-colors hover:border-gold/40 hover:bg-surface-2"
+                >
+                  <span
+                    className="grid h-7 w-7 shrink-0 place-items-center rounded-md"
+                    style={{ background: `${vis.color}1f` }}
+                  >
+                    <vis.Icon size={16} style={{ color: vis.color }} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-semibold text-ink">
+                      {line.type}
+                    </p>
+                    <p className="truncate text-[11px] text-ink-muted">
+                      {line.subtype}
+                    </p>
+                  </div>
+                  <input
+                    type="number"
+                    value={line.pct}
+                    onChange={(e) => handleUpdatePct(idx, e.target.value)}
+                    min={0}
+                    max={100}
+                    step={1}
+                    className="w-16 rounded-md border border-input bg-background px-2 py-1.5 text-right text-xs tabular-nums text-ink outline-none transition focus:border-gold/50 focus:ring-2 focus:ring-ring/40"
+                  />
+                  <span className="text-xs text-ink-muted">%</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveLine(idx)}
+                    className="ml-1 rounded p-1 text-ink-muted opacity-0 transition-all hover:text-negative group-hover:opacity-100"
+                    title="Supprimer"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Total */}
+        <div className="mt-4 flex items-center gap-3">
+          <div className="h-2 flex-1 overflow-hidden rounded-pill bg-surface-deep">
+            <div
+              className="h-full rounded-pill transition-all duration-500"
+              style={{
+                width: `${Math.min(allocationSum, 100)}%`,
+                background: allocationValid
+                  ? "var(--pm-positive)"
+                  : allocationSum > 100
+                  ? "var(--pm-negative)"
+                  : "var(--pm-gold)",
+              }}
+            />
+          </div>
+          <span
+            className={`text-xs font-semibold tabular-nums ${
+              allocationValid
+                ? "text-positive"
+                : allocationSum > 100
+                ? "text-negative"
+                : "text-gold"
+            }`}
+          >
+            {allocationSum} %
+          </span>
+        </div>
+        {allocationDetaillee.length > 0 && !allocationValid && (
+          <p className="mt-2 text-xs text-ink-muted">
+            Ajuste les pourcentages pour atteindre 100 %.
+          </p>
+        )}
+
+        {/* Formulaire d'ajout */}
+        <div className="mt-4 flex flex-wrap items-end gap-2 rounded-md border border-dashed border-border bg-surface-2/30 p-3">
+          <div className="min-w-[130px] flex-1 space-y-1">
+            <label className="text-xs font-medium text-ink-muted">Type</label>
+            <select
+              value={addType}
+              onChange={(e) => {
+                setAddType(e.target.value);
+                const found = ALLOCATION_TYPES.find((t) => t.type === e.target.value);
+                setAddSubtype(found ? found.subtypes[0] : "");
+              }}
+              className="w-full"
+            >
+              {ALLOCATION_TYPES.map((t) => (
+                <option key={t.type} value={t.type}>
+                  {t.type}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="min-w-[160px] flex-1 space-y-1">
+            <label className="text-xs font-medium text-ink-muted">Sous-type</label>
+            <select
+              value={addSubtype}
+              onChange={(e) => setAddSubtype(e.target.value)}
+              className="w-full"
+            >
+              {addTypeData.subtypes.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-ink-muted">%</label>
+            <input
+              type="number"
+              value={addPct}
+              onChange={(e) => setAddPct(e.target.value)}
+              placeholder="10"
+              min={0}
+              max={100}
+              step={1}
+              className={inputNarrow}
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleAddLine}
+            disabled={!addPct || isNaN(parseFloat(addPct)) || parseFloat(addPct) <= 0}
+          >
+            <Plus className="mr-1.5 h-3.5 w-3.5" />
+            Ajouter
+          </Button>
+        </div>
+      </SectionCard>
+
+      {/* ── Messages ────────────────────────────────────────────────── */}
       {error && (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div className="animate-fade-in rounded-md border border-negative/30 bg-negative/10 px-4 py-3 text-sm text-negative">
           {error}
         </div>
       )}
       {success && (
-        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-          Profil mis à jour avec succès.
+        <div className="animate-fade-in rounded-md border border-positive/30 bg-positive/10 px-4 py-3 text-sm text-positive">
+          Profil mis à jour.
         </div>
       )}
 
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">
+      {/* ── Barre de sauvegarde ─────────────────────────────────────── */}
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-ink-muted">
           Progression actuelle :{" "}
-          <strong>{profile.progressionPercent} %</strong>
-          {" "}({formatEur((profile.progressionPercent / 100) * OBJECTIF_FIXE)} sur{" "}
-          {formatEur(OBJECTIF_FIXE)})
+          <strong className="text-gold">{profile.progressionPercent} %</strong>{" "}
+          <span className="tabular-nums">
+            ({formatEur((profile.progressionPercent / 100) * OBJECTIF_FIXE)} sur{" "}
+            {formatEur(OBJECTIF_FIXE)})
+          </span>
         </p>
         <Button onClick={handleSave} disabled={isPending} size="sm">
           {isPending ? (
@@ -625,6 +733,74 @@ export function ProfileForm({ profile }: Props) {
   );
 }
 
+// ── Sous-composants ──────────────────────────────────────────────
+
+function SectionCard({
+  Icon,
+  title,
+  subtitle,
+  children,
+  delay = 0,
+}: {
+  Icon: (p: IconProps) => React.ReactNode;
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+  delay?: number;
+}) {
+  return (
+    <section
+      className="animate-fade-in rounded-lg border border-border bg-surface p-5 sm:p-6"
+      style={{ animationDelay: `${delay}ms`, animationFillMode: "backwards" }}
+    >
+      <div className="mb-5 flex items-center gap-3.5">
+        <div
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-md border"
+          style={goldIconBox}
+        >
+          <Icon size={24} className="text-gold" />
+        </div>
+        <div>
+          <h3 className="font-display text-[18px] font-bold leading-tight tracking-[-0.02em] text-ink">
+            {title}
+          </h3>
+          {subtitle && (
+            <p className="mt-0.5 font-sans text-[10px] uppercase tracking-[0.16em] text-ink-muted">
+              {subtitle}
+            </p>
+          )}
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  gold = false,
+}: {
+  label: string;
+  value: string;
+  gold?: boolean;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <p className="font-sans text-[10px] uppercase tracking-[0.14em] text-ink-muted">
+        {label}
+      </p>
+      <p
+        className={`font-display text-[17px] font-bold leading-none tabular-nums ${
+          gold ? "text-gold" : "text-ink"
+        }`}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
 function Field({
   label,
   helper,
@@ -635,10 +811,12 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-1">
-      <label className="text-xs font-medium text-foreground">{label}</label>
+    <div className="space-y-1.5">
+      <label className="text-xs font-medium text-ink-soft">{label}</label>
       {children}
-      {helper && <p className="text-xs text-muted-foreground">{helper}</p>}
+      {helper && (
+        <p className="text-[11px] leading-relaxed text-ink-muted">{helper}</p>
+      )}
     </div>
   );
 }
