@@ -60,5 +60,8 @@ Réf. `components/portfolio/Sparkline.tsx` :
 - Couleur via **`currentColor`** → portée par une classe `text-*` du parent
   (`text-positive` / `text-negative` / `text-muted-foreground`).
 - < 2 points → tiret pointillé discret (pas de fausse courbe).
-- Données : séries de valeur par actif issues des snapshots (`getAssetSparklines`),
-  pas d'appel API externe. La fenêtre (1J/3J/7J) est tranchée côté client.
+- Données = **performance prix pure** (hors apports) : séries horaires CoinGecko
+  `market_chart` / Yahoo `chart` via `/api/prices/sparkline`, hook `useSparklines`
+  (cache 3 h : `revalidate` serveur + localStorage client). On récupère 7 j puis on
+  tranche la fenêtre (1J/3J/7J) côté client par timestamp. Clé = ticker / id CoinGecko
+  (les actifs sans cotation affichent « — »).
