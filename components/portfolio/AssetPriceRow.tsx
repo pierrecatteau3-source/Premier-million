@@ -35,26 +35,12 @@ export function AssetPriceRow({ ticker, pricingMode, priceData }: Props) {
     );
   }
 
-  const change = priceData.change24hPct;
-  const isPos = change != null && change >= 0;
-
+  // La variation (% de performance) vit désormais dans la colonne « Performance »
+  // dédiée du tableau (mini-courbe). Ici on ne garde que le prix + la fraîcheur.
   return (
     <div className="flex items-center gap-2 flex-wrap">
       {priceData.price != null && (
         <span className="text-sm font-medium tabular-nums">{formatEur(priceData.price)}</span>
-      )}
-      {change != null && (
-        <span
-          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-            isPos ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"
-          }`}
-          title={[
-            priceData.change7dPct != null ? `7j : ${priceData.change7dPct.toFixed(1)} %` : null,
-            priceData.change30dPct != null ? `30j : ${priceData.change30dPct.toFixed(1)} %` : null,
-          ].filter(Boolean).join(" · ") || undefined}
-        >
-          {isPos ? "+" : ""}{change.toFixed(1)} %
-        </span>
       )}
       <span className="text-[10px] text-muted-foreground/60">
         {timeSince(priceData.updatedAt)}

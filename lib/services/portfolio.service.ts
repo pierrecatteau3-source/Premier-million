@@ -172,6 +172,41 @@ export interface HistoryPoint {
   totalValue: number;
 }
 
+/** Point d'une mini-courbe de performance par actif. */
+export interface SparkPoint {
+  /** timestamp (ms) du snapshot */
+  t: number;
+  /** valeur de l'actif à cette date */
+  v: number;
+}
+
+/**
+ * Séries de valeur par actif sur les `days` derniers jours, pour les mini-courbes
+ * de la colonne « Performance » du portefeuille. Renvoie les points bruts (un par
+ * snapshot enregistré) groupés par `assetId`. Le client tranche ensuite selon la
+ * fenêtre choisie (1J / 3J / 7J). Une requête unique, pas d'appel API externe.
+ */
+export async function getAssetSparklines(
+  userId: string,
+  days = 8
+): Promise<Record<string, SparkPoint[]>> {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  cutoff.setHours(0, 0, 0, 0);
+
+  const snapshots = await prisma.snapshot.findMany({
+    where: { asset: { userId }, date: { gte: cutoff } },
+    orderBy: { date: "asc" },
+    select: { assetId: true, value: true, date: true },
+  });
+
+  const byAsset: Record<string, SparkPoint[]> = {};
+  for (const snap of snapshots) {
+    (byAsset[snap.assetId] ??= []).push({ t: snap.date.getTime(), v: snap.value });
+  }
+  return byAsset;
+}
+
 export interface DateRange {
   startDate: Date;
   endDate: Date;

@@ -16,6 +16,7 @@ import {
   PenLine,
   Loader2,
   ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import { PILIER_LABEL } from "@/types";
 import { cn } from "@/lib/utils";
@@ -23,16 +24,33 @@ import type { PilierSummary } from "@/types";
 import { ALLOCATION_TYPES, TYPE_TO_PILIER } from "@/lib/constants/allocation-types";
 import { AssetLogo } from "@/components/portfolio/asset-logo";
 import { AssetPriceRow } from "@/components/portfolio/AssetPriceRow";
+import { Sparkline } from "@/components/portfolio/Sparkline";
 import { TransactionForm } from "@/components/portfolio/TransactionForm";
 import { MigrationPrompt } from "@/components/portfolio/MigrationPrompt";
 import { AssetDetailModal, type AssetDetailData } from "@/components/portfolio/AssetDetailModal";
 import type { PriceMap } from "@/types/prices";
+import type { SparkPoint } from "@/lib/services/portfolio.service";
 
 interface Props {
   piliers: PilierSummary[];
   priceMap?: PriceMap;
   /** Filtre initial du pilier — prime sur ?pilier= dans l'URL. Pour usage en modal. */
   initialFilter?: string;
+  /** Séries de valeur par actif (~8 jours) pour les mini-courbes de performance. */
+  sparklines?: Record<string, SparkPoint[]>;
+}
+
+/** Fenêtres proposées dans l'en-tête de la colonne Performance (en jours). */
+const SPARK_PERIODS = [1, 3, 7] as const;
+type SparkDays = (typeof SPARK_PERIODS)[number];
+
+/**
+ * Tranche une série par nombre de points : pour N jours on garde les N+1 derniers
+ * points (snapshots quotidiens → N intervalles). Robuste aux trous de snapshots.
+ */
+function sliceSparkWindow(points: SparkPoint[], days: SparkDays): SparkPoint[] {
+  if (!points || points.length === 0) return [];
+  return points.slice(-(days + 1));
 }
 
 const inputCls =
@@ -67,7 +85,38 @@ function today() {
 
 const VALID_PILIER_FILTERS = new Set(["PEA", "CRYPTO", "IMMO", "AUTRE", "LIQUIDITE"]);
 
-export function AssetManager({ piliers, priceMap = {}, initialFilter }: Props) {
+/**
+ * Select stylé : on masque le chevron natif de l'OS (`appearance-none`) et on
+ * dessine un seul ChevronDown propre à droite — sinon le glyphe natif se
+ * superpose au contenu sur certains navigateurs.
+ */
+function FieldSelect({
+  value,
+  onChange,
+  children,
+  ariaLabel,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  children: React.ReactNode;
+  ariaLabel: string;
+}) {
+  return (
+    <div className="relative">
+      <select
+        aria-label={ariaLabel}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-8 appearance-none rounded-lg border border-input bg-background pl-2.5 pr-8 text-sm outline-none focus:ring-2 focus:ring-ring"
+      >
+        {children}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+    </div>
+  );
+}
+
+export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines = {} }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const urlPilier = searchParams.get("pilier");
@@ -165,6 +214,7 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter }: Props) {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortBy>("value_desc");
   const [filterPilier, setFilterPilier] = useState(resolvedInitial);
+  const [sparkDays, setSparkDays] = useState<SparkDays>(7);
 
   useEffect(() => {
     // Pas de scroll quand on est en modal (initialFilter fourni par le parent)
@@ -294,21 +344,21 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter }: Props) {
                   onChange={e => setSearch(e.target.value)}
                   className="h-8 flex-1 min-w-[140px] rounded-lg border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
                 />
-                <select
+                <FieldSelect
+                  ariaLabel="Trier les actifs"
                   value={sortBy}
-                  onChange={e => setSortBy(e.target.value as SortBy)}
-                  className="h-8 rounded-lg border border-input bg-background px-2 text-sm outline-none"
+                  onChange={(v) => setSortBy(v as SortBy)}
                 >
-                  <option value="value_desc">Valeur ↓</option>
-                  <option value="value_asc">Valeur ↑</option>
+                  <option value="value_desc">Valeur décroissante</option>
+                  <option value="value_asc">Valeur croissante</option>
                   <option value="name_asc">Nom A→Z</option>
                   <option value="name_desc">Nom Z→A</option>
-                  <option value="pilier">Pilier</option>
-                </select>
-                <select
+                  <option value="pilier">Par pilier</option>
+                </FieldSelect>
+                <FieldSelect
+                  ariaLabel="Filtrer par pilier"
                   value={filterPilier}
-                  onChange={e => setFilterPilier(e.target.value)}
-                  className="h-8 rounded-lg border border-input bg-background px-2 text-sm outline-none"
+                  onChange={setFilterPilier}
                 >
                   <option value="all">Tous les piliers</option>
                   <option value="PEA">PEA</option>
@@ -316,7 +366,7 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter }: Props) {
                   <option value="IMMO">Immobilier</option>
                   <option value="AUTRE">Autre</option>
                   <option value="LIQUIDITE">Compte courant</option>
-                </select>
+                </FieldSelect>
               </div>
               <div className="max-h-[440px] overflow-y-auto">
               <table className="w-full text-sm">
@@ -333,6 +383,29 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter }: Props) {
                     </th>
                     <th className="px-4 py-3 text-right font-medium text-muted-foreground">
                       Valeur
+                    </th>
+                    <th className="hidden px-4 py-3 text-right font-medium text-muted-foreground sm:table-cell">
+                      <div className="flex flex-col items-end gap-1">
+                        <span>Performance</span>
+                        <div className="flex items-center gap-0.5">
+                          {SPARK_PERIODS.map((d) => (
+                            <button
+                              key={d}
+                              type="button"
+                              onClick={() => setSparkDays(d)}
+                              aria-pressed={sparkDays === d}
+                              className={cn(
+                                "rounded px-1.5 py-0.5 text-[10px] font-semibold tabular-nums transition-colors",
+                                sparkDays === d
+                                  ? "bg-primary/15 text-primary"
+                                  : "text-muted-foreground/70 hover:text-foreground"
+                              )}
+                            >
+                              {d}J
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </th>
                     <th className="hidden px-4 py-3 text-right font-medium text-muted-foreground lg:table-cell">
                       +/− latent
@@ -394,6 +467,32 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter }: Props) {
                           </td>
                           <td className="px-4 py-3 text-right tabular-nums font-medium">
                             {formatEur(asset.latestValue)}
+                          </td>
+                          <td className="hidden px-4 py-3 sm:table-cell">
+                            {(() => {
+                              const series = sliceSparkWindow(sparklines[asset.id] ?? [], sparkDays);
+                              const values = series.map((p) => p.v);
+                              const valid = values.length >= 2 && values[0] > 0;
+                              const perf = valid
+                                ? ((values[values.length - 1] - values[0]) / values[0]) * 100
+                                : null;
+                              const toneCls =
+                                perf == null || Math.abs(perf) < 0.05
+                                  ? "text-muted-foreground"
+                                  : perf > 0
+                                  ? "text-positive"
+                                  : "text-negative";
+                              return (
+                                <div className="flex flex-col items-end gap-0.5">
+                                  <Sparkline points={values} className={toneCls} />
+                                  <span className={cn("text-xs font-medium tabular-nums", toneCls)}>
+                                    {perf == null
+                                      ? "—"
+                                      : `${perf >= 0 ? "+" : ""}${perf.toFixed(1)} %`}
+                                  </span>
+                                </div>
+                              );
+                            })()}
                           </td>
                           <td className="hidden px-4 py-3 text-right tabular-nums lg:table-cell">
                             {asset.pvLatente != null ? (
@@ -481,7 +580,7 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter }: Props) {
                         {/* ── Formulaire snapshot inline ─────────── */}
                         {snapshotOpen === asset.id && (
                           <tr className="bg-muted/20">
-                            <td colSpan={6} className="px-4 py-3">
+                            <td colSpan={7} className="px-4 py-3">
                               <div className="flex flex-wrap items-end gap-3">
                                 <div className="space-y-1">
                                   <label className="text-xs font-medium">
@@ -546,7 +645,7 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter }: Props) {
                         {/* ── Formulaire ticker / pricingMode inline ─ */}
                         {editingId === asset.id && (
                           <tr className="bg-muted/20">
-                            <td colSpan={6} className="px-4 py-3">
+                            <td colSpan={7} className="px-4 py-3">
                               {asset.pilier === "LIQUIDITE" ? (
                                 <p className="text-xs text-muted-foreground">
                                   Le Compte courant est toujours en saisie manuelle — pas de ticker ni de pricing live.
@@ -612,7 +711,7 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter }: Props) {
                         {/* ── Transaction form inline — masqué pour LIQUIDITE ─ */}
                         {expandedAssetId === asset.id && asset.pilier !== "LIQUIDITE" && (
                           <tr className="bg-muted/10">
-                            <td colSpan={6} className="px-4 py-4">
+                            <td colSpan={7} className="px-4 py-4">
                               <TransactionForm
                                 assetId={asset.id}
                                 assetName={asset.name}
@@ -633,7 +732,7 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter }: Props) {
                     <td className="px-4 py-3 text-right tabular-nums font-bold">
                       {formatEur(total)}
                     </td>
-                    <td colSpan={2} />
+                    <td colSpan={3} />
                   </tr>
                 </tfoot>
               </table>

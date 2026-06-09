@@ -39,3 +39,26 @@ Réf. `components/portfolio/AssetManager.tsx` :
 
 - **En-tête sticky** : `sticky top-0 z-10` + fond opaque `bg-[hsl(var(--muted))]` (sinon les lignes défilent à travers).
 - **Pied (total) sticky** : `sticky bottom-0 z-10` + `bg-[hsl(var(--muted))]`.
+
+## 5. Selects (anti-superposition du chevron)
+
+Un `<select>` natif laissé tel quel affiche le chevron de l'OS, qui peut se
+**superposer** au contenu (ou doubler un glyphe `↓` présent dans le label).
+
+Pattern validé (réf. `FieldSelect` dans `components/portfolio/AssetManager.tsx`) :
+
+- `appearance-none` pour masquer le chevron natif.
+- Conteneur `relative` + un seul `ChevronDown` (lucide) en `absolute right-2 -translate-y-1/2 pointer-events-none text-muted-foreground`.
+- Réserver la place : `pr-8` sur le `select`.
+- **Ne pas** mettre de flèche unicode (`↓`/`↑`) dans le texte des `<option>` — utiliser des mots (« Valeur décroissante », « Nom A→Z »).
+
+## 6. Mini-courbes (sparklines)
+
+Réf. `components/portfolio/Sparkline.tsx` :
+
+- SVG pur sans axes : `path` aire (`fillOpacity 0.1`) + `path` trait + point de fin.
+- Couleur via **`currentColor`** → portée par une classe `text-*` du parent
+  (`text-positive` / `text-negative` / `text-muted-foreground`).
+- < 2 points → tiret pointillé discret (pas de fausse courbe).
+- Données : séries de valeur par actif issues des snapshots (`getAssetSparklines`),
+  pas d'appel API externe. La fenêtre (1J/3J/7J) est tranchée côté client.

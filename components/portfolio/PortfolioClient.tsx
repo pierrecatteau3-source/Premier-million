@@ -6,10 +6,13 @@ import { usePrices } from "@/hooks/usePrices";
 import { AssetManager } from "@/components/portfolio/AssetManager";
 import type { PilierSummary, PilierAsset } from "@/types";
 import type { PriceMap } from "@/types/prices";
+import type { SparkPoint } from "@/lib/services/portfolio.service";
 
 interface Props {
   piliers: PilierSummary[];
   initialFilter?: string;
+  /** Séries de valeur par actif (sur ~8 jours) pour les mini-courbes de performance. */
+  sparklines?: Record<string, SparkPoint[]>;
 }
 
 /** Injects live prices into pilier assets and recomputes totalValue per pilier */
@@ -44,7 +47,7 @@ function applyLivePrices(piliers: PilierSummary[], priceMap: PriceMap): PilierSu
   });
 }
 
-export function PortfolioClient({ piliers, initialFilter }: Props) {
+export function PortfolioClient({ piliers, initialFilter, sparklines }: Props) {
   const router = useRouter();
   const syncedRef = useRef(false);
 
@@ -105,5 +108,12 @@ export function PortfolioClient({ piliers, initialFilter }: Props) {
     [piliers, prices]
   );
 
-  return <AssetManager piliers={piliersWithLive} priceMap={prices} initialFilter={initialFilter} />;
+  return (
+    <AssetManager
+      piliers={piliersWithLive}
+      priceMap={prices}
+      initialFilter={initialFilter}
+      sparklines={sparklines}
+    />
+  );
 }
