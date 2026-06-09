@@ -70,7 +70,7 @@ interface BpTrade {
 
 // ─── Appels HTTP ────────────────────────────────────────────────────────────────
 
-async function bpFetch<T>(path: string, apiKey: string): Promise<T> {
+async function bpFetch<T>(path: string, apiKey: string, label: string): Promise<T> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   let res: Response;
@@ -86,13 +86,16 @@ async function bpFetch<T>(path: string, apiKey: string): Promise<T> {
   }
 
   if (res.status === 401 || res.status === 403) {
-    throw new BitpandaError("Clé API BitPanda invalide ou sans les droits requis (Trades).");
+    throw new BitpandaError(
+      `Accès refusé par BitPanda (${res.status}) sur ${label}. Vérifie que la clé est ` +
+        `bien confirmée par email et qu'elle a les droits Trade + Transaction + Balance.`
+    );
   }
   if (res.status === 429) {
     throw new BitpandaError("BitPanda limite les requêtes pour l'instant. Réessaie dans un moment.");
   }
   if (!res.ok) {
-    throw new BitpandaError(`BitPanda a répondu une erreur (${res.status}).`);
+    throw new BitpandaError(`BitPanda a répondu une erreur (${res.status}) sur ${label}.`);
   }
   return (await res.json()) as T;
 }
@@ -101,7 +104,11 @@ async function bpFetch<T>(path: string, apiKey: string): Promise<T> {
 async function fetchWalletSymbolMap(
   apiKey: string
 ): Promise<Map<string, { symbol: string; name: string }>> {
-  const json = await bpFetch<{ data?: BpWallet[] }>(`/wallets?page_size=500`, apiKey);
+  const json = await bpFetch<{ data?: BpWallet[] }>(
+    `/wallets?page_size=500`,
+    apiKey,
+    "les portefeuilles (droit Balance)"
+  );
   const map = new Map<string, { symbol: string; name: string }>();
   for (const w of json.data ?? []) {
     const id = w.attributes?.cryptocoin_id;
@@ -125,7 +132,7 @@ async function fetchAllBuyTrades(apiKey: string): Promise<BpTrade[]> {
     const json = await bpFetch<{
       data?: BpTrade[];
       meta?: { next_cursor?: string | null };
-    }>(`/trades?${params.toString()}`, apiKey);
+    }>(`/trades?${params.toString()}`, apiKey, "les achats (droit Trade)");
 
     const batch = json.data ?? [];
     all.push(...batch);
