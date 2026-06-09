@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Clock, KeyRound, Loader2, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Check, Clock, DownloadCloud, KeyRound, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type KeyState = { configured: boolean; hint: string | null };
@@ -11,10 +12,13 @@ interface Props {
 }
 
 export function ApiKeysForm({ initial }: Props) {
+  const router = useRouter();
   const [state, setState] = useState(initial);
   const [bitpanda, setBitpanda] = useState("");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importMsg, setImportMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
   async function patch(body: Record<string, string>): Promise<boolean> {
     setSaving(true);
@@ -57,7 +61,40 @@ export function ApiKeysForm({ initial }: Props) {
     }
   }
 
+  async function handleImport() {
+    setImporting(true);
+    setImportMsg(null);
+    try {
+      const res = await fetch("/api/settings/bitpanda/import", { method: "POST" });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.data) {
+        setImportMsg({ kind: "err", text: json?.error ?? "Échec de l'import." });
+        return;
+      }
+      const r = json.data as {
+        imported: number;
+        skipped: number;
+        assetsCreated: number;
+        ignored: number;
+      };
+      const parts: string[] = [
+        `${r.imported} opération${r.imported > 1 ? "s" : ""} importée${r.imported > 1 ? "s" : ""}`,
+      ];
+      if (r.assetsCreated > 0) {
+        parts.push(`${r.assetsCreated} actif${r.assetsCreated > 1 ? "s" : ""} créé${r.assetsCreated > 1 ? "s" : ""}`);
+      }
+      if (r.skipped > 0) parts.push(`${r.skipped} déjà importée${r.skipped > 1 ? "s" : ""}`);
+      setImportMsg({ kind: "ok", text: parts.join(" · ") });
+      router.refresh();
+    } catch {
+      setImportMsg({ kind: "err", text: "Connexion impossible." });
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return (
+    <>
     <div className="rounded-2xl border border-border/40 bg-card p-6 space-y-6">
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
@@ -104,10 +141,49 @@ export function ApiKeysForm({ initial }: Props) {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        La clé est stockée telle quelle en base (usage perso). Elle servira à
-        l&apos;import automatique de tes positions BitPanda.
+        La clé est stockée telle quelle en base (usage perso). Elle sert à
+        l&apos;import de tes opérations BitPanda ci-dessous.
       </p>
     </div>
+
+    {state.bitpanda.configured && (
+      <div className="rounded-2xl border border-border/40 bg-card p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+            <DownloadCloud className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold">Import BitPanda</h2>
+            <p className="text-xs text-muted-foreground">
+              Récupère tes achats et plans d&apos;épargne (investissements automatiques inclus) et
+              les ajoute au portefeuille et à l&apos;historique. Tes saisies manuelles sont
+              conservées, et relancer l&apos;import ne crée pas de doublon.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Button onClick={handleImport} disabled={importing} variant="outline">
+            {importing ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <DownloadCloud className="mr-2 h-4 w-4" />
+            )}
+            Importer mes opérations
+          </Button>
+          {importMsg && (
+            <span
+              className={
+                importMsg.kind === "ok" ? "text-sm text-positive" : "text-sm text-destructive"
+              }
+            >
+              {importMsg.text}
+            </span>
+          )}
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 

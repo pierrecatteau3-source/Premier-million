@@ -147,7 +147,19 @@ export function TransactionHistoryTable({ transactions }: Props) {
                   </td>
 
                   {/* Actif */}
-                  <td className="py-2 font-medium">{t.asset.name}</td>
+                  <td className="py-2 font-medium">
+                    <span className="inline-flex items-center gap-1.5">
+                      {t.asset.name}
+                      {t.source && t.source !== "manuel" && (
+                        <span
+                          className="rounded-full bg-gold/10 px-1.5 py-0.5 text-[10px] font-medium text-gold"
+                          title="Importé automatiquement (BitPanda)"
+                        >
+                          Auto
+                        </span>
+                      )}
+                    </span>
+                  </td>
 
                   {/* Pilier */}
                   <td className="py-2 text-muted-foreground">{t.asset.pilier}</td>

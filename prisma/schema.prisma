@@ -139,10 +139,14 @@ model Transaction {
   montantInvesti Float
   source         String   @default("manuel")
   note           String?
+  /// Identifiant de l'opération chez le courtier source (ex. id du trade BitPanda).
+  /// null pour les saisies manuelles. Sert à dédoublonner les imports automatiques.
+  externalId     String?
   createdAt      DateTime @default(now())
   asset          Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, externalId])
   @@index([assetId])
   @@index([userId])
 }
