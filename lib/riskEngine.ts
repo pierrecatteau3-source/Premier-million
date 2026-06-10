@@ -7,6 +7,7 @@
  */
 
 import { TYPE_TO_PILIER } from "@/lib/constants/allocation-types";
+import type { AllocationDetailleeLine, PilierSummary } from "@/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -283,6 +284,78 @@ export function computeAdvancedRiskScore(input: RiskScoreInput): RiskScoreResult
     scoreLevier: Math.round(scoreLevier * 100) / 100,
     detail,
   };
+}
+
+// ─── Assemblage de l'entrée du score depuis le portefeuille + profil ──────────
+
+/** Champs profil nécessaires à l'ajustement matelas + allocation détaillée */
+export interface RiskScoreInputProfile {
+  epargnePrecautionMontant: number | null;
+  epargnePrecaution: number | null;
+  epargneMensuelle: number | null;
+  /** Json Prisma — castée si c'est bien un tableau de lignes */
+  allocationDetaillee: unknown;
+}
+
+export interface RiskScoreAssembly {
+  /** Entrée prête pour computeAdvancedRiskScore */
+  input: RiskScoreInput;
+  /** Piliers ajustés (matelas déduit de AUTRE) avec % et écarts recalculés */
+  piliersNet: PilierSummary[];
+  /** Patrimoine net investissable (hors matelas de précaution) */
+  patrimoineNet: number;
+  /** Lignes d'allocation détaillée (vide si non renseignée) */
+  allocationLines: AllocationDetailleeLine[];
+}
+
+/**
+ * Assemble l'entrée du moteur de risque depuis un portefeuille + un profil :
+ * déduit le matelas de précaution du pilier AUTRE, recalcule les % investissables,
+ * et mappe l'allocation détaillée par pilier. Partagé entre /analyse-patrimoine
+ * et le contexte advisor de Pio pour éviter toute divergence de calcul.
+ */
+export function buildRiskScoreInput(
+  portfolio: { piliers: PilierSummary[] },
+  profile: RiskScoreInputProfile
+): RiskScoreAssembly {
+  const matelasEur =
+    profile.epargnePrecautionMontant ??
+    (profile.epargnePrecaution ?? 0) * (profile.epargneMensuelle ?? 0);
+
+  const piliersAjustes = portfolio.piliers.map((p) => ({
+    ...p,
+    totalValue:
+      p.pilier === "AUTRE" ? Math.max(0, p.totalValue - matelasEur) : p.totalValue,
+  }));
+
+  const totalInvestissable = piliersAjustes.reduce((sum, p) => sum + p.totalValue, 0);
+
+  const piliersNet: PilierSummary[] = piliersAjustes.map((p) => {
+    const percentage =
+      totalInvestissable > 0
+        ? Math.round((p.totalValue / totalInvestissable) * 1000) / 10
+        : 0;
+    return { ...p, percentage, allocationGap: percentage - p.targetPercentage };
+  });
+
+  const allocationLines: AllocationDetailleeLine[] = Array.isArray(
+    profile.allocationDetaillee
+  )
+    ? (profile.allocationDetaillee as AllocationDetailleeLine[])
+    : [];
+
+  const input: RiskScoreInput = {
+    piliers: piliersNet.map((p) => ({
+      pilier: p.pilier,
+      totalValue: p.totalValue,
+      percentage: p.percentage,
+      lines: allocationLines.filter((l) => TYPE_TO_PILIER[l.type] === p.pilier),
+    })),
+    totalDebt: 0,
+    totalValue: totalInvestissable,
+  };
+
+  return { input, piliersNet, patrimoineNet: totalInvestissable, allocationLines };
 }
 
 // Re-export TYPE_TO_PILIER for convenience

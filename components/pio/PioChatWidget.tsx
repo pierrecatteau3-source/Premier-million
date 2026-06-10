@@ -4,11 +4,16 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Loader2, Send, X } from "lucide-react";
+import { Loader2, Send, Sparkles, X } from "lucide-react";
 import { usePioChat } from "./PioChatProvider";
 import { pickGreeting } from "@/lib/pio/greetings";
 
 type Msg = { role: "user" | "assistant"; content: string };
+type ChatMode = "chat" | "advisor";
+
+// Message envoyé quand on clique sur "Analyse ma stratégie"
+const ADVISOR_PROMPT =
+  "Analyse ma stratégie : fais-moi une revue complète de mon portefeuille avec des recommandations concrètes.";
 
 export function PioChatWidget() {
   const { open, openChat, closeChat } = usePioChat();
@@ -16,6 +21,7 @@ export function PioChatWidget() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
+  const [pendingMode, setPendingMode] = useState<ChatMode>("chat");
   const [error, setError] = useState("");
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -55,20 +61,18 @@ export function PioChatWidget() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, closeChat]);
 
-  async function send() {
-    const text = input.trim();
+  async function postMessage(text: string, mode: ChatMode) {
     if (!text || pending) return;
     setError("");
     const next: Msg[] = [...messages, { role: "user", content: text }];
     setMessages(next);
-    setInput("");
-    if (inputRef.current) inputRef.current.style.height = "auto";
     setPending(true);
+    setPendingMode(mode);
     try {
       const res = await fetch("/api/pio/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next.slice(-20) }),
+        body: JSON.stringify({ messages: next.slice(-20), mode }),
       });
       const json = await res.json().catch(() => null);
       if (!res.ok || !json?.data?.reply) {
@@ -81,6 +85,21 @@ export function PioChatWidget() {
     } finally {
       setPending(false);
     }
+  }
+
+  // Envoi normal (papote) — lit le champ de saisie
+  function send() {
+    const text = input.trim();
+    if (!text || pending) return;
+    setInput("");
+    if (inputRef.current) inputRef.current.style.height = "auto";
+    void postMessage(text, "chat");
+  }
+
+  // Bouton "Analyse ma stratégie" — déclenche le mode conseil (Opus)
+  function analyzeStrategy() {
+    if (pending) return;
+    void postMessage(ADVISOR_PROMPT, "advisor");
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -168,7 +187,8 @@ export function PioChatWidget() {
             {pending && (
               <PioBubble>
                 <span className="inline-flex items-center gap-2 text-ink-muted">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Pio écrit…
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />{" "}
+                  {pendingMode === "advisor" ? "Pio analyse ta stratégie…" : "Pio écrit…"}
                 </span>
               </PioBubble>
             )}
@@ -182,6 +202,15 @@ export function PioChatWidget() {
 
           {/* Saisie */}
           <div className="border-t border-border p-3">
+            {/* Mode conseil — analyse stratégique ponctuelle (Opus) */}
+            <button
+              onClick={analyzeStrategy}
+              disabled={pending}
+              className="mb-2 flex w-full items-center justify-center gap-2 rounded-xl border border-gold/40 px-3 py-2 text-xs font-medium text-gold transition-colors hover:bg-gold/10 disabled:opacity-40"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Analyse ma stratégie
+            </button>
             <div
               className="flex items-end gap-2 rounded-xl border border-border px-3 py-2"
               style={{ backgroundColor: "hsl(var(--card))" }}

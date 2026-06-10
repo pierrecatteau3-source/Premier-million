@@ -3,8 +3,14 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getPortfolioSummary } from "@/lib/services/portfolio.service";
-import { computeAdvancedRiskScore, volForSubtype, VOL_FALLBACK } from "@/lib/riskEngine";
+import {
+  computeAdvancedRiskScore,
+  buildRiskScoreInput,
+  volForSubtype,
+  VOL_FALLBACK,
+} from "@/lib/riskEngine";
 import { TYPE_TO_PILIER } from "@/lib/constants/allocation-types";
+import { calculateTargetAge } from "@/lib/utils/projection";
 import { Header } from "@/components/layout/Header";
 import { AnalysisCard } from "@/components/analysis/AnalysisCard";
 import { RiskGauge } from "@/components/risk/RiskGauge";
@@ -29,28 +35,6 @@ function formatEur(v: number) {
     currency: "EUR",
     maximumFractionDigits: 0,
   }).format(v);
-}
-
-function calculateTargetAge(
-  currentValue: number,
-  epargne: number,
-  evolution: number,
-  taux: number,
-  ageActuel: number,
-  objectif = 1_000_000,
-  maxYears = 60
-): number | null {
-  const monthlyRate = taux / 12 / 100;
-  let value = currentValue;
-  let e = epargne;
-  for (let y = 0; y < maxYears; y++) {
-    for (let m = 0; m < 12; m++) {
-      value = value * (1 + monthlyRate) + e;
-      if (value >= objectif) return ageActuel + y + (m >= 6 ? 1 : 0);
-    }
-    e *= (1 + evolution / 100);
-  }
-  return null;
 }
 
 async function getLatestAnalysesByType(userId: string) {
@@ -108,50 +92,22 @@ export default async function AnalysePatrimoinePage({
 
   if (!user) redirect("/login");
 
-  const matelasEur = user.epargnePrecautionMontant
-    ?? ((user.epargnePrecaution ?? 0) * (user.epargneMensuelle ?? 0));
-
-  const piliersAjustes = portfolio.piliers.map((p) => ({
-    ...p,
-    totalValue: p.pilier === "AUTRE"
-      ? Math.max(0, p.totalValue - matelasEur)
-      : p.totalValue,
-  }));
-  const totalInvestissable = piliersAjustes.reduce((sum, p) => sum + p.totalValue, 0);
-  const patrimoineNet = totalInvestissable;
-
-  const piliersNet = piliersAjustes.map((p) => ({
-    ...p,
-    percentage: totalInvestissable > 0
-      ? Math.round((p.totalValue / totalInvestissable) * 1000) / 10
-      : 0,
-    allocationGap: (totalInvestissable > 0
-      ? Math.round((p.totalValue / totalInvestissable) * 1000) / 10
-      : 0) - p.targetPercentage,
-  }));
+  // Assemblage matelas + % investissables + lignes d'allocation (helper partagé
+  // avec le mode conseil de Pio — voir lib/riskEngine.ts).
+  const { input: riskInput, piliersNet, patrimoineNet, allocationLines } =
+    buildRiskScoreInput(portfolio, {
+      epargnePrecautionMontant: user.epargnePrecautionMontant,
+      epargnePrecaution: user.epargnePrecaution,
+      epargneMensuelle: user.epargneMensuelle,
+      allocationDetaillee: user.allocationDetaillee,
+    });
 
   const activeHorizon: Horizon =
     TAB_HORIZONS.includes(searchParams.horizon as Horizon)
       ? (searchParams.horizon as Horizon)
       : "YEAR_3";
 
-  // Mapper allocationDetaillee par pilier
-  const allocationLines = Array.isArray(user.allocationDetaillee)
-    ? (user.allocationDetaillee as { type: string; subtype: string; pct: number }[])
-    : [];
-
-  const riskResult = computeAdvancedRiskScore({
-    piliers: piliersNet.map((p) => ({
-      pilier: p.pilier,
-      totalValue: p.totalValue,
-      percentage: p.percentage,
-      lines: allocationLines.filter(
-        (l) => TYPE_TO_PILIER[l.type] === p.pilier
-      ),
-    })),
-    totalDebt: 0,
-    totalValue: totalInvestissable,
-  });
+  const riskResult = computeAdvancedRiskScore(riskInput);
 
   const riskScore = riskResult.total;
   const riskLevel: "faible" | "modéré" | "élevé" =
