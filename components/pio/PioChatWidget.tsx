@@ -11,10 +11,6 @@ import { pickGreeting } from "@/lib/pio/greetings";
 type Msg = { role: "user" | "assistant"; content: string };
 type ChatMode = "chat" | "advisor";
 
-// Message envoyé quand on clique sur "Analyse ma stratégie"
-const ADVISOR_PROMPT =
-  "Analyse ma stratégie : fais-moi une revue complète de mon portefeuille avec des recommandations concrètes.";
-
 export function PioChatWidget() {
   const { open, openChat, closeChat } = usePioChat();
   const [greeting, setGreeting] = useState<string | null>(null);
@@ -22,6 +18,7 @@ export function PioChatWidget() {
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
   const [pendingMode, setPendingMode] = useState<ChatMode>("chat");
+  const [advisorMode, setAdvisorMode] = useState(false);
   const [error, setError] = useState("");
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -87,19 +84,13 @@ export function PioChatWidget() {
     }
   }
 
-  // Envoi normal (papote) — lit le champ de saisie
+  // Envoi — mode conseil (Opus) ou papote (Haiku) selon le toggle "Conseil"
   function send() {
     const text = input.trim();
     if (!text || pending) return;
     setInput("");
     if (inputRef.current) inputRef.current.style.height = "auto";
-    void postMessage(text, "chat");
-  }
-
-  // Bouton "Analyse ma stratégie" — déclenche le mode conseil (Opus)
-  function analyzeStrategy() {
-    if (pending) return;
-    void postMessage(ADVISOR_PROMPT, "advisor");
+    void postMessage(text, advisorMode ? "advisor" : "chat");
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -152,6 +143,25 @@ export function PioChatWidget() {
               </div>
             </div>
             <button
+              onClick={() => setAdvisorMode((v) => !v)}
+              role="switch"
+              aria-checked={advisorMode}
+              aria-label="Mode conseil"
+              title={
+                advisorMode
+                  ? "Mode conseil activé (analyse Opus)"
+                  : "Activer le mode conseil"
+              }
+              className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-medium transition-colors ${
+                advisorMode
+                  ? "border-gold/60 bg-gold/15 text-gold"
+                  : "border-border text-ink-muted hover:text-ink"
+              }`}
+            >
+              <Sparkles className="h-3 w-3" />
+              Conseil
+            </button>
+            <button
               onClick={closeChat}
               aria-label="Fermer"
               className="shrink-0 rounded-md p-1 text-ink-muted transition-colors hover:text-ink"
@@ -202,15 +212,6 @@ export function PioChatWidget() {
 
           {/* Saisie */}
           <div className="border-t border-border p-3">
-            {/* Mode conseil — analyse stratégique ponctuelle (Opus) */}
-            <button
-              onClick={analyzeStrategy}
-              disabled={pending}
-              className="mb-2 flex w-full items-center justify-center gap-2 rounded-xl border border-gold/40 px-3 py-2 text-xs font-medium text-gold transition-colors hover:bg-gold/10 disabled:opacity-40"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              Analyse ma stratégie
-            </button>
             <div
               className="flex items-end gap-2 rounded-xl border border-border px-3 py-2"
               style={{ backgroundColor: "hsl(var(--card))" }}
@@ -238,7 +239,9 @@ export function PioChatWidget() {
               </button>
             </div>
             <p className="mt-1.5 px-1 font-mono text-[9px] text-ink-dim">
-              Pio papote — ce n&apos;est pas un conseil en investissement.
+              {advisorMode
+                ? "Mode conseil — analyse d'une IA, pas un conseil en investissement réglementé."
+                : "Pio papote — ce n'est pas un conseil en investissement."}
             </p>
           </div>
         </div>
