@@ -8,6 +8,12 @@ import { AchievementChecker } from "@/components/achievements/AchievementChecker
 import { PioChatProvider } from "@/components/pio/PioChatProvider";
 import { PioChatWidget } from "@/components/pio/PioChatWidget";
 
+// Données saisies manuellement → tous les onglets authentifiés doivent refléter
+// l'état frais de la base à chaque requête (pas de Full Route Cache côté serveur).
+// Sans ça, le dashboard servait une version statique : "Objectif atteint à" restait
+// figé après une modif du profil. staleTimes (next.config) ne couvre que le cache CLIENT.
+export const dynamic = "force-dynamic";
+
 export default async function DashboardLayout({
   children,
 }: {
