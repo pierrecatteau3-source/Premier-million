@@ -45,14 +45,19 @@ type SparkDays = (typeof SPARK_PERIODS)[number];
 
 /**
  * Tranche une série de prix sur la fenêtre temporelle choisie. Données horaires
- * (CoinGecko / Yahoo) → on filtre par timestamp ; fallback sur les 2 derniers
- * points si la fenêtre est trop courte pour tracer une courbe.
+ * (CoinGecko / Yahoo) → on filtre par timestamp.
+ *
+ * Cas « marché fermé » : sur une fenêtre courte (1J/3J) un week-end ou jour férié,
+ * aucun point ne tombe dans l'intervalle pour une action. Plutôt qu'un tiret, on
+ * retombe alors sur les derniers points cotés disponibles pour garder une courbe
+ * (et un % de perf) lisibles.
  */
 function sliceSparkWindow(points: SparkPoint[], days: SparkDays): SparkPoint[] {
   if (!points || points.length === 0) return [];
   const cutoff = Date.now() - days * 86_400_000;
   const windowed = points.filter((p) => p.t >= cutoff);
-  return windowed.length >= 2 ? windowed : points.slice(-2);
+  if (windowed.length >= 2) return windowed;
+  return points.slice(-Math.min(points.length, 8));
 }
 
 const inputCls =

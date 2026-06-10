@@ -2,7 +2,9 @@
 import { useState, useEffect, useRef } from "react";
 import type { SparklineMap } from "@/types/prices";
 
-const CACHE_KEY = "pm_sparklines_v2";
+// v3 : la validité du cache exige désormais des séries NON vides (cf. plus bas).
+// Le bump de clé purge d'office les caches v2 empoisonnés par des séries vides.
+const CACHE_KEY = "pm_sparklines_v3";
 const TTL = 10_800_000; // 3 h — un appel externe toutes les 3 h max
 
 interface PriceRequest {
@@ -16,10 +18,20 @@ interface CacheEntry {
   days: number;
 }
 
+function hasPoints(series: unknown): series is { length: number } {
+  return Array.isArray(series) && series.length >= 2;
+}
+
 /**
  * Récupère les séries de prix (mini-courbes) pour les actifs cotés.
- * Cache localStorage 3 h : on ne tape les API externes qu'une fois par fenêtre
- * de 3 h. On récupère toujours `days` jours puis le tableau tranche par fenêtre
+ *
+ * Cache localStorage 3 h, mais **anti-empoisonnement** : une série vide (échec
+ * Yahoo/CoinGecko transitoire) n'est jamais considérée comme « en cache » — on
+ * la re-tente au prochain rendu. Le cache 3 h vit sur les séries pleines. Côté
+ * serveur, la route a son propre `revalidate` 3 h : re-fetcher une série vide ne
+ * tape donc pas l'API externe tant qu'elle est en cache Next.
+ *
+ * On récupère toujours `days` jours puis la colonne tranche par fenêtre
  * (1J/3J/7J) côté client, sans nouvel appel.
  */
 export function useSparklines(requests: PriceRequest[], days = 7): SparklineMap {
@@ -42,23 +54,25 @@ export function useSparklines(requests: PriceRequest[], days = 7): SparklineMap 
     }
 
     const now = Date.now();
-    const cacheValid =
-      cached != null &&
-      cached.days === days &&
-      now - cached.fetchedAt < TTL &&
-      allIds.every((id) => id in cached!.data);
+    const cacheFresh =
+      cached != null && cached.days === days && now - cached.fetchedAt < TTL;
+    const cachedData: SparklineMap = cacheFresh && cached ? cached.data : {};
 
-    if (cacheValid && cached) {
-      setData(cached.data);
-      return;
-    }
+    // Le cache n'est pleinement valide que si CHAQUE id y a une série non vide.
+    // Un id absent ou avec une série vide ([]) force un re-fetch (sans repartir
+    // de zéro : on garde les séries déjà bonnes).
+    const allFresh = allIds.every((id) => hasPoints(cachedData[id]));
 
+    // Affiche tout de suite ce qu'on a (même partiel/périmé) pour éviter le flash.
+    if (Object.keys(cachedData).length > 0) setData(cachedData);
+
+    if (allFresh) return;
     if (fetchingRef.current) return;
     fetchingRef.current = true;
 
     (async () => {
       try {
-        const results: SparklineMap = {};
+        const fresh: SparklineMap = {};
         for (const req of requests) {
           if (req.ids.length === 0) continue;
           const param =
@@ -70,22 +84,36 @@ export function useSparklines(requests: PriceRequest[], days = 7): SparklineMap 
           );
           if (res.ok) {
             const json = (await res.json()) as { data: SparklineMap };
-            Object.assign(results, json.data);
+            Object.assign(fresh, json.data);
           }
         }
-        if (Object.keys(results).length > 0) {
-          try {
-            localStorage.setItem(
-              CACHE_KEY,
-              JSON.stringify({ data: results, fetchedAt: Date.now(), days })
-            );
-          } catch {
-            /* ignore */
+
+        // Fusion anti-régression : on n'écrase une série existante que par une
+        // série fraîche NON vide. Une série fraîche vide ne supprime pas une
+        // bonne série déjà en cache.
+        const merged: SparklineMap = { ...cachedData };
+        for (const [id, series] of Object.entries(fresh)) {
+          if (hasPoints(series) || !hasPoints(merged[id])) merged[id] = series;
+        }
+
+        if (Object.keys(merged).length > 0) {
+          // On ne persiste que si au moins une série est pleine — sinon on évite
+          // d'écrire un cache 100 % vide qui n'apporte rien.
+          const anyFull = Object.values(merged).some(hasPoints);
+          if (anyFull) {
+            try {
+              localStorage.setItem(
+                CACHE_KEY,
+                JSON.stringify({ data: merged, fetchedAt: Date.now(), days })
+              );
+            } catch {
+              /* ignore */
+            }
           }
-          setData(results);
+          setData(merged);
         }
       } catch {
-        /* keep empty */
+        /* keep whatever we already showed */
       } finally {
         fetchingRef.current = false;
       }
