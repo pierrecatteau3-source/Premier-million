@@ -13,29 +13,7 @@ import { PillarsGrid } from "@/components/dashboard/PillarCard";
 import { EvolutionBlock } from "@/components/dashboard/EvolutionBlock";
 import { DashboardKpis } from "@/components/dashboard/DashboardKpis";
 import { SectionHeading } from "@/components/dashboard/SectionHeading";
-
-/** Projection de l'âge auquel l'objectif sera atteint avec intérêts composés. */
-function calculateTargetAge(
-  currentValue: number,
-  epargneMensuelle: number,
-  evolutionEpargne: number,
-  objectifCroissance: number,
-  ageActuel: number,
-  objectif: number = 1_000_000,
-  maxYears: number = 60
-): number | null {
-  const monthlyRate = objectifCroissance / 12 / 100;
-  let value = currentValue;
-  let epargne = epargneMensuelle;
-  for (let year = 0; year < maxYears; year++) {
-    for (let month = 0; month < 12; month++) {
-      value = value * (1 + monthlyRate) + epargne;
-      if (value >= objectif) return ageActuel + year + (month >= 6 ? 1 : 0);
-    }
-    epargne *= 1 + evolutionEpargne / 100;
-  }
-  return null;
-}
+import { calculateTargetAge } from "@/lib/utils/projection";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
