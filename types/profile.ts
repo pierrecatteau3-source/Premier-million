@@ -9,8 +9,10 @@ export interface UserProfile {
   objectif: number;
   /** Âge cible pour atteindre l'objectif */
   ageCible: number | null;
-  /** Âge actuel de l'utilisateur */
+  /** Âge actuel de l'utilisateur (legacy — dérivé de dateNaissance si présente) */
   ageActuel: number | null;
+  /** Date de naissance ISO (source de vérité de l'âge, calculé dynamiquement) */
+  dateNaissance: string | null;
   /** Épargne mensuelle en euros */
   epargneMensuelle: number | null;
   /** Épargne de précaution en nombre de mois de dépenses */
@@ -37,6 +39,8 @@ export interface UpdateProfileInput {
   name?: string;
   ageCible?: number | null;
   ageActuel?: number | null;
+  /** Date de naissance "YYYY-MM-DD" ou null pour effacer */
+  dateNaissance?: string | null;
   epargneMensuelle?: number | null;
   epargnePrecaution?: number | null;
   epargnePrecautionMontant?: number | null;

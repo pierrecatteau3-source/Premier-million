@@ -11,6 +11,7 @@ import {
 } from "@/lib/riskEngine";
 import { TYPE_TO_PILIER } from "@/lib/constants/allocation-types";
 import { calculateTargetAge } from "@/lib/utils/projection";
+import { resolveAge } from "@/lib/utils/age";
 import { Header } from "@/components/layout/Header";
 import { AnalysisCard } from "@/components/analysis/AnalysisCard";
 import { RiskGauge } from "@/components/risk/RiskGauge";
@@ -78,6 +79,7 @@ export default async function AnalysePatrimoinePage({
       select: {
         objectif: true,
         ageActuel: true,
+        dateNaissance: true,
         ageCible: true,
         epargneMensuelle: true,
         evolutionEpargne: true,
@@ -146,14 +148,15 @@ export default async function AnalysePatrimoinePage({
     };
   });
 
+  const ageActuel = resolveAge(user);
   const targetAge =
-    user.ageActuel != null && user.epargneMensuelle != null
+    ageActuel != null && user.epargneMensuelle != null
       ? calculateTargetAge(
           patrimoineNet,
           user.epargneMensuelle,
           user.evolutionEpargne ?? 0,
           user.objectifCroissance ?? 8,
-          user.ageActuel,
+          ageActuel,
         )
       : null;
 

@@ -19,6 +19,7 @@ import {
 import type { UserProfile, AllocationDetaillee } from "@/types";
 import { PILIER_LABEL } from "@/types";
 import { calculateProjection, MARKET_RATE_DEFAULT } from "@/lib/utils/projection";
+import { computeAge } from "@/lib/utils/age";
 import { ALLOCATION_TYPES, TYPE_TO_PILIER } from "@/lib/constants/allocation-types";
 
 const OBJECTIF_FIXE = 1_000_000;
@@ -69,8 +70,8 @@ export function ProfileForm({ profile }: Props) {
 
   // ── État du formulaire ────────────────────────────────────────
   const [name, setName] = useState(profile.name ?? "");
-  const [ageActuel, setAgeActuel] = useState(
-    profile.ageActuel ? String(profile.ageActuel) : ""
+  const [dateNaissance, setDateNaissance] = useState(
+    profile.dateNaissance ? profile.dateNaissance.slice(0, 10) : ""
   );
   const [ageCible, setAgeCible] = useState(
     profile.ageCible ? String(profile.ageCible) : ""
@@ -152,7 +153,8 @@ export function ProfileForm({ profile }: Props) {
   }
 
   // ── Faisabilité (lecture seule) ───────────────────────────────
-  const ageActuelNum = parseInt(ageActuel, 10);
+  // Âge dérivé dynamiquement de la date de naissance (NaN si non renseignée).
+  const ageActuelNum = dateNaissance ? computeAge(new Date(dateNaissance)) : NaN;
   const ageCibleNum = parseInt(ageCible, 10);
   const epargneMensuelleNum = parseFloat(epargneMensuelle);
   const evolutionEpargneNum = parseFloat(evolutionEpargne);
@@ -214,7 +216,7 @@ export function ProfileForm({ profile }: Props) {
           body: JSON.stringify({
             name: name.trim() || undefined,
             ageCible: ageCible ? parseInt(ageCible, 10) : null,
-            ageActuel: ageActuel ? parseInt(ageActuel, 10) : null,
+            dateNaissance: dateNaissance || null,
             epargneMensuelle: epargneMensuelle ? parseFloat(epargneMensuelle) : null,
             epargnePrecautionMontant: epargnePrecautionMontant !== "" ? parseFloat(epargnePrecautionMontant) : null,
             evolutionEpargne: evolutionEpargne !== "" ? parseFloat(evolutionEpargne) : null,
@@ -263,14 +265,19 @@ export function ProfileForm({ profile }: Props) {
               className={inputCls}
             />
           </Field>
-          <Field label="Âge actuel">
+          <Field
+            label="Date de naissance"
+            helper={
+              !isNaN(ageActuelNum)
+                ? `${ageActuelNum} ans — l'âge se met à jour automatiquement.`
+                : "Ton âge sera calculé automatiquement à partir de cette date."
+            }
+          >
             <input
-              type="number"
-              value={ageActuel}
-              onChange={(e) => setAgeActuel(e.target.value)}
-              placeholder="ex. 32"
-              min={1}
-              max={120}
+              type="date"
+              value={dateNaissance}
+              onChange={(e) => setDateNaissance(e.target.value)}
+              max={new Date().toISOString().slice(0, 10)}
               className={inputCls}
             />
           </Field>

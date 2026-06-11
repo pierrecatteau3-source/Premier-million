@@ -14,6 +14,7 @@ import { EvolutionBlock } from "@/components/dashboard/EvolutionBlock";
 import { DashboardKpis } from "@/components/dashboard/DashboardKpis";
 import { SectionHeading } from "@/components/dashboard/SectionHeading";
 import { calculateTargetAge } from "@/lib/utils/projection";
+import { resolveAge } from "@/lib/utils/age";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -30,6 +31,7 @@ export default async function DashboardPage() {
         evolutionEpargne: true,
         ageCible: true,
         ageActuel: true,
+        dateNaissance: true,
         objectifCroissance: true,
       },
     }),
@@ -44,7 +46,8 @@ export default async function DashboardPage() {
   const epargneMensuelle = user?.epargneMensuelle ?? null;
   const evolutionEpargne = user?.evolutionEpargne ?? null;
   const ageCible = user?.ageCible ?? null;
-  const ageActuel = user?.ageActuel ?? null;
+  // Âge dérivé de la date de naissance (auto-actualisé), fallback legacy ageActuel.
+  const ageActuel = user ? resolveAge(user) : null;
 
   const patrimoineTotal = portfolio.totalValue;
   const progressionPercent =

@@ -17,6 +17,9 @@ model User {
   /// { pea: 40, crypto: 20, immo: 30, autre: 10 }
   allocationCible          Json
   createdAt                DateTime              @default(now())
+  /// Source de vérité de l'âge : l'âge est dérivé dynamiquement de cette date.
+  /// ageActuel (ci-dessous) reste un fallback legacy pour les profils sans date.
+  dateNaissance            DateTime?
   ageActuel                Int?
   epargnePrecaution        Int?
   evolutionEpargne         Float?

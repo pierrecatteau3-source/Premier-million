@@ -14,6 +14,7 @@ import {
   incrementGlobalCounter,
   getGlobalCount,
 } from "@/lib/analysisRateLimit";
+import { resolveAge } from "@/lib/utils/age";
 import { HORIZON } from "@/types";
 import type { Horizon } from "@/types";
 
@@ -200,6 +201,7 @@ export async function POST(req: NextRequest) {
         select: {
           objectif: true,
           ageActuel: true,
+          dateNaissance: true,
           ageCible: true,
           epargneMensuelle: true,
           risqueMaxPerte: true,
@@ -242,7 +244,7 @@ export async function POST(req: NextRequest) {
 
     const userProfile = {
       objectif: user?.objectif ?? 1_000_000,
-      ageActuel: user?.ageActuel ?? null,
+      ageActuel: user ? resolveAge(user) : null,
       ageCible: user?.ageCible ?? null,
       epargneMensuelle: user?.epargneMensuelle ?? null,
       risqueMaxPerte: user?.risqueMaxPerte ?? null,

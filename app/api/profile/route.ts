@@ -27,6 +27,9 @@ const updateSchema = z.object({
   objectif: z.number().positive().optional(),
   ageCible: z.number().int().min(18).max(100).nullable().optional(),
   ageActuel: z.number().int().min(1).max(120).nullable().optional(),
+  // Date de naissance (source de vérité de l'âge). Le client envoie "YYYY-MM-DD" ;
+  // z.coerce.date() la convertit en Date. null = effacer.
+  dateNaissance: z.coerce.date().nullable().optional(),
   epargneMensuelle: z.number().nonnegative().nullable().optional(),
   epargnePrecaution: z.number().int().min(0).max(36).nullable().optional(),
   epargnePrecautionMontant: z.number().nonnegative().nullable().optional(),
@@ -73,6 +76,7 @@ export async function GET() {
       objectif: true,
       ageCible: true,
       ageActuel: true,
+      dateNaissance: true,
       epargneMensuelle: true,
       epargnePrecaution: true,
       epargnePrecautionMontant: true,
@@ -107,6 +111,7 @@ export async function GET() {
       objectif: user.objectif,
       ageCible: user.ageCible,
       ageActuel: user.ageActuel,
+      dateNaissance: user.dateNaissance?.toISOString() ?? null,
       epargneMensuelle: user.epargneMensuelle,
       epargnePrecaution: user.epargnePrecaution,
       epargnePrecautionMontant: user.epargnePrecautionMontant,
@@ -146,6 +151,7 @@ export async function PUT(req: NextRequest) {
       ...(data.objectif !== undefined && { objectif: data.objectif }),
       ...(data.ageCible !== undefined && { ageCible: data.ageCible }),
       ...(data.ageActuel !== undefined && { ageActuel: data.ageActuel }),
+      ...(data.dateNaissance !== undefined && { dateNaissance: data.dateNaissance }),
       ...(data.epargneMensuelle !== undefined && {
         epargneMensuelle: data.epargneMensuelle,
       }),
@@ -172,6 +178,7 @@ export async function PUT(req: NextRequest) {
       objectif: true,
       ageCible: true,
       ageActuel: true,
+      dateNaissance: true,
       epargneMensuelle: true,
       epargnePrecaution: true,
       epargnePrecautionMontant: true,
@@ -188,6 +195,7 @@ export async function PUT(req: NextRequest) {
   return NextResponse.json({
     data: {
       ...updated,
+      dateNaissance: updated.dateNaissance?.toISOString() ?? null,
       allocationDetaillee: updated.allocationDetaillee ?? null,
       createdAt: updated.createdAt.toISOString(),
     },

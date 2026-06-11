@@ -11,6 +11,7 @@ import { getPortfolioSummary } from "@/lib/services/portfolio.service";
 import { fetchMarketSnapshot } from "@/lib/services/market-data.service";
 import { buildRiskScoreInput, computeAdvancedRiskScore } from "@/lib/riskEngine";
 import { calculateProjection, calculateTargetAge } from "@/lib/utils/projection";
+import { resolveAge } from "@/lib/utils/age";
 import { formatMarketContext } from "@/lib/pio/greetings";
 import type { PioAdvisorContextInput } from "@/lib/pio/persona";
 
@@ -33,6 +34,7 @@ export async function getAdvisorContext(userId: string): Promise<PioAdvisorConte
       select: {
         objectif: true,
         ageActuel: true,
+        dateNaissance: true,
         ageCible: true,
         epargneMensuelle: true,
         evolutionEpargne: true,
@@ -48,6 +50,8 @@ export async function getAdvisorContext(userId: string): Promise<PioAdvisorConte
   ]);
 
   const objectifEur = user?.objectif ?? 1_000_000;
+  // Âge dérivé de la date de naissance (auto-actualisé), fallback legacy ageActuel.
+  const ageActuel = user ? resolveAge(user) : null;
 
   // Ajustement matelas + % investissables + lignes d'allocation (helper partagé)
   const assembly = buildRiskScoreInput(portfolio, {
@@ -73,21 +77,21 @@ export async function getAdvisorContext(userId: string): Promise<PioAdvisorConte
 
   // Trajectoire : âge d'atteinte de l'objectif au rythme actuel
   const targetAge =
-    user?.ageActuel != null && user?.epargneMensuelle != null
+    ageActuel != null && user?.epargneMensuelle != null
       ? calculateTargetAge(
           patrimoineNet,
           user.epargneMensuelle,
           user.evolutionEpargne ?? 0,
           user.objectifCroissance ?? 8,
-          user.ageActuel,
+          ageActuel,
           objectifEur
         )
       : null;
 
   // Projection à l'horizon "âge cible" (si renseigné)
   let projection: PioAdvisorContextInput["projection"] = null;
-  if (user?.ageActuel != null && user?.ageCible != null && user.ageCible > user.ageActuel) {
-    const years = user.ageCible - user.ageActuel;
+  if (ageActuel != null && user?.ageCible != null && user.ageCible > ageActuel) {
+    const years = user.ageCible - ageActuel;
     const res = calculateProjection({
       currentValue: patrimoineNet,
       monthlySavings: user.epargneMensuelle ?? 0,
@@ -134,7 +138,7 @@ export async function getAdvisorContext(userId: string): Promise<PioAdvisorConte
     objectifEur,
     patrimoineNetEur,
     progressPct,
-    ageActuel: user?.ageActuel ?? null,
+    ageActuel,
     ageCible: user?.ageCible ?? null,
     epargneMensuelleEur: user?.epargneMensuelle ?? null,
     risqueMaxPerte: user?.risqueMaxPerte ?? null,
