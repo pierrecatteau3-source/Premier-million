@@ -3,7 +3,10 @@ export const MARKET_RATE_DEFAULT = 0.08; // 8 %/an — S&P 500 depuis 1957
 export interface ProjectionInput {
   currentValue: number;
   monthlySavings: number;
-  annualRate: number;
+  /** Évolution annuelle de l'épargne en % (ex. 4 pour +4 %/an) */
+  savingsGrowthPct: number;
+  /** Taux de croissance annuel en % (ex. 8 pour 8 %/an) */
+  annualRatePct: number;
   years: number;
   target: number;
 }
@@ -15,23 +18,30 @@ export interface ProjectionResult {
 }
 
 /**
- * Calcule la valeur future avec intérêts composés + versements mensuels.
- * FV = PV × (1+r)^n + PMT × ((1+r)^n − 1) / r
- * r = annualRate/12, n = years×12
+ * Valeur projetée à un horizon donné, par simulation mensuelle exacte
+ * (intérêts composés + épargne qui évolue chaque année).
+ *
+ * MÊME moteur que `calculateTargetAge` ci-dessous : la « valeur projetée à
+ * l'âge cible » (profil, Pio) et « objectif atteint à » (dashboard) racontent
+ * ainsi la même histoire — l'ancienne formule fermée à épargne moyenne lissée
+ * pouvait les faire diverger de 1-2 ans autour de l'objectif.
  */
-export function calculateProjection(input: ProjectionInput): ProjectionResult {
-  const { currentValue, monthlySavings, annualRate, years, target } = input;
-  const r = annualRate / 12;
-  const n = years * 12;
+export function simulateProjection(input: ProjectionInput): ProjectionResult {
+  const { currentValue, monthlySavings, savingsGrowthPct, annualRatePct, years, target } = input;
+  const monthlyRate = annualRatePct / 12 / 100;
 
-  const compoundFactor = Math.pow(1 + r, n);
-  const fvPV = currentValue * compoundFactor;
-  const fvPMT = r > 0 ? monthlySavings * ((compoundFactor - 1) / r) : monthlySavings * n;
-  const projectedValue = fvPV + fvPMT;
+  let value = currentValue;
+  let e = monthlySavings;
+  for (let y = 0; y < years; y++) {
+    for (let m = 0; m < 12; m++) {
+      value = value * (1 + monthlyRate) + e;
+    }
+    e *= 1 + savingsGrowthPct / 100;
+  }
 
   return {
-    projectedValue: Math.round(projectedValue),
-    reachable: projectedValue >= target,
+    projectedValue: Math.round(value),
+    reachable: value >= target,
     targetYear: new Date().getFullYear() + years,
   };
 }

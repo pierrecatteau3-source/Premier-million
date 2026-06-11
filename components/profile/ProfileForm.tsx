@@ -18,7 +18,11 @@ import {
 } from "@/components/icons";
 import type { UserProfile, AllocationDetaillee } from "@/types";
 import { PILIER_LABEL } from "@/types";
-import { calculateProjection, MARKET_RATE_DEFAULT } from "@/lib/utils/projection";
+import {
+  simulateProjection,
+  calculateTargetAge,
+  MARKET_RATE_DEFAULT,
+} from "@/lib/utils/projection";
 import { computeAge } from "@/lib/utils/age";
 import { ALLOCATION_TYPES, TYPE_TO_PILIER } from "@/lib/constants/allocation-types";
 
@@ -183,24 +187,37 @@ export function ProfileForm({ profile }: Props) {
     !isNaN(epargneMensuelleNum) &&
     epargneMensuelleNum > 0;
 
-  const epargneMoyenne =
-    showFaisabilite && !isNaN(evolutionEpargneNum) && evolutionEpargne !== ""
-      ? epargneMensuelleNum * Math.pow(1 + evolutionEpargneNum / 100, years / 2)
-      : epargneMensuelleNum;
-
   const epargneFinaleProjete =
     showFaisabilite && !isNaN(evolutionEpargneNum) && evolutionEpargne !== ""
       ? epargneMensuelleNum * Math.pow(1 + evolutionEpargneNum / 100, years)
       : null;
 
+  // Simulation exacte — mêmes entrées et même moteur que le dashboard
+  // (« Objectif atteint à ») pour que barre, verdict et KPI soient alignés.
+  const patrimoineActuel = (profile.progressionPercent / 100) * OBJECTIF_FIXE;
+  const evolutionPourCalcul =
+    evolutionEpargne !== "" && !isNaN(evolutionEpargneNum) ? evolutionEpargneNum : 0;
+
   const projection = showFaisabilite
-    ? calculateProjection({
-        currentValue: (profile.progressionPercent / 100) * OBJECTIF_FIXE,
-        monthlySavings: epargneMoyenne,
-        annualRate: tauxProjection,
+    ? simulateProjection({
+        currentValue: patrimoineActuel,
+        monthlySavings: epargneMensuelleNum,
+        savingsGrowthPct: evolutionPourCalcul,
+        annualRatePct: tauxProjection * 100,
         years,
         target: OBJECTIF_FIXE,
       })
+    : null;
+
+  // Le même KPI que la tuile du dashboard, calculé à l'identique.
+  const ageObjectifAtteint = showFaisabilite
+    ? calculateTargetAge(
+        patrimoineActuel,
+        epargneMensuelleNum,
+        evolutionPourCalcul,
+        tauxProjection * 100,
+        ageActuelNum
+      )
     : null;
 
   const matelasEur =
@@ -296,6 +313,46 @@ export function ProfileForm({ profile }: Props) {
 
   return (
     <div className="space-y-6">
+      {/* ── Barre sticky : titre + Enregistrer toujours accessibles ─── */}
+      <div
+        className="sticky top-2 z-30 flex items-center justify-between gap-3 rounded-lg border border-border px-4 py-3 backdrop-blur-md"
+        style={{ background: "color-mix(in srgb, var(--pm-bg-deep) 82%, transparent)" }}
+      >
+        <div className="min-w-0">
+          <h1 className="truncate font-display text-[17px] font-bold leading-tight tracking-[-0.02em] text-ink">
+            Profil investisseur &amp; Stratégie
+          </h1>
+          <p className="mt-0.5 hidden truncate font-sans text-[10px] uppercase tracking-[0.16em] text-ink-muted sm:block">
+            Identité · Épargne · Profil de risque · Allocation cible
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          {success && !warning && (
+            <span className="animate-fade-in text-xs font-medium text-positive">
+              ✓ Enregistré
+            </span>
+          )}
+          {warning && (
+            <span className="animate-fade-in hidden text-xs font-medium text-gold sm:inline">
+              Enregistré sauf allocation
+            </span>
+          )}
+          {error && (
+            <span className="animate-fade-in hidden text-xs font-medium text-negative sm:inline">
+              Erreur — détail en bas
+            </span>
+          )}
+          <Button onClick={handleSave} disabled={isPending} size="sm">
+            {isPending ? (
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-3.5 w-3.5" />
+            )}
+            Enregistrer
+          </Button>
+        </div>
+      </div>
+
       {/* ── Identité & objectif ─────────────────────────────────────── */}
       <SectionCard
         Icon={IconTarget}
@@ -474,11 +531,16 @@ export function ProfileForm({ profile }: Props) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <Stat label="Horizon" value={`${years} ans`} />
             <Stat
-              label="Valeur projetée"
+              label={`Valeur projetée à ${ageCibleNum} ans`}
               value={formatEur(projection.projectedValue)}
+              gold
+            />
+            <Stat
+              label="Objectif atteint à"
+              value={ageObjectifAtteint != null ? `${ageObjectifAtteint} ans` : "60 ans +"}
               gold
             />
             <div className="space-y-1.5">

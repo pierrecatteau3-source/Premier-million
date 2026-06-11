@@ -10,7 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { getPortfolioSummary } from "@/lib/services/portfolio.service";
 import { fetchMarketSnapshot } from "@/lib/services/market-data.service";
 import { buildRiskScoreInput, computeAdvancedRiskScore } from "@/lib/riskEngine";
-import { calculateProjection, calculateTargetAge } from "@/lib/utils/projection";
+import { simulateProjection, calculateTargetAge } from "@/lib/utils/projection";
 import { resolveAge } from "@/lib/utils/age";
 import { formatMarketContext } from "@/lib/pio/greetings";
 import type { PioAdvisorContextInput } from "@/lib/pio/persona";
@@ -92,10 +92,13 @@ export async function getAdvisorContext(userId: string): Promise<PioAdvisorConte
   let projection: PioAdvisorContextInput["projection"] = null;
   if (ageActuel != null && user?.ageCible != null && user.ageCible > ageActuel) {
     const years = user.ageCible - ageActuel;
-    const res = calculateProjection({
+    // Simulation exacte (épargne évolutive) — même moteur que targetAge
+    // ci-dessus et que le dashboard : Pio raconte la même histoire partout.
+    const res = simulateProjection({
       currentValue: patrimoineNet,
       monthlySavings: user.epargneMensuelle ?? 0,
-      annualRate: (user.objectifCroissance ?? 8) / 100,
+      savingsGrowthPct: user.evolutionEpargne ?? 0,
+      annualRatePct: user.objectifCroissance ?? 8,
       years,
       target: objectifEur,
     });

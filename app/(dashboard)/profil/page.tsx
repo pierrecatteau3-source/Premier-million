@@ -2,7 +2,6 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Header } from "@/components/layout/Header";
 import { ProfileForm } from "@/components/profile/ProfileForm";
 import { DecisionList } from "@/components/profile/DecisionList";
 import { getPortfolioSummary } from "@/lib/services/portfolio.service";
@@ -89,15 +88,11 @@ export default async function ProfilPage() {
   }));
 
   return (
-    <>
-      <Header
-        title="Profil investisseur & Stratégie"
-        description="Identité · Épargne · Profil de risque · Allocation cible"
-      />
-      <div className="space-y-6 p-6">
-        <ProfileForm profile={profile} />
-        <DecisionList initial={decisions} />
-      </div>
-    </>
+    // Le titre + bouton Enregistrer vivent dans la barre sticky de ProfileForm
+    // (le bouton a besoin de l'état du formulaire).
+    <div className="space-y-6 p-6">
+      <ProfileForm profile={profile} />
+      <DecisionList initial={decisions} />
+    </div>
   );
 }
