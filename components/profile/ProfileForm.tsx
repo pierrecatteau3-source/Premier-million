@@ -68,6 +68,11 @@ export function ProfileForm({ profile }: Props) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  // Sauvegarde dédiée de la date de naissance (indépendante de la validation
+  // de l'allocation, qui bloque le bouton global). Feedback inline sous le champ.
+  const [isSavingDob, startDobTransition] = useTransition();
+  const [dobSaved, setDobSaved] = useState(false);
+  const [dobError, setDobError] = useState("");
 
   // ── État du formulaire ────────────────────────────────────────
   const [name, setName] = useState(profile.name ?? "");
@@ -197,6 +202,33 @@ export function ProfileForm({ profile }: Props) {
       ? epargnePrecautionNum * epargneMensuelleNum
       : null;
 
+  // ── Sauvegarde dédiée de la date de naissance ─────────────────
+  // N'envoie QUE la date → pas bloquée par la validation d'allocation,
+  // et met à jour l'âge dérivé partout (dashboard « Objectif atteint à »).
+  function handleSaveDateNaissance() {
+    setDobError("");
+    setDobSaved(false);
+    startDobTransition(async () => {
+      try {
+        const res = await fetch("/api/profile", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dateNaissance: dateNaissance || null }),
+        });
+        if (!res.ok) {
+          const json = await res.json().catch(() => ({}));
+          setDobError(json.error ?? "Erreur lors de l'enregistrement.");
+          return;
+        }
+        setDobSaved(true);
+        router.refresh();
+        setTimeout(() => setDobSaved(false), 3000);
+      } catch {
+        setDobError("Erreur réseau — vérifie ta connexion.");
+      }
+    });
+  }
+
   // ── Sauvegarde ────────────────────────────────────────────────
   function handleSave() {
     setError("");
@@ -274,13 +306,44 @@ export function ProfileForm({ profile }: Props) {
                 : "Ton âge sera calculé automatiquement à partir de cette date."
             }
           >
-            <input
-              type="date"
-              value={dateNaissance}
-              onChange={(e) => setDateNaissance(e.target.value)}
-              max={new Date().toISOString().slice(0, 10)}
-              className={inputCls}
-            />
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={dateNaissance}
+                onChange={(e) => {
+                  setDateNaissance(e.target.value);
+                  setDobSaved(false);
+                  setDobError("");
+                }}
+                max={new Date().toISOString().slice(0, 10)}
+                className={inputCls}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSaveDateNaissance}
+                disabled={isSavingDob || !dateNaissance}
+                className="shrink-0"
+              >
+                {isSavingDob ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Save className="h-3.5 w-3.5" />
+                )}
+                <span className="ml-1.5">Enregistrer</span>
+              </Button>
+            </div>
+            {dobSaved && (
+              <p className="animate-fade-in text-[11px] font-medium text-positive">
+                ✓ Date de naissance enregistrée — âge mis à jour.
+              </p>
+            )}
+            {dobError && (
+              <p className="animate-fade-in text-[11px] font-medium text-negative">
+                {dobError}
+              </p>
+            )}
           </Field>
           <Field label="Objectif patrimonial">
             <div className="flex h-10 items-center gap-2 rounded-md border border-input bg-surface-deep px-3">
