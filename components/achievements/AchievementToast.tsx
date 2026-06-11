@@ -39,9 +39,12 @@ export function AchievementToast({ achievements, onDismiss }: Props) {
   const gradient = TIER_GRADIENT[current.tier] ?? TIER_GRADIENT.bronze;
 
   return (
-    <div key={animKey} className="fixed top-4 right-4 z-50 animate-slide-in-right">
+    <div
+      key={animKey}
+      className="fixed left-4 right-4 top-[max(1rem,env(safe-area-inset-top))] z-50 animate-slide-in-right sm:left-auto"
+    >
       <div
-        className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-xl min-w-[260px] max-w-[320px] cursor-pointer"
+        className="flex w-full cursor-pointer items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-xl sm:w-auto sm:min-w-[260px] sm:max-w-[320px]"
         onClick={advance}
         role="button"
         aria-label="Fermer la notification"

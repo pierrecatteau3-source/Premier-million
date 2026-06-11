@@ -32,7 +32,7 @@ export default async function DashboardLayout({
         <AppSidebar />
 
         {/* Contenu principal */}
-        <main className="relative z-[1] flex-1 overflow-y-auto pb-24 md:pb-12">
+        <main className="relative z-[1] flex-1 overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-12">
           <div className="mx-auto max-w-[1340px] px-5 pt-8 md:px-12 md:pt-9">
             <Topbar />
             {children}

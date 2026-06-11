@@ -256,7 +256,7 @@ export function RecurringInvestments({ initialData, assets }: Props) {
     <div className="space-y-4">
       {/* Toast notification */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 rounded-xl bg-foreground px-5 py-3 text-sm text-background shadow-lg animate-in fade-in slide-in-from-bottom-2">
+        <div className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-50 rounded-xl bg-foreground px-5 py-3 text-sm text-background shadow-lg animate-in fade-in slide-in-from-bottom-2 md:bottom-6">
           {toast}
         </div>
       )}

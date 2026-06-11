@@ -65,3 +65,25 @@ Réf. `components/portfolio/Sparkline.tsx` :
   (cache 3 h : `revalidate` serveur + localStorage client). On récupère 7 j puis on
   tranche la fenêtre (1J/3J/7J) côté client par timestamp. Clé = ticker / id CoinGecko
   (les actifs sans cotation affichent « — »).
+
+## 7. Mobile (téléphone, < 768px)
+
+Règles posées lors de la passe mobile (2026-06) — à respecter sur tout nouveau composant :
+
+- **`dvh`, jamais `vh`** dans les hauteurs d'overlays (`h-[100dvh]`, `calc(100dvh-…)`) :
+  `vh` ignore le clavier virtuel et la barre d'adresse iOS → zones de saisie masquées.
+- **Safe areas** : tout élément `fixed` collé à un bord d'écran prend
+  `env(safe-area-inset-*)` (ex. BottomNav `pb-[env(safe-area-inset-bottom)]`,
+  header plein écran `pt-[max(0.75rem,env(safe-area-inset-top))]`). Le viewport racine
+  est en `viewportFit: "cover"` (`app/layout.tsx`).
+- **Inputs ≥ 16px sur mobile** : iOS zoome au focus sous 16px. Filet global dans
+  `globals.css` (`@media (max-width: 767px) { input, select, textarea { font-size: 16px } }`) ;
+  sur les champs stylés, préférer aussi l'explicite `text-base sm:text-sm`.
+- **Toasts bottom** : décalés au-dessus de la BottomNav (`bottom-24 md:bottom-6`).
+  Toasts top : bornés `left-4 right-4 sm:left-auto` pour ne pas déborder sur 320px.
+- **Chat Pio** : plein écran sur mobile (`fixed inset-0 h-[100dvh]`), panneau flottant
+  inchangé en `md:`. Scroll de la page verrouillé quand ouvert (`document.body.style.overflow`).
+- **Formulaires** : toute grille de champs commence en `grid-cols-1` et ne passe en
+  colonnes qu'à partir de `sm:` ; groupes de boutons/pilules en `w-full overflow-x-auto sm:w-fit`.
+- **Tap feedback** : `-webkit-tap-highlight-color: transparent` + `touch-action: manipulation`
+  posés globalement — le feedback visuel vient des styles `:active` du composant.

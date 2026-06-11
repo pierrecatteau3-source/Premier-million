@@ -83,7 +83,7 @@ export function TransactionForm({ assetId, assetName, priceData, onClose, onSave
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className="text-xs text-muted-foreground block mb-1">Date</label>
             <input
@@ -106,7 +106,7 @@ export function TransactionForm({ assetId, assetName, priceData, onClose, onSave
             </select>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label className="text-xs text-muted-foreground block mb-1">Quantité</label>
             <input

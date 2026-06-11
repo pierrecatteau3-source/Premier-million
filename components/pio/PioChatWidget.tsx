@@ -58,6 +58,16 @@ export function PioChatWidget() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, closeChat]);
 
+  // Verrouille le scroll de la page quand le chat est ouvert (plein écran sur mobile)
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
   async function postMessage(text: string, mode: ChatMode) {
     if (!text || pending) return;
     setError("");
@@ -107,7 +117,7 @@ export function PioChatWidget() {
         <button
           onClick={openChat}
           aria-label="Ouvrir le chat avec Pio"
-          className="fixed bottom-20 right-4 z-40 grid h-14 w-14 place-items-center rounded-full border border-gold/40 shadow-lg md:hidden"
+          className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-40 grid h-14 w-14 place-items-center rounded-full border border-gold/40 shadow-lg md:hidden"
           style={{ backgroundColor: "hsl(var(--popover))" }}
         >
           <Image
@@ -124,11 +134,11 @@ export function PioChatWidget() {
         <div
           role="dialog"
           aria-label="Chat avec Pio"
-          className="fixed bottom-4 right-4 z-50 flex h-[min(600px,calc(100vh-2rem))] w-[min(440px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border shadow-2xl"
+          className="fixed inset-0 z-50 flex h-[100dvh] w-full flex-col overflow-hidden md:inset-auto md:bottom-4 md:right-4 md:h-[min(600px,calc(100dvh-2rem))] md:w-[min(440px,calc(100vw-2rem))] md:rounded-2xl md:border md:border-border md:shadow-2xl"
           style={{ backgroundColor: "hsl(var(--popover))" }}
         >
           {/* En-tête */}
-          <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+          <div className="flex items-center gap-3 border-b border-border px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] md:pt-3">
             <Image
               src="/character/pio-avatar.png"
               alt="Pio"
@@ -211,7 +221,7 @@ export function PioChatWidget() {
           </div>
 
           {/* Saisie */}
-          <div className="border-t border-border p-3">
+          <div className="border-t border-border p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:pb-3">
             <div
               className="flex items-end gap-2 rounded-xl border border-border px-3 py-2"
               style={{ backgroundColor: "hsl(var(--card))" }}
@@ -226,7 +236,7 @@ export function PioChatWidget() {
                 onKeyDown={onKeyDown}
                 rows={1}
                 placeholder="Écris à Pio…"
-                className="max-h-[140px] flex-1 resize-none overflow-y-auto bg-transparent text-sm leading-snug text-ink outline-none placeholder:text-ink-dim"
+                className="max-h-[140px] flex-1 resize-none overflow-y-auto bg-transparent text-base leading-snug text-ink outline-none placeholder:text-ink-dim sm:text-sm"
               />
               <button
                 onClick={() => void send()}

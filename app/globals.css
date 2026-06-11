@@ -101,6 +101,26 @@
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
     color-scheme: dark;
+    /* Mobile : pas de flash gris au tap (le feedback visuel vient des styles :active) */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Mobile : supprime le délai de double-tap-zoom sur les éléments interactifs */
+  button,
+  a,
+  select,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+
+  /* iOS zoome automatiquement sur tout champ < 16px au focus → on force 16px
+     sur mobile (filet global ; les inputs clés ont aussi text-base sm:text-sm). */
+  @media (max-width: 767px) {
+    input:not([type="checkbox"]):not([type="radio"]),
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
   }
 
   body {

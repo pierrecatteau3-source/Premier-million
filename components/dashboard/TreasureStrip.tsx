@@ -45,7 +45,7 @@ export function TreasureStrip({
       >
         <Eyebrow>Mon trésor · patrimoine total</Eyebrow>
         <div
-          className="mt-3.5 flex items-baseline gap-3.5 font-display text-[64px] font-bold leading-[0.9] tracking-[-0.045em] tabular-nums text-gold-bright sm:text-[80px] lg:text-[96px]"
+          className="mt-3.5 flex flex-wrap items-baseline gap-3.5 font-display text-[clamp(40px,13vw,64px)] font-bold leading-[0.9] tracking-[-0.045em] tabular-nums text-gold-bright sm:text-[80px] lg:text-[96px]"
           style={{ textShadow: "0 2px 24px rgba(224,180,80,0.18)" }}
         >
           {eur0(totalValue)}

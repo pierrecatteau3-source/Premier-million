@@ -24,11 +24,12 @@ import { ALLOCATION_TYPES, TYPE_TO_PILIER } from "@/lib/constants/allocation-typ
 
 const OBJECTIF_FIXE = 1_000_000;
 
+// text-base sur mobile (< sm) : iOS zoome au focus sur tout champ < 16px
 const inputCls =
-  "h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-ink outline-none transition focus:border-gold/50 focus:ring-2 focus:ring-ring/40";
+  "h-10 w-full rounded-md border border-input bg-background px-3 text-base text-ink outline-none transition focus:border-gold/50 focus:ring-2 focus:ring-ring/40 sm:text-sm";
 
 const inputNarrow =
-  "h-10 w-20 rounded-md border border-input bg-background px-2.5 text-right text-sm tabular-nums text-ink outline-none transition focus:border-gold/50 focus:ring-2 focus:ring-ring/40";
+  "h-10 w-20 rounded-md border border-input bg-background px-2.5 text-right text-base tabular-nums text-ink outline-none transition focus:border-gold/50 focus:ring-2 focus:ring-ring/40 sm:text-sm";
 
 // Boîte d'icône dorée — réutilise le pattern des PillarCards du Dashboard.
 const goldIconBox: CSSProperties = {
@@ -393,7 +394,7 @@ export function ProfileForm({ profile }: Props) {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Stat label="Horizon" value={`${years} ans`} />
             <Stat
               label="Valeur projetée"
@@ -646,7 +647,7 @@ export function ProfileForm({ profile }: Props) {
         )}
 
         {/* Formulaire d'ajout */}
-        <div className="mt-4 flex flex-wrap items-end gap-2 rounded-md border border-dashed border-border bg-surface-2/30 p-3">
+        <div className="mt-4 flex flex-col gap-2 rounded-md border border-dashed border-border bg-surface-2/30 p-3 sm:flex-row sm:flex-wrap sm:items-end">
           <div className="min-w-[130px] flex-1 space-y-1">
             <label className="text-xs font-medium text-ink-muted">Type</label>
             <select
@@ -698,6 +699,7 @@ export function ProfileForm({ profile }: Props) {
             size="sm"
             onClick={handleAddLine}
             disabled={!addPct || isNaN(parseFloat(addPct)) || parseFloat(addPct) <= 0}
+            className="w-full sm:w-auto"
           >
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             Ajouter

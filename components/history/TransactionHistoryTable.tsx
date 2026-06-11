@@ -152,7 +152,8 @@ export function TransactionHistoryTable({ transactions }: Props) {
       )}
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        {/* min-w : colonnes lisibles sur mobile, le wrapper scrolle horizontalement */}
+        <table className="w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b border-border/50">
               <th className="py-2 text-left text-xs font-medium text-muted-foreground">Date</th>

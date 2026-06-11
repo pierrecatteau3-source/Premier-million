@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
@@ -28,6 +28,15 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Premier Million",
   description: "Suivi de patrimoine vers le premier million d'euros",
+};
+
+// viewportFit "cover" : l'app s'étend sous l'encoche/barre gestuelle iOS ;
+// les éléments fixed gèrent leur retrait via env(safe-area-inset-*).
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#14110d", // --pm-bg (expresso quasi-noir)
 };
 
 export default function RootLayout({

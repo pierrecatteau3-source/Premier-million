@@ -261,7 +261,7 @@ export default async function AnalysePatrimoinePage({
           )}
 
           {/* Onglets horizons */}
-          <div className="flex gap-1 rounded-lg border border-border bg-muted p-1 w-fit">
+          <div className="flex w-full max-w-full gap-1 overflow-x-auto rounded-lg border border-border bg-muted p-1 sm:w-fit">
             {TAB_HORIZONS.map((h) => {
               const isActive = h === activeHorizon;
               const hasCached = portfolioByHorizon.has(h);
@@ -269,7 +269,7 @@ export default async function AnalysePatrimoinePage({
                 <a
                   key={h}
                   href={`/analyse-patrimoine?horizon=${h}`}
-                  className={`relative flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  className={`relative flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors sm:flex-none ${
                     isActive
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
@@ -328,7 +328,7 @@ export default async function AnalysePatrimoinePage({
           </div>
 
           {/* Onglets horizons */}
-          <div className="flex gap-1 rounded-lg border border-border bg-muted p-1 w-fit">
+          <div className="flex w-full max-w-full gap-1 overflow-x-auto rounded-lg border border-border bg-muted p-1 sm:w-fit">
             {TAB_HORIZONS.map((h) => {
               const isActive = h === activeHorizon;
               const hasCached = marketByHorizon.has(h);
@@ -336,7 +336,7 @@ export default async function AnalysePatrimoinePage({
                 <a
                   key={h}
                   href={`/analyse-patrimoine?horizon=${h}`}
-                  className={`relative flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  className={`relative flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors sm:flex-none ${
                     isActive
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
