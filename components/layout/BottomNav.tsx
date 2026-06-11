@@ -5,18 +5,20 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Briefcase,
-  BarChart2,
+  History,
   UserCircle,
   Trophy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+// Nav téléphone : pas d'onglet Analyse (desktop only) ; Historique (récap
+// achats/ventes) prend la dernière position, en bas à droite.
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/portefeuille", label: "Portefeuille", icon: Briefcase },
-  { href: "/analyse-patrimoine", label: "Analyse", icon: BarChart2 },
   { href: "/succes", label: "Succès", icon: Trophy },
   { href: "/profil", label: "Profil", icon: UserCircle },
+  { href: "/historique", label: "Historique", icon: History },
 ];
 
 export function BottomNav() {

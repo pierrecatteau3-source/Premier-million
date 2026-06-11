@@ -90,7 +90,8 @@ export default async function PortefeuillePage() {
         <DecisionJournal decisions={decisions} />
       </div>
 
-      <Card className="mt-3.5">
+      {/* Masqué sur téléphone : la gestion des virements programmés reste sur desktop */}
+      <Card className="mt-3.5 hidden md:block">
         <CardHeader>
           <CardTitle className="text-[22px]">
             Investissements <em className="italic text-gold">automatiques</em>

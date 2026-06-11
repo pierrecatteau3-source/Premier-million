@@ -23,14 +23,19 @@ interface Evolution {
  * Active dot avec ligne horizontale pointillée vers l'axe Y.
  * Le `cy` est la position SVG du point sur la courbe → la ligne y est alignée.
  */
-const CHART_LEFT_OFFSET = 98; // margin.left (8) + YAxis width (90)
-function ActiveDotWithLine(props: { cx?: number; cy?: number; plotBottom?: number }) {
-  const { cx = 0, cy = 0, plotBottom = 0 } = props;
+function ActiveDotWithLine(props: {
+  cx?: number;
+  cy?: number;
+  plotBottom?: number;
+  /** margin.left (8) + largeur de l'axe Y (responsive) */
+  leftOffset?: number;
+}) {
+  const { cx = 0, cy = 0, plotBottom = 0, leftOffset = 98 } = props;
   return (
     <g pointerEvents="none">
       {/* Pointillé horizontal vers l'axe Y (au niveau du point) */}
       <line
-        x1={CHART_LEFT_OFFSET}
+        x1={leftOffset}
         y1={cy}
         x2={cx}
         y2={cy}
@@ -107,6 +112,16 @@ export function PortfolioChart({
   const [to, setTo] = useState<string>(today);
   const [data, setData] = useState<HistoryPoint[]>([]);
   const [loading, setLoading] = useState(false);
+
+  // Mobile (< sm) : graphique moins haut + axe Y compact (k€/M€)
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   // Pour éviter le double fetch au montage
   const isFirstRender = useRef(true);
@@ -202,11 +217,25 @@ export function PortfolioChart({
     value: d.totalValue,
   }));
 
-  const chartHeight = compact ? 400 : 220;
-  const emptyHeight = compact ? "h-[400px]" : "h-48";
+  const chartHeight = compact ? (isMobile ? 230 : 400) : 220;
+  const emptyHeight = compact ? (isMobile ? "h-[230px]" : "h-[400px]") : "h-48";
+  // Axe Y plus étroit sur mobile (labels compacts k€/M€) — leftOffset suit pour les pointillés
+  const yAxisWidth = isMobile ? 52 : 90;
+  const chartLeftOffset = 8 + yAxisWidth; // margin.left (8) + largeur YAxis
   // Approximation du bas de la zone de plot (sous laquelle se trouvent les ticks X) :
   // chartHeight − margin.bottom (8) − xAxis room (~22 = fontSize 11 + tickMargin 12).
   const plotBottom = chartHeight - 30;
+
+  // Format compact pour l'axe Y mobile : "12 k€", "1,2 M€"
+  function formatEurCompact(v: number): string {
+    if (Math.abs(v) >= 1_000_000) {
+      return `${(v / 1_000_000).toFixed(1).replace(".", ",").replace(",0", "")} M€`;
+    }
+    if (Math.abs(v) >= 1_000) {
+      return `${Math.round(v / 1_000)} k€`;
+    }
+    return `${Math.round(v)} €`;
+  }
 
   return (
     <div className="space-y-4">
@@ -252,11 +281,11 @@ export function PortfolioChart({
                 className="fill-muted-foreground"
               />
               <YAxis
-                tickFormatter={(v) => formatEur(v)}
+                tickFormatter={(v) => (isMobile ? formatEurCompact(v) : formatEur(v))}
                 tick={{ fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
-                width={90}
+                width={yAxisWidth}
                 tickCount={6}
                 tickMargin={8}
                 className="fill-muted-foreground"
@@ -303,7 +332,12 @@ export function PortfolioChart({
                     : false
                 }
                 activeDot={(props) => (
-                  <ActiveDotWithLine cx={props.cx} cy={props.cy} plotBottom={plotBottom} />
+                  <ActiveDotWithLine
+                    cx={props.cx}
+                    cy={props.cy}
+                    plotBottom={plotBottom}
+                    leftOffset={chartLeftOffset}
+                  />
                 )}
               />
             </LineChart>

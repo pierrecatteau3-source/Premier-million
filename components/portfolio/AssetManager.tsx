@@ -376,22 +376,22 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines
                 </FieldSelect>
               </div>
               <div className="max-h-[440px] overflow-y-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-xs sm:text-sm">
                 <thead>
                   <tr className="border-b border-border [&>th]:sticky [&>th]:top-0 [&>th]:z-10 [&>th]:bg-[hsl(var(--muted))]">
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                    <th className="px-2 py-2.5 sm:px-4 sm:py-3 text-left font-medium text-muted-foreground">
                       Actif
                     </th>
-                    <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                    <th className="hidden px-2 py-2.5 text-left font-medium text-muted-foreground sm:table-cell sm:px-4 sm:py-3">
                       Pilier
                     </th>
-                    <th className="hidden px-4 py-3 text-right font-medium text-muted-foreground xl:table-cell">
+                    <th className="hidden px-2 py-2.5 sm:px-4 sm:py-3 text-right font-medium text-muted-foreground xl:table-cell">
                       Quantité
                     </th>
-                    <th className="px-4 py-3 text-right font-medium text-muted-foreground">
+                    <th className="px-2 py-2.5 sm:px-4 sm:py-3 text-right font-medium text-muted-foreground">
                       Valeur
                     </th>
-                    <th className="hidden px-4 py-3 text-right font-medium text-muted-foreground sm:table-cell">
+                    <th className="hidden px-2 py-2.5 sm:px-4 sm:py-3 text-right font-medium text-muted-foreground sm:table-cell">
                       <div className="flex flex-col items-end gap-1">
                         <span>Performance</span>
                         <div className="flex items-center gap-0.5">
@@ -414,10 +414,10 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines
                         </div>
                       </div>
                     </th>
-                    <th className="hidden px-4 py-3 text-right font-medium text-muted-foreground lg:table-cell">
+                    <th className="hidden px-2 py-2.5 sm:px-4 sm:py-3 text-right font-medium text-muted-foreground lg:table-cell">
                       +/− latent
                     </th>
-                    <th className="px-4 py-3 text-right font-medium text-muted-foreground">
+                    <th className="px-2 py-2.5 sm:px-4 sm:py-3 text-right font-medium text-muted-foreground">
                       Actions
                     </th>
                   </tr>
@@ -428,9 +428,9 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines
                         <tr
                           className="transition-colors hover:bg-muted/30"
                         >
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2.5">
-                              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md border border-border bg-surface-deep">
+                          <td className="px-2 py-2.5 sm:px-4 sm:py-3">
+                            <div className="flex items-center gap-1.5 sm:gap-2.5">
+                              <span className="hidden h-9 w-9 shrink-0 place-items-center rounded-md border border-border bg-surface-deep sm:grid">
                                 <AssetLogo
                                   name={asset.name}
                                   ticker={asset.ticker}
@@ -457,7 +457,7 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines
                               </div>
                             </div>
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="hidden px-2 py-2.5 sm:table-cell sm:px-4 sm:py-3">
                             <span
                               className={cn(
                                 "inline-block rounded-sm px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.12em]",
@@ -467,15 +467,15 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines
                               {PILIER_LABEL[asset.pilier]}
                             </span>
                           </td>
-                          <td className="hidden px-4 py-3 text-right tabular-nums text-muted-foreground xl:table-cell">
+                          <td className="hidden px-2 py-2.5 sm:px-4 sm:py-3 text-right tabular-nums text-muted-foreground xl:table-cell">
                             {asset.quantiteTotal != null
                               ? asset.quantiteTotal.toLocaleString("fr-FR", { maximumFractionDigits: 6 })
                               : "—"}
                           </td>
-                          <td className="px-4 py-3 text-right tabular-nums font-medium">
+                          <td className="px-2 py-2.5 sm:px-4 sm:py-3 text-right tabular-nums font-medium">
                             {formatEur(asset.latestValue)}
                           </td>
-                          <td className="hidden px-4 py-3 sm:table-cell">
+                          <td className="hidden px-2 py-2.5 sm:px-4 sm:py-3 sm:table-cell">
                             {(() => {
                               const rawSeries = asset.ticker ? sparklines[asset.ticker] : undefined;
                               const series = sliceSparkWindow(rawSeries ?? [], sparkDays);
@@ -502,7 +502,7 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines
                               );
                             })()}
                           </td>
-                          <td className="hidden px-4 py-3 text-right tabular-nums lg:table-cell">
+                          <td className="hidden px-2 py-2.5 sm:px-4 sm:py-3 text-right tabular-nums lg:table-cell">
                             {asset.pvLatente != null ? (
                               <span className={cn(
                                 "inline-flex flex-col items-end",
@@ -520,8 +520,8 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines
                               <span className="text-muted-foreground">—</span>
                             )}
                           </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center justify-end gap-1">
+                          <td className="px-2 py-2.5 sm:px-4 sm:py-3">
+                            <div className="flex items-center justify-end gap-0.5 sm:gap-1">
                               {asset.pilier !== "LIQUIDITE" && (
                                 <button
                                   title="Historique d'achats"
@@ -588,7 +588,7 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines
                         {/* ── Formulaire snapshot inline ─────────── */}
                         {snapshotOpen === asset.id && (
                           <tr className="bg-muted/20">
-                            <td colSpan={7} className="px-4 py-3">
+                            <td colSpan={7} className="px-2 py-2.5 sm:px-4 sm:py-3">
                               <div className="flex flex-wrap items-end gap-3">
                                 <div className="space-y-1">
                                   <label className="text-xs font-medium">
@@ -653,7 +653,7 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines
                         {/* ── Formulaire ticker / pricingMode inline ─ */}
                         {editingId === asset.id && (
                           <tr className="bg-muted/20">
-                            <td colSpan={7} className="px-4 py-3">
+                            <td colSpan={7} className="px-2 py-2.5 sm:px-4 sm:py-3">
                               {asset.pilier === "LIQUIDITE" ? (
                                 <p className="text-xs text-muted-foreground">
                                   Le Compte courant est toujours en saisie manuelle — pas de ticker ni de pricing live.
@@ -733,14 +733,20 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines
                   ))}
                 </tbody>
                 <tfoot>
+                  {/* Cellules vides en miroir des colonnes responsives (pas de colSpan :
+                      il fausserait l'alignement quand des colonnes sont masquées) */}
                   <tr className="border-t-2 border-border [&>td]:sticky [&>td]:bottom-0 [&>td]:z-10 [&>td]:bg-[hsl(var(--muted))]">
-                    <td colSpan={3} className="px-4 py-3 font-semibold">
+                    <td className="px-2 py-2.5 font-semibold sm:px-4 sm:py-3">
                       Total portefeuille
                     </td>
-                    <td className="px-4 py-3 text-right tabular-nums font-bold">
+                    <td className="hidden sm:table-cell" />
+                    <td className="hidden xl:table-cell" />
+                    <td className="px-2 py-2.5 text-right tabular-nums font-bold sm:px-4 sm:py-3">
                       {formatEur(total)}
                     </td>
-                    <td colSpan={3} />
+                    <td className="hidden sm:table-cell" />
+                    <td className="hidden lg:table-cell" />
+                    <td />
                   </tr>
                 </tfoot>
               </table>

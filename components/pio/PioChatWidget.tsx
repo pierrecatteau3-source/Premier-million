@@ -68,6 +68,30 @@ export function PioChatWidget() {
     };
   }, [open]);
 
+  // Mobile : fige le chat sur le viewport VISUEL. À l'ouverture du clavier, iOS ne
+  // réduit pas le viewport layout (100dvh) : il le décale vers le haut → le header
+  // sortait de l'écran. On cale la hauteur sur visualViewport et on recale la page,
+  // pour que seul le fil de messages défile.
+  const [vvBox, setVvBox] = useState<{ height: number; top: number } | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    const vv = window.visualViewport;
+    const isMobile = window.matchMedia("(max-width: 767px)").matches;
+    if (!vv || !isMobile) return;
+    const sync = () => {
+      setVvBox({ height: Math.round(vv.height), top: Math.round(vv.offsetTop) });
+      window.scrollTo(0, 0);
+    };
+    sync();
+    vv.addEventListener("resize", sync);
+    vv.addEventListener("scroll", sync);
+    return () => {
+      vv.removeEventListener("resize", sync);
+      vv.removeEventListener("scroll", sync);
+      setVvBox(null);
+    };
+  }, [open]);
+
   async function postMessage(text: string, mode: ChatMode) {
     if (!text || pending) return;
     setError("");
@@ -135,7 +159,14 @@ export function PioChatWidget() {
           role="dialog"
           aria-label="Chat avec Pio"
           className="fixed inset-0 z-50 flex h-[100dvh] w-full flex-col overflow-hidden md:inset-auto md:bottom-4 md:right-4 md:h-[min(600px,calc(100dvh-2rem))] md:w-[min(440px,calc(100vw-2rem))] md:rounded-2xl md:border md:border-border md:shadow-2xl"
-          style={{ backgroundColor: "hsl(var(--popover))" }}
+          style={{
+            backgroundColor: "hsl(var(--popover))",
+            // Mobile, clavier ouvert : hauteur = viewport visuel, recalé sous la barre iOS
+            ...(vvBox != null && {
+              height: `${vvBox.height}px`,
+              transform: `translateY(${vvBox.top}px)`,
+            }),
+          }}
         >
           {/* En-tête */}
           <div className="flex items-center gap-3 border-b border-border px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] md:pt-3">
@@ -181,7 +212,7 @@ export function PioChatWidget() {
           </div>
 
           {/* Fil de discussion */}
-          <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+          <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4">
             {greeting === null ? (
               <PioBubble>
                 <span className="inline-flex items-center gap-2 text-ink-muted">

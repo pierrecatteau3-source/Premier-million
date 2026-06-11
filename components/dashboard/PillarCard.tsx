@@ -90,11 +90,11 @@ function PillarCard({
       type="button"
       onClick={() => onOpen(pilier.pilier)}
       aria-label={`Voir les actifs du pilier ${cfg.name}`}
-      className="group relative block w-full overflow-hidden rounded-lg border border-border bg-surface p-5 text-left transition-all duration-200 hover:-translate-y-1 hover:border-gold/60 hover:bg-surface-2 hover:shadow-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="group relative block w-full overflow-hidden rounded-lg border border-border bg-surface p-3 text-left transition-all duration-200 hover:-translate-y-1 hover:border-gold/60 hover:bg-surface-2 hover:shadow-gold focus:outline-none focus-visible:ring-2 focus-visible:ring-gold/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:p-5"
     >
-      <div className="mb-[18px] flex items-start justify-between gap-3">
+      <div className="mb-3 flex items-start justify-between gap-3 sm:mb-[18px]">
         <div
-          className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-md border"
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-md border sm:h-[52px] sm:w-[52px]"
           style={{ ...cfg.iconBox, boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)" }}
         >
           <cfg.Icon size={32} />
@@ -104,14 +104,14 @@ function PillarCard({
         </span>
       </div>
 
-      <h3 className="font-display text-[18px] font-bold leading-[1.1] tracking-[-0.02em] text-ink">
+      <h3 className="font-display text-[15px] font-bold leading-[1.1] tracking-[-0.02em] text-ink sm:text-[18px]">
         {cfg.name}
       </h3>
       <div className="mt-1.5 font-sans text-[9.5px] uppercase tracking-[0.15em] text-ink-muted">
         {cfg.sub}
       </div>
 
-      <div className="mt-[18px] flex items-baseline gap-1.5 font-display text-[36px] font-bold leading-none tracking-[-0.03em] tabular-nums text-ink">
+      <div className="mt-3 flex flex-wrap items-baseline gap-1.5 font-display text-[22px] font-bold leading-none tracking-[-0.03em] tabular-nums text-ink sm:mt-[18px] sm:text-[36px]">
         {eur0(pilier.totalValue)}
         <span className="font-sans text-[12px] tracking-[0.12em] text-ink-muted">€</span>
       </div>
@@ -137,7 +137,7 @@ function PillarCard({
         )}
       </div>
 
-      <div className="mt-[18px] border-t border-dashed border-border pt-4">
+      <div className="mt-3 border-t border-dashed border-border pt-3 sm:mt-[18px] sm:pt-4">
         <div className="relative h-1.5 overflow-hidden rounded-pill bg-surface-deep">
           <div
             className="h-full rounded-pill transition-[width] duration-500"
@@ -243,7 +243,7 @@ export function PillarsGrid({
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 xl:grid-cols-4">
         {reels.map((p) => (
           <PillarCard key={p.pilier} pilier={p} onOpen={setOpen} />
         ))}

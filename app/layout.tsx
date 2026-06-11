@@ -37,6 +37,9 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: "#14110d", // --pm-bg (expresso quasi-noir)
+  // Android : le viewport layout se réduit quand le clavier s'ouvre (100dvh suit).
+  // iOS l'ignore — géré via visualViewport dans PioChatWidget.
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({

@@ -82,6 +82,22 @@ export function PioHero({
         />
       </div>
 
+      {/* Période — liste déroulante (mobile/tablette), juste au-dessus du récap de Pio */}
+      <div className="lg:hidden">
+        <select
+          value={periodKey}
+          onChange={(e) => onPeriodChange(e.target.value as DashboardPeriodKey)}
+          aria-label="Période d'analyse"
+          className="w-full"
+        >
+          {PERIOD_OPTIONS.map((opt) => (
+            <option key={opt.key} value={opt.key}>
+              Période · {opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {/* Bulle BD */}
       <div
         className="relative rounded-lg border px-7 py-6 font-display text-[17px] leading-[1.45] tracking-[-0.012em] text-ink"
@@ -150,9 +166,9 @@ export function PioHero({
         </div>
       </div>
 
-      {/* Toggle période — hauteur calée sur la bulle de Pio */}
+      {/* Toggle période (desktop) — hauteur calée sur la bulle de Pio */}
       <div
-        className="flex flex-col gap-1 rounded-lg border p-2 lg:h-full"
+        className="hidden flex-col gap-1 rounded-lg border p-2 lg:flex lg:h-full"
         style={{ background: "var(--pm-surface)", borderColor: "var(--pm-rule-strong)" }}
         role="radiogroup"
         aria-label="Période d'analyse"
