@@ -102,6 +102,8 @@ export default async function DashboardPage() {
         totalValue={patrimoineTotal}
         capRestant={Math.max(objectif - patrimoineTotal, 0)}
         targetAge={targetAge}
+        ageActuel={ageActuel}
+        tauxProjection={user?.objectifCroissance ?? 8}
         assetCount={assetCount}
         pilierCount={pilierCount}
         epargneMensuelle={epargneMensuelle}

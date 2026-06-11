@@ -7,6 +7,10 @@ interface Props {
   totalValue: number;
   epargneMensuelle: number | null;
   targetAge: number | null;
+  /** Âge actuel utilisé par la projection (dérivé de la date de naissance). */
+  ageActuel: number | null;
+  /** Taux de croissance annuel (%) utilisé par la projection. */
+  tauxProjection: number;
   assetCount: number;
   pilierCount: number;
   delta: PeriodDelta;
@@ -27,11 +31,24 @@ export function TreasureStrip({
   totalValue,
   epargneMensuelle,
   targetAge,
+  ageActuel,
+  tauxProjection,
   assetCount,
   pilierCount,
   delta,
   periodLabel,
 }: Props) {
+  // Sous-texte de la tuile « Objectif atteint à » : affiche les paramètres
+  // réellement utilisés par la projection — une donnée de profil manquante ou
+  // périmée devient visible immédiatement au lieu de produire un chiffre opaque.
+  const projectionFoot =
+    targetAge != null && ageActuel != null
+      ? `${String(tauxProjection).replace(".", ",")} %/an · de ${ageActuel} à ${targetAge} ans`
+      : ageActuel == null
+      ? "Renseigne ta date de naissance dans le Profil"
+      : epargneMensuelle == null
+      ? "Renseigne ton épargne mensuelle dans le Profil"
+      : "Non atteint sous 60 ans à ce rythme";
   // Performance pure = variation de valeur hors apports (comme les phrases de Pio).
   // On ne compte PAS l'argent injecté comme de la performance.
   const up = delta.performance >= 0;
@@ -92,7 +109,7 @@ export function TreasureStrip({
           </span>
         </div>
         <div className="mt-3.5 font-sans text-[10.5px] tracking-[0.06em] text-ink-muted">
-          Projection intérêts composés
+          {projectionFoot}
         </div>
       </div>
     </div>

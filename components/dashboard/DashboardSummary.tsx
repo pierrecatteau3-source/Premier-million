@@ -12,6 +12,10 @@ interface Props {
   totalValue: number;
   capRestant: number;
   targetAge: number | null;
+  /** Âge actuel utilisé par la projection (dérivé de la date de naissance). */
+  ageActuel: number | null;
+  /** Taux de croissance annuel (%) utilisé par la projection. */
+  tauxProjection: number;
   assetCount: number;
   pilierCount: number;
   epargneMensuelle: number | null;
@@ -29,6 +33,8 @@ export function DashboardSummary({
   totalValue,
   capRestant,
   targetAge,
+  ageActuel,
+  tauxProjection,
   assetCount,
   pilierCount,
   epargneMensuelle,
@@ -52,6 +58,8 @@ export function DashboardSummary({
         totalValue={totalValue}
         epargneMensuelle={epargneMensuelle}
         targetAge={targetAge}
+        ageActuel={ageActuel}
+        tauxProjection={tauxProjection}
         assetCount={assetCount}
         pilierCount={pilierCount}
         delta={deltas[periodKey]}

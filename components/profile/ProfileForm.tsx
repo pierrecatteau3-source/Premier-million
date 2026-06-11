@@ -67,6 +67,7 @@ export function ProfileForm({ profile }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
+  const [warning, setWarning] = useState("");
   const [success, setSuccess] = useState(false);
   // Sauvegarde dédiée de la date de naissance (indépendante de la validation
   // de l'allocation, qui bloque le bouton global). Feedback inline sous le champ.
@@ -168,6 +169,13 @@ export function ProfileForm({ profile }: Props) {
 
   const years = ageCibleNum - ageActuelNum;
 
+  // Taux de projection : la croissance cible du profil si renseignée, sinon 8 %.
+  // Même logique que le dashboard (« Objectif atteint à ») pour que les deux
+  // écrans racontent la même histoire.
+  const objectifCroissanceNum = parseFloat(objectifCroissance);
+  const tauxCustom = objectifCroissance !== "" && !isNaN(objectifCroissanceNum);
+  const tauxProjection = tauxCustom ? objectifCroissanceNum / 100 : MARKET_RATE_DEFAULT;
+
   const showFaisabilite =
     !isNaN(ageActuelNum) &&
     !isNaN(ageCibleNum) &&
@@ -189,7 +197,7 @@ export function ProfileForm({ profile }: Props) {
     ? calculateProjection({
         currentValue: (profile.progressionPercent / 100) * OBJECTIF_FIXE,
         monthlySavings: epargneMoyenne,
-        annualRate: MARKET_RATE_DEFAULT,
+        annualRate: tauxProjection,
         years,
         target: OBJECTIF_FIXE,
       })
@@ -230,16 +238,15 @@ export function ProfileForm({ profile }: Props) {
   }
 
   // ── Sauvegarde ────────────────────────────────────────────────
+  // Une allocation invalide ne bloque PLUS la sauvegarde du reste du profil :
+  // les champs simples (épargne, âge, stratégie…) partent toujours en base ;
+  // l'allocation n'est incluse que si elle totalise 100 % (sinon avertissement).
   function handleSave() {
     setError("");
+    setWarning("");
     setSuccess(false);
 
-    if (allocationDetaillee.length > 0 && !allocationValid) {
-      setError(
-        `L'allocation cible doit totaliser 100 % (actuellement ${allocationSum} %).`
-      );
-      return;
-    }
+    const allocationIncluse = allocationDetaillee.length === 0 || allocationValid;
 
     startTransition(async () => {
       try {
@@ -256,7 +263,10 @@ export function ProfileForm({ profile }: Props) {
             risqueMaxPerte: risqueMaxPerte !== "" ? parseFloat(risqueMaxPerte) : null,
             niveauConnaissance: niveauConnaissance || null,
             objectifCroissance: objectifCroissance !== "" ? parseFloat(objectifCroissance) : null,
-            allocationDetaillee: allocationDetaillee.length > 0 ? allocationDetaillee : null,
+            ...(allocationIncluse && {
+              allocationDetaillee:
+                allocationDetaillee.length > 0 ? allocationDetaillee : null,
+            }),
           }),
         });
 
@@ -266,6 +276,11 @@ export function ProfileForm({ profile }: Props) {
           return;
         }
 
+        if (!allocationIncluse) {
+          setWarning(
+            `Allocation cible non sauvegardée : elle doit totaliser 100 % (actuellement ${allocationSum} %). Le reste du profil est bien enregistré.`
+          );
+        }
         setSuccess(true);
         router.refresh();
         setTimeout(() => setSuccess(false), 3000);
@@ -446,7 +461,9 @@ export function ProfileForm({ profile }: Props) {
                 Faisabilité de l&apos;objectif
               </h3>
               <p className="mt-0.5 font-sans text-[10px] uppercase tracking-[0.16em] text-ink-muted">
-                Basé sur 8 %/an — moyenne S&amp;P 500 depuis 1957
+                {tauxCustom
+                  ? `Basé sur ${String(objectifCroissanceNum).replace(".", ",")} %/an — ta croissance cible`
+                  : "Basé sur 8 %/an — moyenne S&P 500 depuis 1957"}
                 {evolutionEpargne !== "" && !isNaN(evolutionEpargneNum) && (
                   <>
                     {" · "}épargne {evolutionEpargneNum > 0 ? "+" : ""}
@@ -774,6 +791,11 @@ export function ProfileForm({ profile }: Props) {
       {error && (
         <div className="animate-fade-in rounded-md border border-negative/30 bg-negative/10 px-4 py-3 text-sm text-negative">
           {error}
+        </div>
+      )}
+      {warning && (
+        <div className="animate-fade-in rounded-md border border-gold/30 bg-gold/10 px-4 py-3 text-sm text-gold">
+          {warning}
         </div>
       )}
       {success && (
