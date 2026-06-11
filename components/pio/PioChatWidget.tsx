@@ -43,9 +43,12 @@ export function PioChatWidget() {
     }
   }, [messages, greeting, pending, open]);
 
-  // Focus de l'input à l'ouverture
+  // Focus de l'input à l'ouverture — desktop uniquement : sur mobile, l'autofocus
+  // ouvre le clavier d'emblée et fait sauter le viewport iOS dès l'ouverture.
   useEffect(() => {
-    if (open) inputRef.current?.focus();
+    if (open && window.matchMedia("(min-width: 768px)").matches) {
+      inputRef.current?.focus();
+    }
   }, [open]);
 
   // Échap pour fermer
@@ -79,8 +82,16 @@ export function PioChatWidget() {
     const isMobile = window.matchMedia("(max-width: 767px)").matches;
     if (!vv || !isMobile) return;
     const sync = () => {
-      setVvBox({ height: Math.round(vv.height), top: Math.round(vv.offsetTop) });
-      window.scrollTo(0, 0);
+      // N'intervenir QUE clavier ouvert (viewport visuel nettement réduit).
+      // Sinon (scroll du fil, barre Safari qui se replie…), tout recalage
+      // scrollTo + translateY fait « trembler » le widget.
+      const keyboardOpen = window.innerHeight - vv.height > 80;
+      if (keyboardOpen) {
+        setVvBox({ height: Math.round(vv.height), top: Math.round(vv.offsetTop) });
+        window.scrollTo(0, 0);
+      } else {
+        setVvBox(null);
+      }
     };
     sync();
     vv.addEventListener("resize", sync);

@@ -274,8 +274,14 @@ export function PortfolioChart({
                 tick={{ fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
-                interval="preserveStartEnd"
-                minTickGap={72}
+                // Mobile : seulement la première et la dernière date
+                ticks={
+                  isMobile && chartData.length > 1
+                    ? [chartData[0].label, chartData[chartData.length - 1].label]
+                    : undefined
+                }
+                interval={isMobile ? 0 : "preserveStartEnd"}
+                minTickGap={isMobile ? 0 : 72}
                 tickMargin={12}
                 padding={{ left: 8, right: 8 }}
                 className="fill-muted-foreground"
@@ -286,7 +292,7 @@ export function PortfolioChart({
                 tickLine={false}
                 axisLine={false}
                 width={yAxisWidth}
-                tickCount={6}
+                tickCount={isMobile ? 3 : 6}
                 tickMargin={8}
                 className="fill-muted-foreground"
                 domain={[

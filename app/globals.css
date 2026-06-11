@@ -123,6 +123,18 @@
     }
   }
 
+  /* iOS/Safari : input date a une largeur intrinsèque qui ignore w-full et
+     déborde de son conteneur → on neutralise le rendu natif. */
+  input[type="date"] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-width: 0;
+    max-width: 100%;
+  }
+  input[type="date"]::-webkit-date-and-time-value {
+    text-align: left;
+  }
+
   body {
     @apply text-foreground;
     font-family: var(--font-sans), Geist, system-ui, sans-serif;

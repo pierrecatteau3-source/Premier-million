@@ -292,6 +292,32 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines
   );
   const total = piliers.reduce((s, p) => s + p.totalValue, 0);
 
+  // Sparkline + % de perf d'un actif sur une fenêtre donnée.
+  // Rendu 2× par ligne : cellule mobile figée sur 1J, cellule desktop sur sparkDays.
+  function renderPerf(ticker: string | null, days: SparkDays) {
+    const rawSeries = ticker ? sparklines[ticker] : undefined;
+    const series = sliceSparkWindow(rawSeries ?? [], days);
+    const values = series.map((p) => p.v);
+    const valid = values.length >= 2 && values[0] > 0;
+    const perf = valid
+      ? ((values[values.length - 1] - values[0]) / values[0]) * 100
+      : null;
+    const toneCls =
+      perf == null || Math.abs(perf) < 0.05
+        ? "text-muted-foreground"
+        : perf > 0
+        ? "text-positive"
+        : "text-negative";
+    return (
+      <div className="flex flex-col items-end gap-0.5">
+        <Sparkline points={values} className={toneCls} />
+        <span className={cn("text-xs font-medium tabular-nums", toneCls)}>
+          {perf == null ? "—" : `${perf >= 0 ? "+" : ""}${perf.toFixed(1)} %`}
+        </span>
+      </div>
+    );
+  }
+
   const displayedAssets = allAssets
     .filter((a) => filterPilier === "all" || a.pilier === filterPilier)
     .filter((a) => a.name.toLowerCase().includes(search.toLowerCase()))
@@ -391,10 +417,12 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines
                     <th className="px-2 py-2.5 sm:px-4 sm:py-3 text-right font-medium text-muted-foreground">
                       Valeur
                     </th>
-                    <th className="hidden px-2 py-2.5 sm:px-4 sm:py-3 text-right font-medium text-muted-foreground sm:table-cell">
+                    <th className="px-2 py-2.5 sm:px-4 sm:py-3 text-right font-medium text-muted-foreground">
                       <div className="flex flex-col items-end gap-1">
-                        <span>Performance</span>
-                        <div className="flex items-center gap-0.5">
+                        {/* Mobile : fenêtre 1J fixe, pas de sélecteur */}
+                        <span className="sm:hidden">Évol. 1J</span>
+                        <span className="hidden sm:inline">Performance</span>
+                        <div className="hidden items-center gap-0.5 sm:flex">
                           {SPARK_PERIODS.map((d) => (
                             <button
                               key={d}
@@ -417,7 +445,7 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines
                     <th className="hidden px-2 py-2.5 sm:px-4 sm:py-3 text-right font-medium text-muted-foreground lg:table-cell">
                       +/− latent
                     </th>
-                    <th className="px-2 py-2.5 sm:px-4 sm:py-3 text-right font-medium text-muted-foreground">
+                    <th className="hidden px-2 py-2.5 sm:table-cell sm:px-4 sm:py-3 text-right font-medium text-muted-foreground">
                       Actions
                     </th>
                   </tr>
@@ -429,8 +457,8 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines
                           className="transition-colors hover:bg-muted/30"
                         >
                           <td className="px-2 py-2.5 sm:px-4 sm:py-3">
-                            <div className="flex items-center gap-1.5 sm:gap-2.5">
-                              <span className="hidden h-9 w-9 shrink-0 place-items-center rounded-md border border-border bg-surface-deep sm:grid">
+                            <div className="flex items-center gap-2 sm:gap-2.5">
+                              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-border bg-surface-deep sm:h-9 sm:w-9">
                                 <AssetLogo
                                   name={asset.name}
                                   ticker={asset.ticker}
@@ -447,7 +475,8 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines
                                 >
                                   {asset.name}
                                 </button>
-                                <div className="mt-0.5">
+                                {/* Prix unitaire — desktop uniquement */}
+                                <div className="mt-0.5 hidden sm:block">
                                   <AssetPriceRow
                                     ticker={asset.ticker}
                                     pricingMode={asset.pricingMode}
@@ -475,32 +504,11 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines
                           <td className="px-2 py-2.5 sm:px-4 sm:py-3 text-right tabular-nums font-medium">
                             {formatEur(asset.latestValue)}
                           </td>
+                          <td className="px-2 py-2.5 sm:hidden">
+                            {renderPerf(asset.ticker, 1)}
+                          </td>
                           <td className="hidden px-2 py-2.5 sm:px-4 sm:py-3 sm:table-cell">
-                            {(() => {
-                              const rawSeries = asset.ticker ? sparklines[asset.ticker] : undefined;
-                              const series = sliceSparkWindow(rawSeries ?? [], sparkDays);
-                              const values = series.map((p) => p.v);
-                              const valid = values.length >= 2 && values[0] > 0;
-                              const perf = valid
-                                ? ((values[values.length - 1] - values[0]) / values[0]) * 100
-                                : null;
-                              const toneCls =
-                                perf == null || Math.abs(perf) < 0.05
-                                  ? "text-muted-foreground"
-                                  : perf > 0
-                                  ? "text-positive"
-                                  : "text-negative";
-                              return (
-                                <div className="flex flex-col items-end gap-0.5">
-                                  <Sparkline points={values} className={toneCls} />
-                                  <span className={cn("text-xs font-medium tabular-nums", toneCls)}>
-                                    {perf == null
-                                      ? "—"
-                                      : `${perf >= 0 ? "+" : ""}${perf.toFixed(1)} %`}
-                                  </span>
-                                </div>
-                              );
-                            })()}
+                            {renderPerf(asset.ticker, sparkDays)}
                           </td>
                           <td className="hidden px-2 py-2.5 sm:px-4 sm:py-3 text-right tabular-nums lg:table-cell">
                             {asset.pvLatente != null ? (
@@ -520,7 +528,7 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines
                               <span className="text-muted-foreground">—</span>
                             )}
                           </td>
-                          <td className="px-2 py-2.5 sm:px-4 sm:py-3">
+                          <td className="hidden px-2 py-2.5 sm:table-cell sm:px-4 sm:py-3">
                             <div className="flex items-center justify-end gap-0.5 sm:gap-1">
                               {asset.pilier !== "LIQUIDITE" && (
                                 <button
@@ -744,9 +752,11 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines
                     <td className="px-2 py-2.5 text-right tabular-nums font-bold sm:px-4 sm:py-3">
                       {formatEur(total)}
                     </td>
+                    {/* Performance : 2 cellules (mobile 1J / desktop) comme dans le corps */}
+                    <td className="sm:hidden" />
                     <td className="hidden sm:table-cell" />
                     <td className="hidden lg:table-cell" />
-                    <td />
+                    <td className="hidden sm:table-cell" />
                   </tr>
                 </tfoot>
               </table>

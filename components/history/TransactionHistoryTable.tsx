@@ -152,17 +152,18 @@ export function TransactionHistoryTable({ transactions }: Props) {
       )}
 
       <div className="overflow-x-auto">
-        {/* min-w : colonnes lisibles sur mobile, le wrapper scrolle horizontalement */}
-        <table className="w-full min-w-[640px] text-sm">
+        {/* Mobile : 3 colonnes (date / actif / montant), pas de scroll horizontal.
+            Desktop : toutes les colonnes, min-w pour rester lisible. */}
+        <table className="w-full text-sm sm:min-w-[640px]">
           <thead>
             <tr className="border-b border-border/50">
               <th className="py-2 text-left text-xs font-medium text-muted-foreground">Date</th>
               <th className="py-2 text-left text-xs font-medium text-muted-foreground">Actif</th>
-              <th className="py-2 text-left text-xs font-medium text-muted-foreground">Pilier</th>
-              <th className="py-2 text-right text-xs font-medium text-muted-foreground">Quantité</th>
-              <th className="py-2 text-right text-xs font-medium text-muted-foreground">Prix unitaire</th>
+              <th className="hidden py-2 text-left text-xs font-medium text-muted-foreground sm:table-cell">Pilier</th>
+              <th className="hidden py-2 text-right text-xs font-medium text-muted-foreground sm:table-cell">Quantité</th>
+              <th className="hidden py-2 text-right text-xs font-medium text-muted-foreground sm:table-cell">Prix unitaire</th>
               <th className="py-2 text-right text-xs font-medium text-muted-foreground">Montant investi</th>
-              <th className="py-2 w-20" />
+              <th className="hidden w-20 py-2 sm:table-cell" />
             </tr>
           </thead>
           <tbody>
@@ -197,10 +198,10 @@ export function TransactionHistoryTable({ transactions }: Props) {
                   </td>
 
                   {/* Pilier */}
-                  <td className="py-2 text-muted-foreground">{t.asset.pilier}</td>
+                  <td className="hidden py-2 text-muted-foreground sm:table-cell">{t.asset.pilier}</td>
 
                   {/* Quantité */}
-                  <td className="py-2 text-right tabular-nums text-muted-foreground">
+                  <td className="hidden py-2 text-right tabular-nums text-muted-foreground sm:table-cell">
                     {isEditing ? (
                       <input
                         type="number"
@@ -226,7 +227,7 @@ export function TransactionHistoryTable({ transactions }: Props) {
                   </td>
 
                   {/* Prix unitaire */}
-                  <td className="py-2 text-right tabular-nums text-muted-foreground">
+                  <td className="hidden py-2 text-right tabular-nums text-muted-foreground sm:table-cell">
                     {isEditing ? (
                       <input
                         type="number"
@@ -268,8 +269,8 @@ export function TransactionHistoryTable({ transactions }: Props) {
                     )}
                   </td>
 
-                  {/* Actions */}
-                  <td className="py-2 pl-2">
+                  {/* Actions — desktop uniquement (mobile = consultation) */}
+                  <td className="hidden py-2 pl-2 sm:table-cell">
                     {isEditing ? (
                       <div className="flex items-center gap-1">
                         <button
