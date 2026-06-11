@@ -34,7 +34,10 @@ const chatSchema = z.object({
     .array(
       z.object({
         role: z.enum(["user", "assistant"]),
-        content: z.string().min(1).max(2000),
+        // Marge large : l'historique renvoyé contient les réponses de Pio, qui
+        // peuvent être longues (surtout en mode conseil). 2000 bloquait la
+        // conversation dès le 2e message (réponse précédente > 2000 → 400).
+        content: z.string().min(1).max(16000),
       })
     )
     .min(1)
