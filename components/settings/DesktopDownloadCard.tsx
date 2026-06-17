@@ -1,3 +1,5 @@
+"use client";
+
 import { Download, Monitor } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
