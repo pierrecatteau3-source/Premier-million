@@ -2,8 +2,13 @@ name: Cron - Snapshot
 
 on:
   schedule:
-    # 7h et 16h UTC = 9h + 18h Paris en été (CEST), 8h + 17h Paris en hiver (CET)
-    - cron: "0 7,16 * * *"
+    # Toutes les heures (à HH:00 UTC). Le snapshot s'upsert sur [assetId, date du
+    # jour UTC] : chaque run écrase la valeur du jour avec le dernier prix valide.
+    # Plus de runs = courbe plus fraîche + meilleure résilience aux blips Yahoo
+    # (un prix 0/échec est désormais skippé, donc un bon run suivant garde la main).
+    # Reste dans le gratuit : Yahoo public (qq appels/h), CoinGecko demo (~720/mois),
+    # GitHub Actions (~720 min/mois < 2000).
+    - cron: "0 * * * *"
   workflow_dispatch: # trigger manuel via Actions tab
 
 jobs:
