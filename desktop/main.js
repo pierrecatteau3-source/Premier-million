@@ -9,11 +9,11 @@ const path = require("path");
 const fs = require("fs");
 
 // ── Config URL ────────────────────────────────────────────────────────────
-// Priorite : variable d'env PREMIER_MILLION_URL > constante ci-dessous.
-// Pour pointer sur la prod, remplace DEFAULT_URL par ton URL Railway, ex :
-//   const DEFAULT_URL = "https://premier-million.up.railway.app";
-// ou lance ponctuellement :  PREMIER_MILLION_URL="https://..." npm start
-const DEFAULT_URL = "http://localhost:3000";
+// L'app installee se connecte a la prod (URL gravee ci-dessous au build).
+// Pour developper contre un serveur local, surcharge sans toucher au code :
+//   Windows : $env:PREMIER_MILLION_URL="http://localhost:3000"; npm start
+//   bash    : PREMIER_MILLION_URL="http://localhost:3000" npm start
+const DEFAULT_URL = "https://premier-million-production.up.railway.app";
 const APP_URL = process.env.PREMIER_MILLION_URL || DEFAULT_URL;
 
 let APP_ORIGIN = null;

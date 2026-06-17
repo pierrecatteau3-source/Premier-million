@@ -16,20 +16,18 @@ npm start          # ouvre la fenetre
 
 ## Choisir l'URL chargee
 
-Par defaut la coquille pointe sur `http://localhost:3000` (serveur Next local).
+Par defaut la coquille pointe sur la **prod** (URL gravee dans `DEFAULT_URL` en
+haut de [`main.js`](main.js)) — c'est cette valeur qui part dans l'`.exe`.
 
-Pour pointer sur la **prod** sans toucher au code :
+Pour developper contre un serveur **local** sans toucher au code :
 
 ```bash
 # Windows PowerShell
-$env:PREMIER_MILLION_URL="https://<ton-projet>.up.railway.app"; npm start
+$env:PREMIER_MILLION_URL="http://localhost:3000"; npm start
 
 # bash
-PREMIER_MILLION_URL="https://<ton-projet>.up.railway.app" npm start
+PREMIER_MILLION_URL="http://localhost:3000" npm start
 ```
-
-Ou, de maniere permanente, remplace la constante `DEFAULT_URL` en haut de
-[`main.js`](main.js).
 
 ## Ce que fait la coquille
 

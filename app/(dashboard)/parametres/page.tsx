@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Header } from "@/components/layout/Header";
 import { ApiKeysForm } from "@/components/settings/ApiKeysForm";
+import { DesktopDownloadCard } from "@/components/settings/DesktopDownloadCard";
 
 /** État masqué d'une clé — on n'envoie jamais la valeur complète au client. */
 function mask(key: string | null): { configured: boolean; hint: string | null } {
@@ -23,9 +24,13 @@ export default async function ParametresPage() {
 
   return (
     <>
-      <Header title="Paramètres" description="Réglages techniques · clés API" />
+      <Header
+        title="Paramètres"
+        description="Réglages techniques · app bureau · clés API"
+      />
 
       <div className="p-6 space-y-6">
+        <DesktopDownloadCard />
         <ApiKeysForm
           initial={{
             bitpanda: mask(user?.bitpandaApiKey ?? null),
