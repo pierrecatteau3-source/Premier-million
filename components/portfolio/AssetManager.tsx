@@ -221,7 +221,7 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortBy>("value_desc");
   const [filterPilier, setFilterPilier] = useState(resolvedInitial);
-  const [sparkDays, setSparkDays] = useState<SparkDays>(7);
+  const [sparkDays, setSparkDays] = useState<SparkDays>(1);
 
   useEffect(() => {
     // Pas de scroll quand on est en modal (initialFilter fourni par le parent)

@@ -13,7 +13,7 @@ const RANGE_OPTIONS = [
   { label: "Vue sur 30j", days: 30 },
 ] as const;
 
-const DEFAULT_RANGE_DAYS = 30;
+const DEFAULT_RANGE_DAYS = 7;
 
 export function EvolutionBlock() {
   const [rangeDays, setRangeDays] = useState<number>(DEFAULT_RANGE_DAYS);

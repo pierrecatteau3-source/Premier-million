@@ -40,7 +40,7 @@ export function DashboardSummary({
   epargneMensuelle,
   deltas,
 }: Props) {
-  const [periodKey, setPeriodKey] = useState<DashboardPeriodKey>("month");
+  const [periodKey, setPeriodKey] = useState<DashboardPeriodKey>("day");
 
   return (
     <>
