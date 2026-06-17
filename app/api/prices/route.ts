@@ -79,8 +79,10 @@ export async function GET(req: NextRequest) {
         const result = await yahooFinance.quoteSummary(t, { modules: ["price"] });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const p = (result as any).price as { regularMarketPrice?: number; regularMarketChangePercent?: number } | undefined;
+        // 0 = échec source côté Yahoo → on l'affiche comme indisponible (null).
+        const rawPrice = p?.regularMarketPrice;
         data[t] = {
-          price: p?.regularMarketPrice ?? null,
+          price: rawPrice != null && rawPrice > 0 ? rawPrice : null,
           change24hPct: p?.regularMarketChangePercent != null ? p.regularMarketChangePercent * 100 : null,
           change7dPct: null,
           change30dPct: null,

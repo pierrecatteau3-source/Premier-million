@@ -70,7 +70,9 @@ async function fetchYahooSeries(
       const points: SparkPoint[] = [];
       for (let i = 0; i < ts.length; i++) {
         const c = closes[i];
-        if (c != null) points.push({ t: ts[i] * 1000, v: c });
+        // c > 0 : Yahoo met `null` dans les trous, mais on écarte aussi un 0
+        // éventuel qui créerait un pic vers le bas dans la mini-courbe.
+        if (c != null && c > 0) points.push({ t: ts[i] * 1000, v: c });
       }
       if (points.length > 0) return points; // succès : on s'arrête
       // Réponse OK mais vide → on tente quand même l'autre hôte avant d'abandonner

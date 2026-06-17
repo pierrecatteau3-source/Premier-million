@@ -58,7 +58,11 @@ async function fetchEquityPrices(tickers: string[]): Promise<Record<string, numb
         const summary = await yahooFinance.quoteSummary(ticker, { modules: ["price"] });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const p = (summary as any).price as { regularMarketPrice?: number } | undefined;
-        result[ticker] = p?.regularMarketPrice ?? null;
+        // Yahoo renvoie ponctuellement regularMarketPrice = 0 (hors-séance,
+        // rate-limit, module partiel) → on le traite comme un échec (null) pour
+        // ne jamais persister un snapshot à 0 qui casse la courbe.
+        const raw = p?.regularMarketPrice;
+        result[ticker] = raw != null && raw > 0 ? raw : null;
       } catch {
         result[ticker] = null;
       }
@@ -137,7 +141,10 @@ export async function GET(req: NextRequest) {
         ? (cryptoPrices[asset.ticker!] ?? null)
         : (equityPrices[asset.ticker!] ?? null);
 
-    if (livePrice == null) {
+    // Rejette null ET <= 0 (garde alignée sur /api/snapshots/sync) : un prix 0
+    // signifie un échec source, pas une valeur réelle. Sans ce garde, le cron
+    // écrivait un snapshot à 0 qui se propageait par carry-forward dans l'historique.
+    if (livePrice == null || livePrice <= 0) {
       snapshotsSkipped++;
       continue;
     }
