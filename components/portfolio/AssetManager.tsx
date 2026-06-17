@@ -290,7 +290,6 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines
       pricingMode: a.pricingMode ?? "manual",
     }))
   );
-  const total = piliers.reduce((s, p) => s + p.totalValue, 0);
 
   // Sparkline + % de perf d'un actif sur une fenêtre donnée.
   // Rendu 2× par ligne : cellule mobile figée sur 1J, cellule desktop sur sparkDays.
@@ -329,6 +328,11 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines
       if (sortBy === "pilier") return a.pilier.localeCompare(b.pilier);
       return 0;
     });
+
+  // Le total reflète le périmètre affiché (filtre pilier + recherche) et non
+  // l'ensemble du portefeuille — indispensable quand la table est ouverte en
+  // modale sur un seul pilier depuis le dashboard.
+  const total = displayedAssets.reduce((s, a) => s + (a.latestValue ?? 0), 0);
 
   return (
     <div className="space-y-4">
@@ -745,7 +749,9 @@ export function AssetManager({ piliers, priceMap = {}, initialFilter, sparklines
                       il fausserait l'alignement quand des colonnes sont masquées) */}
                   <tr className="border-t-2 border-border [&>td]:sticky [&>td]:bottom-0 [&>td]:z-10 [&>td]:bg-[hsl(var(--muted))]">
                     <td className="px-2 py-2.5 font-semibold sm:px-4 sm:py-3">
-                      Total portefeuille
+                      {filterPilier === "all"
+                        ? "Total portefeuille"
+                        : `Total ${PILIER_LABEL[filterPilier as keyof typeof PILIER_LABEL]}`}
                     </td>
                     <td className="hidden sm:table-cell" />
                     <td className="hidden xl:table-cell" />
