@@ -1,0 +1,37 @@
+{
+  "name": "premier-million-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Coquille desktop Electron de Premier Million (option A) — affiche l'app web deployee dans une fenetre native. Aucun serveur ni secret embarque.",
+  "main": "main.js",
+  "author": "Pierre Catteau",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.premiermillion.desktop",
+    "productName": "Premier Million",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "error.html",
+      "assets/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
