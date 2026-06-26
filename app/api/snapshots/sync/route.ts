@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 import { fetchEquityCurrentPrices } from "@/lib/services/yahoo.service";
+import { fetchCryptoCurrentPrices } from "@/lib/services/coingecko.service";
 
 // POST /api/snapshots/sync
 // 1. Fetches live prices and upserts today's market-value snapshot for each live asset.
@@ -54,32 +55,12 @@ export async function POST() {
 
   const priceMap: Record<string, number | null> = {};
 
-  // Fetch crypto prices via CoinGecko
+  // Prix live via services centralisés (timeout, retry, rejet des prix <= 0).
   if (cryptoIds.length > 0) {
-    try {
-      const apiKey = process.env.COINGECKO_API_KEY;
-      const url = `https://api.coingecko.com/api/v3/simple/price?ids=${cryptoIds.join(",")}&vs_currencies=eur`;
-      const headers: Record<string, string> = { Accept: "application/json" };
-      if (apiKey && apiKey !== "REMPLACER_PAR_TA_CLE") {
-        headers["x-cg-demo-api-key"] = apiKey;
-      }
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 8000);
-      const res = await fetch(url, { headers, signal: controller.signal });
-      clearTimeout(timeout);
-      if (res.ok) {
-        const raw = (await res.json()) as Record<string, Record<string, number>>;
-        for (const id of cryptoIds) {
-          priceMap[id] = raw[id]?.eur ?? null;
-        }
-      }
-    } catch { /* continue with equity */ }
+    Object.assign(priceMap, await fetchCryptoCurrentPrices(cryptoIds));
   }
-
-  // Fetch equity prices via fetch direct /v8/chart (fiable, rejette les 0)
   if (equityTickers.length > 0) {
-    const equityPrices = await fetchEquityCurrentPrices(equityTickers);
-    Object.assign(priceMap, equityPrices);
+    Object.assign(priceMap, await fetchEquityCurrentPrices(equityTickers));
   }
 
   let count = 0;

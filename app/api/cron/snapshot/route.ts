@@ -14,41 +14,17 @@ export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { fetchEquityCurrentPrices } from "@/lib/services/yahoo.service";
+import { fetchCryptoCurrentPrices } from "@/lib/services/coingecko.service";
 
 // ─── Helpers prix ──────────────────────────────────────────────────────────────
+// Crypto via CoinGecko, equity via fetch direct /v8/chart — services centralisés
+// et résilients (timeout, retry, rejet des prix <= 0).
 
 async function fetchCryptoPrices(ids: string[]): Promise<Record<string, number | null>> {
   if (ids.length === 0) return {};
-  const apiKey = process.env.COINGECKO_API_KEY;
-  const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(",")}&vs_currencies=eur`;
-
-  const headers: Record<string, string> = { Accept: "application/json" };
-  if (apiKey && apiKey !== "REMPLACER_PAR_TA_CLE") {
-    headers["x-cg-demo-api-key"] = apiKey;
-  }
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10_000);
-  try {
-    const res = await fetch(url, { headers, signal: controller.signal });
-    clearTimeout(timeout);
-    if (!res.ok) throw new Error(`CoinGecko ${res.status}`);
-    const raw = (await res.json()) as Record<string, Record<string, number>>;
-    const result: Record<string, number | null> = {};
-    for (const id of ids) {
-      result[id] = raw[id]?.eur ?? null;
-    }
-    return result;
-  } catch {
-    clearTimeout(timeout);
-    const result: Record<string, number | null> = {};
-    for (const id of ids) result[id] = null;
-    return result;
-  }
+  return fetchCryptoCurrentPrices(ids);
 }
 
-// Prix equity : fetch direct /v8/chart (fiable depuis un serveur, pas de crumb),
-// avec rejet des prix <= 0 — cf. lib/services/yahoo.service.ts.
 async function fetchEquityPrices(tickers: string[]): Promise<Record<string, number | null>> {
   if (tickers.length === 0) return {};
   return fetchEquityCurrentPrices(tickers);

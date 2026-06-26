@@ -19,10 +19,10 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { fetchEquityDailyCloses, type DailyClose } from "@/lib/services/yahoo.service";
+import { fetchEquityDailyCloses } from "@/lib/services/yahoo.service";
+import { fetchCryptoDailyCloses } from "@/lib/services/coingecko.service";
 
 const DAY_MS = 86_400_000;
-const COINGECKO_TIMEOUT_MS = 10_000;
 
 export interface BackfillResult {
   assetsProcessed: number;
@@ -47,7 +47,7 @@ function utcMidnight(d: Date): Date {
  * Les jours antérieurs au 1er achat (quantité ≤ 0) sont ignorés.
  */
 function buildMarketRows(
-  closes: DailyClose[],
+  closes: { date: Date; close: number }[],
   transactions: { quantite: number; date: Date }[]
 ): { date: Date; value: number }[] {
   const sortedTx = [...transactions].sort(
@@ -141,53 +141,6 @@ async function backfillEquity(
 
   const rows = buildMarketRows(closes, asset.transactions);
   return persistRows(asset.id, rows, start, utcMidnight(now));
-}
-
-/** Historique crypto via CoinGecko market_chart (prix EUR), bucketé par jour UTC. */
-async function fetchCryptoDailyCloses(
-  id: string,
-  days: number
-): Promise<DailyClose[]> {
-  const apiKey = process.env.COINGECKO_API_KEY;
-  const headers: Record<string, string> = { Accept: "application/json" };
-  if (apiKey && apiKey !== "REMPLACER_PAR_TA_CLE") {
-    headers["x-cg-demo-api-key"] = apiKey;
-  }
-  const url = `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(
-    id
-  )}/market_chart?vs_currency=eur&days=${days}`;
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), COINGECKO_TIMEOUT_MS);
-  try {
-    const res = await fetch(url, {
-      headers,
-      signal: controller.signal,
-      next: { revalidate: 3_600 },
-    });
-    clearTimeout(timer);
-    if (!res.ok) {
-      console.warn(`[backfill] CoinGecko ${res.status} pour "${id}"`);
-      return [];
-    }
-    const json = (await res.json()) as { prices?: [number, number][] };
-    const byDay = new Map<number, number>();
-    for (const [ms, price] of json.prices ?? []) {
-      if (price == null || price <= 0) continue;
-      const d = new Date(ms);
-      byDay.set(
-        Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()),
-        price // last-write-wins → clôture du jour
-      );
-    }
-    return Array.from(byDay.entries())
-      .sort((a, b) => a[0] - b[0])
-      .map(([t, close]) => ({ date: new Date(t), close }));
-  } catch {
-    clearTimeout(timer);
-    console.warn(`[backfill] CoinGecko indisponible pour "${id}"`);
-    return [];
-  }
 }
 
 async function backfillCrypto(

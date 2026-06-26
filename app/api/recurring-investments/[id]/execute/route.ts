@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
 import { fetchEquityCurrentPrices } from "@/lib/services/yahoo.service";
+import { fetchCryptoCurrentPrices } from "@/lib/services/coingecko.service";
 
 /**
  * POST /api/recurring-investments/[id]/execute
@@ -62,26 +63,10 @@ export async function POST(
         prixEntreeEur = prices[asset.ticker.trim()] ?? null;
         prixSource = "live_equity";
       } else {
-        // live_crypto → CoinGecko
-        const apiKey = process.env.COINGECKO_API_KEY;
-        const url = `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(asset.ticker)}&vs_currencies=eur`;
-        const headers: Record<string, string> = { Accept: "application/json" };
-        if (apiKey && apiKey !== "REMPLACER_PAR_TA_CLE") {
-          headers["x-cg-demo-api-key"] = apiKey;
-        }
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 8000);
-        try {
-          const res = await fetch(url, { headers, signal: controller.signal });
-          clearTimeout(timeout);
-          if (res.ok) {
-            const raw = (await res.json()) as Record<string, Record<string, number>>;
-            prixEntreeEur = raw[asset.ticker]?.["eur"] ?? null;
-            prixSource = "live_crypto";
-          }
-        } catch {
-          clearTimeout(timeout);
-        }
+        // live_crypto → CoinGecko (service centralisé, retry + rejet 0)
+        const prices = await fetchCryptoCurrentPrices([asset.ticker]);
+        prixEntreeEur = prices[asset.ticker.trim()] ?? null;
+        prixSource = "live_crypto";
       }
     } catch {
       // La récupération live a échoué → on tombera sur le fallback snapshot

@@ -4,6 +4,8 @@
  * Ne throw jamais — retourne null sur chaque champ en cas d'échec.
  */
 
+import { fetchCryptoQuotes, type CryptoQuote } from "@/lib/services/coingecko.service";
+
 export interface MarketSnapshot {
   fetchedAt: string;
   indices: {
@@ -28,28 +30,13 @@ function withTimeout(url: string, init?: RequestInit): Promise<Response> {
 }
 
 async function fetchCrypto(): Promise<MarketSnapshot["crypto"]> {
-  try {
-    const key = process.env.COINGECKO_API_KEY;
-    const headers: Record<string, string> = key
-      ? { "x-cg-demo-api-key": key }
-      : {};
-    const res = await withTimeout(
-      "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=eur&include_24hr_change=true",
-      { headers }
-    );
-    if (!res.ok) return { btc: null, eth: null };
-    const data = await res.json() as Record<string, Record<string, number>>;
-    return {
-      btc: data.bitcoin
-        ? { priceEur: data.bitcoin.eur, change24h: data.bitcoin.eur_24h_change }
-        : null,
-      eth: data.ethereum
-        ? { priceEur: data.ethereum.eur, change24h: data.ethereum.eur_24h_change }
-        : null,
-    };
-  } catch {
-    return { btc: null, eth: null };
-  }
+  // Service centralisé (timeout, retry, rejet des prix <= 0) — cf. coingecko.service.
+  const quotes = await fetchCryptoQuotes(["bitcoin", "ethereum"]);
+  const toEntry = (q?: CryptoQuote) =>
+    q && q.price != null
+      ? { priceEur: q.price, change24h: q.change24hPct ?? 0 }
+      : null;
+  return { btc: toEntry(quotes.bitcoin), eth: toEntry(quotes.ethereum) };
 }
 
 async function fetchIndex(
