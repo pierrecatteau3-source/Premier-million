@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
+import { fetchEquityCurrentPrices } from "@/lib/services/yahoo.service";
 
 /**
  * POST /api/recurring-investments/[id]/execute
@@ -57,13 +58,8 @@ export async function POST(
   ) {
     try {
       if (asset.pricingMode === "live_equity") {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const YahooFinance = (await import("yahoo-finance2")).default;
-        const yahooFinance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
-        const result = await yahooFinance.quoteSummary(asset.ticker, { modules: ["price"] });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const p = (result as any).price as { regularMarketPrice?: number } | undefined;
-        prixEntreeEur = p?.regularMarketPrice ?? null;
+        const prices = await fetchEquityCurrentPrices([asset.ticker]);
+        prixEntreeEur = prices[asset.ticker.trim()] ?? null;
         prixSource = "live_equity";
       } else {
         // live_crypto → CoinGecko

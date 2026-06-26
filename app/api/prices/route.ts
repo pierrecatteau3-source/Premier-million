@@ -2,6 +2,7 @@ export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
 import type { PriceMap } from "@/types/prices";
+import { fetchEquityQuotes } from "@/lib/services/yahoo.service";
 
 // GET /api/prices?ids=bitcoin,ethereum&mode=crypto
 // GET /api/prices?tickers=EWLD.PA,CW8.PA&mode=equity
@@ -63,43 +64,43 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // mode === "equity"
+  // mode === "equity" — fetch direct /v8/chart (fiable, sans crumb).
   const tickers = searchParams.get("tickers") ?? "";
   if (!tickers) return NextResponse.json({ data: {}, updatedAt });
 
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const YahooFinance = (await import("yahoo-finance2")).default;
-    // yahoo-finance2 v3: default export is the class, must instantiate before calling methods
-    const yahooFinance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
-    const data: PriceMap = {};
-    for (const ticker of tickers.split(",")) {
-      const t = ticker.trim();
-      try {
-        const result = await yahooFinance.quoteSummary(t, { modules: ["price"] });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const p = (result as any).price as { regularMarketPrice?: number; regularMarketChangePercent?: number } | undefined;
-        // 0 = échec source côté Yahoo → on l'affiche comme indisponible (null).
-        const rawPrice = p?.regularMarketPrice;
-        data[t] = {
-          price: rawPrice != null && rawPrice > 0 ? rawPrice : null,
-          change24hPct: p?.regularMarketChangePercent != null ? p.regularMarketChangePercent * 100 : null,
-          change7dPct: null,
-          change30dPct: null,
-          updatedAt,
-        };
-      } catch {
-        data[t] = { price: null, change24hPct: null, change7dPct: null, change30dPct: null, updatedAt, error: "not_found" };
-      }
+  const tickerList = tickers
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+
+  const quotes = await fetchEquityQuotes(tickerList);
+  const data: PriceMap = {};
+  let anyOk = false;
+  for (const t of tickerList) {
+    const q = quotes[t];
+    if (q && q.price != null) {
+      anyOk = true;
+      data[t] = {
+        price: q.price,
+        change24hPct: q.changePct,
+        change7dPct: null,
+        change30dPct: null,
+        updatedAt,
+      };
+    } else {
+      data[t] = {
+        price: null,
+        change24hPct: null,
+        change7dPct: null,
+        change30dPct: null,
+        updatedAt,
+        error: "source_unavailable",
+      };
     }
-    return NextResponse.json({ data, updatedAt });
-  } catch {
-    // yahoo-finance2 unavailable
-    const data: PriceMap = {};
-    for (const t of tickers.split(",")) {
-      // TODO: remplacer par une API alternative
-      data[t.trim()] = { price: null, change24hPct: null, change7dPct: null, change30dPct: null, updatedAt, error: "source_unavailable" };
-    }
-    return NextResponse.json({ data, updatedAt }, { status: 502 });
   }
+
+  return NextResponse.json(
+    { data, updatedAt },
+    { status: anyOk || tickerList.length === 0 ? 200 : 502 }
+  );
 }

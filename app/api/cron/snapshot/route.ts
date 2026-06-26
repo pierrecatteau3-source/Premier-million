@@ -13,6 +13,7 @@ export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { fetchEquityCurrentPrices } from "@/lib/services/yahoo.service";
 
 // ─── Helpers prix ──────────────────────────────────────────────────────────────
 
@@ -46,33 +47,11 @@ async function fetchCryptoPrices(ids: string[]): Promise<Record<string, number |
   }
 }
 
+// Prix equity : fetch direct /v8/chart (fiable depuis un serveur, pas de crumb),
+// avec rejet des prix <= 0 — cf. lib/services/yahoo.service.ts.
 async function fetchEquityPrices(tickers: string[]): Promise<Record<string, number | null>> {
   if (tickers.length === 0) return {};
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const YahooFinance = (await import("yahoo-finance2")).default;
-    const yahooFinance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
-    const result: Record<string, number | null> = {};
-    for (const ticker of tickers) {
-      try {
-        const summary = await yahooFinance.quoteSummary(ticker, { modules: ["price"] });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const p = (summary as any).price as { regularMarketPrice?: number } | undefined;
-        // Yahoo renvoie ponctuellement regularMarketPrice = 0 (hors-séance,
-        // rate-limit, module partiel) → on le traite comme un échec (null) pour
-        // ne jamais persister un snapshot à 0 qui casse la courbe.
-        const raw = p?.regularMarketPrice;
-        result[ticker] = raw != null && raw > 0 ? raw : null;
-      } catch {
-        result[ticker] = null;
-      }
-    }
-    return result;
-  } catch {
-    const result: Record<string, number | null> = {};
-    for (const ticker of tickers) result[ticker] = null;
-    return result;
-  }
+  return fetchEquityCurrentPrices(tickers);
 }
 
 // ─── Handler ───────────────────────────────────────────────────────────────────

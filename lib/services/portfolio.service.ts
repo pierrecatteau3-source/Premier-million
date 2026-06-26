@@ -1,11 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import type { PortfolioSummary, PilierSummary, Pilier } from "@/types";
 
-/** Extrait la date locale YYYY-MM-DD sans décalage UTC */
-function toLocalDateKey(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
+/**
+ * Clé de jour YYYY-MM-DD en UTC. Tous les snapshots sont écrits à minuit UTC
+ * (cron + sync + backfill), donc on lit en UTC pour éviter qu'un serveur/poste
+ * non-UTC ne décale les points d'un jour (collision / trou dans la courbe).
+ */
+function toUTCDateKey(d: Date): string {
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
 
@@ -213,7 +217,7 @@ async function buildHistoryFromRange(
       carryTotal = runningTotal;
     } else {
       // Dans la période — point épars
-      sparsePoints[toLocalDateKey(snap.date)] = runningTotal;
+      sparsePoints[toUTCDateKey(snap.date)] = runningTotal;
     }
   }
 
@@ -223,16 +227,16 @@ async function buildHistoryFromRange(
   if (startDate) {
     const result: HistoryPoint[] = [];
     const cursor = new Date(startDate);
-    cursor.setHours(0, 0, 0, 0);
-    const endLocal = new Date(endDate);
-    endLocal.setHours(0, 0, 0, 0);
+    cursor.setUTCHours(0, 0, 0, 0);
+    const endUTC = new Date(endDate);
+    endUTC.setUTCHours(0, 0, 0, 0);
     let lastKnown = carryTotal;
 
-    while (cursor <= endLocal) {
-      const key = toLocalDateKey(cursor);
+    while (cursor <= endUTC) {
+      const key = toUTCDateKey(cursor);
       if (sparsePoints[key] !== undefined) lastKnown = sparsePoints[key];
       result.push({ date: key, totalValue: lastKnown });
-      cursor.setDate(cursor.getDate() + 1);
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
     }
     return result;
   }
@@ -318,22 +322,22 @@ export async function getAssetHistoryByRange(
     if (snap.date < startDate) {
       carryValue = snap.value;
     } else {
-      sparsePoints[toLocalDateKey(snap.date)] = snap.value;
+      sparsePoints[toUTCDateKey(snap.date)] = snap.value;
     }
   }
 
   // Remplissage journalier entre startDate et endDate
   const result: HistoryPoint[] = [];
   const cursor = new Date(startDate);
-  cursor.setHours(0, 0, 0, 0);
-  const endLocal = new Date(endDate);
-  endLocal.setHours(0, 0, 0, 0);
+  cursor.setUTCHours(0, 0, 0, 0);
+  const endUTC = new Date(endDate);
+  endUTC.setUTCHours(0, 0, 0, 0);
   let lastKnown = carryValue;
-  while (cursor <= endLocal) {
-    const key = toLocalDateKey(cursor);
+  while (cursor <= endUTC) {
+    const key = toUTCDateKey(cursor);
     if (sparsePoints[key] !== undefined) lastKnown = sparsePoints[key];
     result.push({ date: key, totalValue: lastKnown });
-    cursor.setDate(cursor.getDate() + 1);
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
   return result;
 }

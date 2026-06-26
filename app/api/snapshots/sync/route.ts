@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireSession } from "@/lib/session";
+import { fetchEquityCurrentPrices } from "@/lib/services/yahoo.service";
 
 // POST /api/snapshots/sync
 // 1. Fetches live prices and upserts today's market-value snapshot for each live asset.
@@ -30,11 +31,11 @@ export async function POST() {
     return NextResponse.json({ count: 0 });
   }
 
-  // Normalize a Date to local midnight (consistent with how "today" is computed)
+  // Normalise une date à MINUIT UTC — aligné sur le cron (app/api/cron/snapshot
+  // utilise Date.UTC). Indispensable pour que cron et sync écrivent la MÊME clé
+  // [assetId, date] : sinon (serveur non-UTC) deux lignes distinctes par jour.
   function toMidnight(d: Date): Date {
-    const n = new Date(d);
-    n.setHours(0, 0, 0, 0);
-    return n;
+    return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
   }
 
   const today = toMidnight(new Date());
@@ -75,23 +76,10 @@ export async function POST() {
     } catch { /* continue with equity */ }
   }
 
-  // Fetch equity prices via yahoo-finance2
+  // Fetch equity prices via fetch direct /v8/chart (fiable, rejette les 0)
   if (equityTickers.length > 0) {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const YahooFinance = (await import("yahoo-finance2")).default;
-      const yahooFinance = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
-      for (const ticker of equityTickers) {
-        try {
-          const result = await yahooFinance.quoteSummary(ticker, { modules: ["price"] });
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const p = (result as any).price as { regularMarketPrice?: number } | undefined;
-          priceMap[ticker] = p?.regularMarketPrice ?? null;
-        } catch {
-          priceMap[ticker] = null;
-        }
-      }
-    } catch { /* yahoo-finance2 unavailable */ }
+    const equityPrices = await fetchEquityCurrentPrices(equityTickers);
+    Object.assign(priceMap, equityPrices);
   }
 
   let count = 0;

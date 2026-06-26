@@ -13,6 +13,9 @@ interface Props {
   initialFilter?: string;
 }
 
+/** Au-delà de cette ancienneté du dernier snapshot, on relance une réparation. */
+const STALE_MS = 12 * 60 * 60 * 1000;
+
 /** Injects live prices into pilier assets and recomputes totalValue per pilier */
 function applyLivePrices(piliers: PilierSummary[], priceMap: PriceMap): PilierSummary[] {
   return piliers.map((pilier) => {
@@ -83,26 +86,35 @@ export function PortfolioClient({ piliers, initialFilter }: Props) {
   // 7 jours ; la colonne tranche ensuite la fenêtre 1J/3J/7J côté client.
   const sparklines = useSparklines(requests, 7);
 
-  // Auto-sync when live prices arrive and some assets have no snapshot yet (latestValue === undefined)
-  const hasLiveAssets = requests.length > 0;
-  const hasUnsnapshotted = piliers.some((p) =>
-    p.assets.some(
-      (a) =>
-        (a.pricingMode === "live_equity" || a.pricingMode === "live_crypto") &&
-        a.latestValue === undefined
-    )
-  );
+  // Auto-réparation de l'historique de marché. On déclenche un backfill (vraies
+  // clôtures Yahoo / CoinGecko) si le dernier snapshot des actifs live est ABSENT
+  // ou PÉRIMÉ (> 12 h) — pas seulement absent comme avant. Ça reconstruit les
+  // courbes « gelées » sans action de l'utilisateur, et rattrape un cron horaire
+  // qui aurait sauté. Une seule fois par montage (syncedRef).
+  const needsHeal = useMemo(() => {
+    const liveAssets = piliers
+      .flatMap((p) => p.assets)
+      .filter(
+        (a) =>
+          (a.pricingMode === "live_equity" || a.pricingMode === "live_crypto") &&
+          !!a.ticker
+      );
+    if (liveAssets.length === 0) return false;
+    const latestMs = liveAssets.reduce(
+      (max, a) => (a.latestDate ? Math.max(max, new Date(a.latestDate).getTime()) : max),
+      0
+    );
+    return latestMs === 0 || Date.now() - latestMs > STALE_MS;
+  }, [piliers]);
 
   useEffect(() => {
-    if (!hasLiveAssets || !hasUnsnapshotted) return;
-    if (Object.keys(prices).length === 0) return; // prices not loaded yet
-    if (syncedRef.current) return;
+    if (!needsHeal || syncedRef.current) return;
     syncedRef.current = true;
 
-    fetch("/api/snapshots/sync", { method: "POST" })
+    fetch("/api/snapshots/backfill", { method: "POST" })
       .then(() => router.refresh())
       .catch(() => null);
-  }, [prices, hasLiveAssets, hasUnsnapshotted, router]);
+  }, [needsHeal, router]);
 
   const piliersWithLive = useMemo(
     () => applyLivePrices(piliers, prices),
